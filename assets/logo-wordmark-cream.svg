@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64" fill="none">
+  <defs>
+    <linearGradient id="wmxg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#27DCFF"></stop>
+      <stop offset="55%" stop-color="#1FB8D6"></stop>
+      <stop offset="100%" stop-color="#0E5A6E"></stop>
+    </linearGradient>
+  </defs>
+  <text x="0" y="46" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="52" letter-spacing="-0.03em" fill="#F2F5F7">Syllabri</text>
+  <g transform="translate(212, 6)">
+    <path d="M0 0 L10 0 L46 46 L36 46 Z" fill="url(#wmxg2)"></path>
+    <path d="M46 0 L36 0 L0 46 L10 46 Z" fill="url(#wmxg2)" opacity="0.9"></path>
+    <circle cx="42" cy="6" r="1.6" fill="#27DCFF"></circle>
+    <circle cx="6" cy="40" r="1.2" fill="#27DCFF"></circle>
+  </g>
+  <text x="142" y="63" font-family="Plus Jakarta Sans, sans-serif" font-weight="700" font-size="12" letter-spacing="0.4em" fill="#A2B3BE">NETWORK</text>
+</svg>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .btn {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 8px;
+    padding: 10px 16px;
+    border: 0;
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.2,0,0,1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary { background:#192F3D; color:#fff; box-shadow: 0 1px 1px rgba(15,16,32,0.04), 0 2px 6px -1px rgba(15,16,32,0.06); }
+  .btn-primary:hover { background:#15303F; }
+  .btn-secondary { background:#FFFFFF; color:#0A1825; border:1px solid #E8E2D6; }
+  .btn-secondary:hover { background:#FAF6EF; }
+  .btn-ghost { background:transparent; color:#0A1825; }
+  .btn-ghost:hover { background:#F2EDE2; }
+  .btn-saffron { background:#1FB8D6; color:#0A1825; }
+  .btn-danger { background:transparent; color:#B91C1C; border:1px solid #F5BFBF; }
+</style>
+</head>
+<body style="padding:24px 28px;">
+  <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+    <button class="btn btn-primary">Create invoice</button>
+    <button class="btn btn-secondary">Cancel</button>
+    <button class="btn btn-ghost">View all</button>
+    <button class="btn btn-saffron">✨ Make a video</button>
+    <button class="btn btn-danger">Delete</button>
+    <button class="btn btn-primary" style="padding:14px 22px; font-size:15px;">Continue</button>
+    <button class="btn btn-secondary" style="padding:6px 10px; font-size:12px;">Filter</button>
+  </div>
+  <div class="label" style="margin-top:14px;">primary · secondary · ghost · saffron · danger · large · small</div>
+</body></html>

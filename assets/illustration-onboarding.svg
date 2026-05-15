@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none">
+  <defs>
+    <radialGradient id="onbbg" cx="50%" cy="60%" r="60%">
+      <stop offset="0%" stop-color="#C2F3FF" stop-opacity="0.55"></stop>
+      <stop offset="100%" stop-color="#FAF6EF" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="320" height="240" fill="#FAF6EF"></rect>
+  <circle cx="160" cy="140" r="110" fill="url(#onbbg)"></circle>
+  
+  <rect x="80" y="120" width="160" height="80" rx="10" fill="#192F3D"></rect>
+  <rect x="92" y="132" width="40" height="56" rx="6" fill="#FAF6EF"></rect>
+  <rect x="140" y="132" width="40" height="28" rx="6" fill="#1FB8D6"></rect>
+  <rect x="188" y="132" width="40" height="56" rx="6" fill="#FAF6EF"></rect>
+  
+  <rect x="72" y="100" width="176" height="20" rx="6" fill="#1FB8D6"></rect>
+  <rect x="72" y="100" width="176" height="6" rx="3" fill="#0EA1BD"></rect>
+  
+  <rect x="130" y="70" width="60" height="22" rx="6" fill="#192F3D"></rect>
+  <circle cx="142" cy="81" r="3" fill="#FAF6EF"></circle>
+  <circle cx="160" cy="81" r="3" fill="#27DCFF"></circle>
+  <circle cx="178" cy="81" r="3" fill="#FAF6EF"></circle>
+  
+  <rect x="60" y="200" width="200" height="6" rx="3" fill="#0A1825" opacity="0.12"></rect>
+</svg>

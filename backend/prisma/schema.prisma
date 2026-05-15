@@ -1,0 +1,517 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum BusinessType {
+  RETAIL
+  KIRANA
+  COACHING
+  SALON
+  CLINIC
+  RESTAURANT
+  GYM
+  MALL
+  FREELANCER
+  WORKSHOP
+  OTHER
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  STAFF
+  ACCOUNTANT
+}
+
+enum PlanType {
+  STARTER
+  GROWTH
+  SCALE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  CHEQUE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum FeeStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  WAIVED
+}
+
+enum LeaseStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  PENDING
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  RETURN
+  DAMAGE
+}
+
+// ─── Core: Tenant (Business) ──────────────────────────────────────────────────
+
+model Tenant {
+  id              String       @id @default(uuid())
+  name            String
+  businessType    BusinessType
+  gstin           String?      @unique
+  pan             String?
+  phone           String
+  email           String       @unique
+  address         String?
+  city            String?
+  state           String?
+  pincode         String?
+  logoUrl         String?
+  plan            PlanType     @default(STARTER)
+  isActive        Boolean      @default(true)
+  modules         Json         // enabled modules list
+  currency        String       @default("INR")
+  locale          String       @default("en-IN")
+  timezone        String       @default("Asia/Kolkata")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  users           User[]
+  products        Product[]
+  categories      Category[]
+  invoices        Invoice[]
+  transactions    Transaction[]
+  appointments    Appointment[]
+  services        Service[]
+  feeRecords      FeeRecord[]
+  students        Student[]
+  leaseUnits      LeaseUnit[]
+  leaseTenants    LeaseTenant[]
+  staff           Staff[]
+  customers       Customer[]
+  taxRates        TaxRate[]
+
+  @@map("tenants")
+}
+
+// ─── Users & Auth ─────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(uuid())
+  tenantId        String
+  name            String
+  email           String
+  password        String
+  role            UserRole  @default(STAFF)
+  isActive        Boolean   @default(true)
+  isEmailVerified Boolean   @default(false)
+  emailVerifyToken String?
+  passwordResetToken String?
+  passwordResetExpiry DateTime?
+  refreshToken    String?
+  lastLogin       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ─── Customers ────────────────────────────────────────────────────────────────
+
+model Customer {
+  id          String    @id @default(uuid())
+  tenantId    String
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  gstin       String?
+  notes       String?
+  totalSpent  Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+  transactions  Transaction[]
+  appointments  Appointment[]
+
+  @@map("customers")
+}
+
+// ─── Staff ────────────────────────────────────────────────────────────────────
+
+model Staff {
+  id          String    @id @default(uuid())
+  tenantId    String
+  name        String
+  phone       String?
+  email       String?
+  role        String
+  salary      Float?
+  joinedAt    DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+
+  @@map("staff")
+}
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+model Category {
+  id          String    @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  parentId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent      Category?   @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[]  @relation("CategoryTree")
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  tenantId      String
+  categoryId    String?
+  name          String
+  description   String?
+  sku           String?
+  barcode       String?
+  unit          String    @default("pcs")
+  costPrice     Float     @default(0)
+  sellingPrice  Float
+  mrp           Float?
+  taxRateId     String?
+  stock         Float     @default(0)
+  lowStockAlert Float     @default(5)
+  imageUrl      String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category        Category?         @relation(fields: [categoryId], references: [id])
+  taxRate         TaxRate?          @relation(fields: [taxRateId], references: [id])
+  invoiceItems    InvoiceItem[]
+  transactionItems TransactionItem[]
+  stockMovements  StockMovement[]
+
+  @@unique([tenantId, sku])
+  @@map("products")
+}
+
+model TaxRate {
+  id        String    @id @default(uuid())
+  tenantId  String
+  name      String
+  rate      Float
+  isGst     Boolean   @default(true)
+  cgst      Float?
+  sgst      Float?
+  igst      Float?
+  createdAt DateTime  @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@map("tax_rates")
+}
+
+model StockMovement {
+  id          String            @id @default(uuid())
+  tenantId    String
+  productId   String
+  type        StockMovementType
+  quantity    Float
+  beforeStock Float
+  afterStock  Float
+  reference   String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("stock_movements")
+}
+
+// ─── POS / Transactions ───────────────────────────────────────────────────────
+
+model Transaction {
+  id              String        @id @default(uuid())
+  tenantId        String
+  customerId      String?
+  invoiceId       String?       @unique
+  receiptNumber   String        @unique
+  subtotal        Float
+  discountAmount  Float         @default(0)
+  taxAmount       Float         @default(0)
+  total           Float
+  amountPaid      Float
+  change          Float         @default(0)
+  paymentMethod   PaymentMethod @default(CASH)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer  Customer?         @relation(fields: [customerId], references: [id])
+  items     TransactionItem[]
+
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id            String  @id @default(uuid())
+  transactionId String
+  productId     String
+  name          String
+  quantity      Float
+  unitPrice     Float
+  discount      Float   @default(0)
+  taxAmount     Float   @default(0)
+  total         Float
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@map("transaction_items")
+}
+
+// ─── Invoicing ────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id              String        @id @default(uuid())
+  tenantId        String
+  customerId      String?
+  invoiceNumber   String        @unique
+  status          InvoiceStatus @default(DRAFT)
+  issueDate       DateTime      @default(now())
+  dueDate         DateTime?
+  subtotal        Float
+  discountAmount  Float         @default(0)
+  taxAmount       Float         @default(0)
+  total           Float
+  amountPaid      Float         @default(0)
+  balanceDue      Float
+  notes           String?
+  terms           String?
+  gstDetails      Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer  Customer?     @relation(fields: [customerId], references: [id])
+  items     InvoiceItem[]
+  payments  Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Float
+  unitPrice   Float
+  discount    Float   @default(0)
+  taxRate     Float   @default(0)
+  taxAmount   Float   @default(0)
+  total       Float
+
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  invoiceId     String
+  amount        Float
+  method        PaymentMethod
+  reference     String?
+  notes         String?
+  paidAt        DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─── Appointments (Salon / Clinic) ────────────────────────────────────────────
+
+model Service {
+  id          String    @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  duration    Int       // minutes
+  price       Float
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  tenantId    String
+  customerId  String?
+  staffId     String?
+  serviceId   String?
+  title       String
+  notes       String?
+  status      AppointmentStatus @default(SCHEDULED)
+  startTime   DateTime
+  endTime     DateTime
+  price       Float?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer  Customer? @relation(fields: [customerId], references: [id])
+  staff     Staff?    @relation(fields: [staffId], references: [id])
+  service   Service?  @relation(fields: [serviceId], references: [id])
+
+  @@map("appointments")
+}
+
+// ─── Fees (Coaching Institute) ────────────────────────────────────────────────
+
+model Student {
+  id            String    @id @default(uuid())
+  tenantId      String
+  name          String
+  phone         String?
+  email         String?
+  parentName    String?
+  parentPhone   String?
+  course        String?
+  batch         String?
+  enrolledAt    DateTime  @default(now())
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feeRecords  FeeRecord[]
+
+  @@map("students")
+}
+
+model FeeRecord {
+  id            String    @id @default(uuid())
+  tenantId      String
+  studentId     String
+  description   String
+  amount        Float
+  discount      Float     @default(0)
+  netAmount     Float
+  dueDate       DateTime
+  status        FeeStatus @default(PENDING)
+  paidAmount    Float     @default(0)
+  paidAt        DateTime?
+  paymentMethod PaymentMethod?
+  receiptNumber String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("fee_records")
+}
+
+// ─── Lease (Mall / Complex) ───────────────────────────────────────────────────
+
+model LeaseUnit {
+  id          String    @id @default(uuid())
+  tenantId    String
+  unitNumber  String
+  floor       String?
+  area        Float?
+  description String?
+  isOccupied  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leases      LeaseTenant[]
+
+  @@unique([tenantId, unitNumber])
+  @@map("lease_units")
+}
+
+model LeaseTenant {
+  id            String      @id @default(uuid())
+  tenantId      String
+  unitId        String
+  businessName  String
+  contactName   String?
+  phone         String?
+  email         String?
+  monthlyRent   Float
+  deposit       Float       @default(0)
+  startDate     DateTime
+  endDate       DateTime?
+  status        LeaseStatus @default(ACTIVE)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unit    LeaseUnit @relation(fields: [unitId], references: [id])
+
+  @@map("lease_tenants")
+}

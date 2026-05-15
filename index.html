@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Syllabrix — Design System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="colors_and_type.css" />
+<style>
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 56px 40px 80px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 56px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark { width: 36px; height: 36px; }
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .brand-tag {
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--fg-muted); padding-left: 12px; margin-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+  .meta { font-size: 13px; color: var(--fg-muted); }
+  .meta b { color: var(--fg); font-weight: 600; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px;
+    align-items: end; margin-bottom: 64px;
+  }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--indigo-500);
+    margin-bottom: 16px;
+  }
+  h1.hero-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 72px;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    margin: 0 0 20px;
+    text-wrap: balance;
+  }
+  h1.hero-title em {
+    font-style: normal; color: var(--indigo-500);
+  }
+  .hero-sub {
+    font-size: 18px; line-height: 1.55; color: var(--fg-muted);
+    max-width: 540px; margin: 0;
+  }
+  .hero-meta-wrap { display: flex; flex-direction: column; gap: 24px; }
+  .hero-logo {
+    background: linear-gradient(135deg, #FFFFFF 0%, #ECEFF2 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    box-shadow: var(--shadow-sm);
+  }
+  .hero-logo img { display: block; width: 100%; height: auto; }
+  .hero-meta {
+    border-left: 3px solid var(--saffron-400);
+    padding: 8px 0 8px 18px;
+    display: grid; gap: 10px;
+  }
+  .hero-meta-row {
+    display: flex; justify-content: space-between;
+    font-size: 13px;
+  }
+  .hero-meta-row span:first-child {
+    color: var(--fg-muted); letter-spacing: 0.04em;
+  }
+  .hero-meta-row span:last-child {
+    color: var(--fg); font-weight: 600;
+    font-family: var(--font-mono); font-size: 12.5px;
+  }
+
+  /* ---------- Section header ---------- */
+  .section {
+    margin: 0 0 56px;
+  }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 16px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--fg-subtle); letter-spacing: 0.1em;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-weight: 700; font-size: 28px;
+    letter-spacing: -0.02em;
+    margin: 4px 0 0;
+  }
+  .section-aside {
+    font-size: 13px; color: var(--fg-muted);
+    max-width: 320px; text-align: right;
+  }
+
+  /* ---------- Foundations cards ---------- */
+  .grid-foundations {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex; flex-direction: column;
+    min-height: 200px;
+    transition: border-color 120ms, transform 120ms;
+  }
+  a.card { text-decoration: none; color: inherit; }
+  a.card:hover { border-color: var(--indigo-300); transform: translateY(-2px); }
+  .card-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--fg-subtle);
+  }
+  .card-title {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 18px; margin: 4px 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .card-body { flex: 1; }
+  .card-foot {
+    margin-top: 14px; font-size: 12px;
+    color: var(--fg-muted);
+    display: flex; justify-content: space-between;
+  }
+
+  /* Color card */
+  .swatch-stack {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    border-radius: 6px; overflow: hidden;
+    height: 56px;
+  }
+  .swatch-stack > div { height: 100%; }
+  .palette-name {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--fg-muted); margin-top: 10px;
+  }
+
+  /* Type card */
+  .type-spec {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 52px; line-height: 0.95;
+    letter-spacing: -0.04em; color: var(--fg);
+  }
+  .type-spec.body { font-family: var(--font-body); font-weight: 500; font-size: 32px; letter-spacing: -0.01em; }
+  .type-spec.mono { font-family: var(--font-mono); font-weight: 500; font-size: 26px; letter-spacing: 0; }
+
+  /* Spacing card */
+  .spacing-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--fg-muted); margin-bottom: 6px;
+  }
+  .spacing-bar { height: 8px; background: var(--indigo-300); border-radius: 2px; }
+
+  /* Radius card */
+  .radii-row {
+    display: flex; gap: 10px; align-items: flex-end;
+    height: 80px;
+  }
+  .radii-block {
+    background: var(--indigo-100);
+    border: 1px solid var(--indigo-200);
+    width: 100%;
+  }
+
+  /* ---------- UI kit cards ---------- */
+  .grid-kits {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .kit-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex; flex-direction: column;
+    transition: transform 160ms, box-shadow 160ms, border-color 160ms;
+  }
+  .kit-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--indigo-300);
+    box-shadow: 0 18px 40px -24px rgba(20,19,92,0.35);
+  }
+  .kit-preview {
+    aspect-ratio: 4 / 3;
+    background: var(--bg-sunken);
+    border-bottom: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .kit-meta { padding: 18px 20px 20px; }
+  .kit-name {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 19px; margin: 0 0 4px; letter-spacing: -0.01em;
+  }
+  .kit-desc {
+    font-size: 13.5px; color: var(--fg-muted); margin: 0 0 14px;
+    line-height: 1.5;
+  }
+  .kit-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 600; font-size: 13px; color: var(--indigo-500);
+  }
+  .kit-cta::after { content: "→"; font-weight: 400; }
+
+  /* --- Web app preview --- */
+  .preview-web {
+    background:
+      linear-gradient(135deg, #0C1A23 0%, #192F3D 100%);
+    color: #fff;
+    padding: 18px;
+    display: flex; gap: 12px;
+    height: 100%;
+  }
+  .preview-web .pw-side {
+    width: 80px; flex-shrink: 0;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 8px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .preview-web .pw-logo {
+    width: 24px; height: 24px;
+    background: #1FB8D6; border-radius: 5px;
+    position: relative;
+  }
+  .preview-web .pw-logo::after {
+    content: ""; position: absolute; inset: 6px;
+    background: #0C1A23; border-radius: 2px;
+  }
+  .preview-web .pw-link {
+    height: 8px; border-radius: 3px;
+    background: rgba(255,255,255,0.12);
+  }
+  .preview-web .pw-link.active { background: rgba(245,158,11,0.85); width: 70%; }
+  .preview-web .pw-body { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .preview-web .pw-row { display: flex; gap: 8px; }
+  .preview-web .pw-tile {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: var(--font-mono); font-size: 10px;
+    color: rgba(255,255,255,0.7);
+  }
+  .preview-web .pw-tile b {
+    display: block; color: #fff; font-family: var(--font-display);
+    font-weight: 700; font-size: 18px; letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .preview-web .pw-tile.accent { background: #1FB8D6; color: rgba(14,13,63,0.7); }
+  .preview-web .pw-tile.accent b { color: #0C1A23; }
+  .preview-web .pw-chart {
+    flex: 1.6;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex; align-items: flex-end; gap: 4px;
+  }
+  .preview-web .pw-chart i {
+    flex: 1; display: block;
+    background: rgba(245,158,11,0.7);
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* --- Mobile preview --- */
+  .preview-mobile {
+    background: linear-gradient(135deg, var(--cream-200) 0%, var(--cream-100) 100%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .preview-mobile .pm-phone {
+    width: 150px; height: 100%;
+    background: var(--ink-900);
+    border-radius: 22px;
+    padding: 8px;
+    box-shadow: 0 16px 40px -18px rgba(20,19,92,0.4);
+  }
+  .preview-mobile .pm-screen {
+    width: 100%; height: 100%;
+    background: var(--cream-100);
+    border-radius: 16px;
+    padding: 12px 10px;
+    display: flex; flex-direction: column; gap: 8px;
+    overflow: hidden;
+  }
+  .preview-mobile .pm-greeting {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 13px; letter-spacing: -0.02em;
+    color: var(--ink-900);
+  }
+  .preview-mobile .pm-eyebrow {
+    font-family: var(--font-mono); font-size: 7px;
+    color: var(--fg-muted); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .preview-mobile .pm-kpi {
+    background: var(--indigo-500); color: #fff;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 18px; letter-spacing: -0.02em;
+  }
+  .preview-mobile .pm-kpi small { display: block; font-size: 7px; color: rgba(255,255,255,0.7); font-family: var(--font-mono); font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; }
+  .preview-mobile .pm-row { display: flex; gap: 6px; }
+  .preview-mobile .pm-pill {
+    flex: 1; background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; height: 28px;
+    display: flex; align-items: center; padding: 0 8px;
+    font-size: 8px; color: var(--fg-muted);
+  }
+  .preview-mobile .pm-pill.accent {
+    background: var(--saffron-400); color: var(--ink-900); font-weight: 600;
+    border-color: var(--saffron-400);
+  }
+
+  /* --- Marketing preview --- */
+  .preview-marketing {
+    background: var(--cream-100);
+    padding: 18px;
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .preview-marketing .pmk-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 12px;
+    letter-spacing: -0.02em;
+  }
+  .preview-marketing .pmk-nav i {
+    display: inline-block; width: 14px; height: 14px;
+    background: var(--indigo-500); border-radius: 3px; vertical-align: middle;
+    margin-right: 5px; position: relative;
+  }
+  .preview-marketing .pmk-nav i::after {
+    content: ""; position: absolute; inset: 3px;
+    background: var(--saffron-400); border-radius: 1px;
+  }
+  .preview-marketing .pmk-cta {
+    background: var(--ink-900); color: #fff;
+    border-radius: 999px; padding: 4px 10px; font-size: 8px;
+  }
+  .preview-marketing .pmk-h {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 22px; line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    margin: 6px 0 4px;
+  }
+  .preview-marketing .pmk-h em {
+    font-style: normal; color: var(--indigo-500);
+  }
+  .preview-marketing .pmk-sub {
+    font-size: 10px; color: var(--fg-muted); line-height: 1.5;
+    max-width: 80%;
+  }
+  .preview-marketing .pmk-actions { display: flex; gap: 6px; margin-top: auto; }
+  .preview-marketing .pmk-btn {
+    font-size: 9px; font-weight: 600;
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--ink-900); color: #fff;
+  }
+  .preview-marketing .pmk-btn.ghost { background: transparent; color: var(--ink-900); border: 1px solid var(--ink-900); }
+
+  /* ---------- Token strip ---------- */
+  .strip {
+    background: var(--ink-900);
+    color: #fff;
+    border-radius: var(--radius-xl);
+    padding: 36px 40px;
+    display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 32px;
+    margin-bottom: 56px;
+  }
+  .strip-row { display: flex; flex-direction: column; gap: 6px; }
+  .strip-label {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+  .strip-val {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 28px; letter-spacing: -0.02em;
+  }
+  .strip-val.small { font-size: 18px; }
+  .strip-note { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+
+  /* ---------- Principles ---------- */
+  .principles {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .principle {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    position: relative;
+  }
+  .principle-num {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--saffron-500); letter-spacing: 0.12em;
+  }
+  .principle-title {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 20px; letter-spacing: -0.015em;
+    margin: 8px 0 10px;
+    line-height: 1.15;
+  }
+  .principle-body {
+    font-size: 13.5px; line-height: 1.55; color: var(--fg-muted);
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    margin-top: 80px; padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between;
+    font-size: 12.5px; color: var(--fg-muted);
+  }
+  footer code {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--fg);
+  }
+
+  @media (max-width: 960px) {
+    .grid-foundations, .principles { grid-template-columns: repeat(2, 1fr); }
+    .grid-kits { grid-template-columns: 1fr; }
+    .hero { grid-template-columns: 1fr; }
+    h1.hero-title { font-size: 52px; }
+    .strip { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-mark" src="assets/logo-syllabrix-network.png" alt="Syllabrix Network" style="height:36px;width:auto;"/>
+      <span class="brand-tag">Design System</span>
+    </div>
+    <div class="meta">
+      v<b>0.1.0</b> · <b>May 2026</b> · Maintained by Brand & Product Design
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div>
+      <div class="eyebrow">One smart ERP for every small business</div>
+      <h1 class="hero-title">A modular system, <em>built like bricks</em>.</h1>
+      <p class="hero-sub">
+        Syllabrix gives micro and small businesses across India an ERP that snaps together
+        — POS, inventory, payments, payroll, GST filing, and an AI marketing studio.
+        This is the design system that keeps every module looking, sounding, and behaving
+        like the same product.
+      </p>
+    </div>
+    <div class="hero-meta-wrap">
+      <div class="hero-logo">
+        <img src="assets/logo-syllabrix-network.png" alt="Syllabrix Network" />
+      </div>
+      <div class="hero-meta">
+        <div class="hero-meta-row"><span>Primary</span><span>Syllabrix Navy · #192F3D</span></div>
+        <div class="hero-meta-row"><span>Signal</span><span>Brix Cyan · #1FB8D6</span></div>
+        <div class="hero-meta-row"><span>Display</span><span>Bricolage Grotesque</span></div>
+        <div class="hero-meta-row"><span>Text</span><span>Plus Jakarta Sans</span></div>
+        <div class="hero-meta-row"><span>Grid</span><span>4px base · 8 / 12 / 16</span></div>
+        <div class="hero-meta-row"><span>Locales</span><span>EN · HI · TA · MR · BN</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Foundations -->
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="section-num">01 / FOUNDATIONS</div>
+        <h2 class="section-title">Tokens you can build with</h2>
+      </div>
+      <p class="section-aside">
+        Every UI in Syllabrix derives from this small set. Open the
+        <b>Design System</b> tab for the full reviewable library.
+      </p>
+    </div>
+
+    <div class="grid-foundations">
+
+      <a class="card" href="preview/colors-primary.html">
+        <span class="card-label">Color</span>
+        <h3 class="card-title">Syllabrix Navy</h3>
+        <div class="swatch-stack" aria-hidden="true">
+          <div style="background:#CFD7DD"></div>
+          <div style="background:#6E8493"></div>
+          <div style="background:#192F3D"></div>
+          <div style="background:#122430"></div>
+          <div style="background:#03080C"></div>
+        </div>
+        <div class="palette-name">navy-100 → navy-900</div>
+        <div class="card-foot"><span>5 ramps</span><span>9 stops each</span></div>
+      </a>
+
+      <a class="card" href="preview/type-display.html">
+        <span class="card-label">Type</span>
+        <h3 class="card-title">Display, Text, Mono</h3>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:6px;">
+          <div class="type-spec">Aa</div>
+          <div class="type-spec body">Aa</div>
+          <div class="type-spec mono">Aa</div>
+        </div>
+        <div class="card-foot"><span>3 families</span><span>3-axis scale</span></div>
+      </a>
+
+      <a class="card" href="preview/spacing-scale.html">
+        <span class="card-label">Spacing</span>
+        <h3 class="card-title">4-pt grid</h3>
+        <div class="card-body">
+          <div class="spacing-row"><span style="width:24px">04</span><div class="spacing-bar" style="width:4px"></div></div>
+          <div class="spacing-row"><span style="width:24px">08</span><div class="spacing-bar" style="width:8px"></div></div>
+          <div class="spacing-row"><span style="width:24px">12</span><div class="spacing-bar" style="width:12px"></div></div>
+          <div class="spacing-row"><span style="width:24px">16</span><div class="spacing-bar" style="width:16px"></div></div>
+          <div class="spacing-row"><span style="width:24px">24</span><div class="spacing-bar" style="width:24px"></div></div>
+          <div class="spacing-row"><span style="width:24px">32</span><div class="spacing-bar" style="width:32px"></div></div>
+          <div class="spacing-row"><span style="width:24px">48</span><div class="spacing-bar" style="width:48px"></div></div>
+        </div>
+        <div class="card-foot"><span>10 steps</span><span>4 → 96 px</span></div>
+      </a>
+
+      <a class="card" href="preview/radii.html">
+        <span class="card-label">Shape</span>
+        <h3 class="card-title">Radii</h3>
+        <div class="card-body radii-row" style="margin-top:8px">
+          <div class="radii-block" style="border-radius:2px;  height:48px"></div>
+          <div class="radii-block" style="border-radius:6px;  height:48px"></div>
+          <div class="radii-block" style="border-radius:10px; height:48px"></div>
+          <div class="radii-block" style="border-radius:16px; height:48px"></div>
+          <div class="radii-block" style="border-radius:999px; height:48px"></div>
+        </div>
+        <div class="card-foot"><span>sm → 2xl + pill</span><span>5 steps</span></div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Token strip / numbers -->
+  <section class="strip">
+    <div class="strip-row">
+      <span class="strip-label">Brand promise</span>
+      <span class="strip-val small">Modular like bricks. Smart like a teammate.</span>
+      <span class="strip-note">Every module ships standalone, every module knows what the others know.</span>
+    </div>
+    <div class="strip-row">
+      <span class="strip-label">Modules shipped</span>
+      <span class="strip-val">14</span>
+      <span class="strip-note">POS, Inventory, Billing, GST, Payroll, AI Studio…</span>
+    </div>
+    <div class="strip-row">
+      <span class="strip-label">Components</span>
+      <span class="strip-val">68</span>
+      <span class="strip-note">From buttons to module tiles and AI callouts.</span>
+    </div>
+    <div class="strip-row">
+      <span class="strip-label">Locales supported</span>
+      <span class="strip-val">5</span>
+      <span class="strip-note">English with Hindi, Tamil, Marathi, Bengali on roadmap.</span>
+    </div>
+  </section>
+
+  <!-- Principles -->
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="section-num">02 / PRINCIPLES</div>
+        <h2 class="section-title">How Syllabrix should feel</h2>
+      </div>
+      <p class="section-aside">
+        Principles guide every visual and copy decision. When in doubt,
+        choose the option that reinforces the one you are violating least.
+      </p>
+    </div>
+
+    <div class="principles">
+      <article class="principle">
+        <div class="principle-num">P · 01</div>
+        <h3 class="principle-title">Confident, never corporate</h3>
+        <p class="principle-body">
+          We talk like the smartest person at a kirana counter, not like enterprise software.
+          Direct verbs, real numbers, no "leverage" or "synergy."
+        </p>
+      </article>
+      <article class="principle">
+        <div class="principle-num">P · 02</div>
+        <h3 class="principle-title">Earned trust</h3>
+        <p class="principle-body">
+          Money, taxes, and AI all need receipts. Show the source, the math, and
+          the rollback. Never hide a destructive action behind a clever animation.
+        </p>
+      </article>
+      <article class="principle">
+        <div class="principle-num">P · 03</div>
+        <h3 class="principle-title">Modular by default</h3>
+        <p class="principle-body">
+          The brick is the unit. Components stack, snap, and reorder without
+          breaking. If a layout only works at one screen size, it's not finished.
+        </p>
+      </article>
+      <article class="principle">
+        <div class="principle-num">P · 04</div>
+        <h3 class="principle-title">Warmth over polish</h3>
+        <p class="principle-body">
+          Cream over cold gray. Cyan as a spark, not a flood. The shop owner is on a 2-year-old
+          Android with a cracked screen — design for that, not the design awards.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- UI kits -->
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="section-num">03 / UI KITS</div>
+        <h2 class="section-title">Three surfaces, one system</h2>
+      </div>
+      <p class="section-aside">
+        Each kit is a working hi-fi prototype that reads from the same tokens.
+        Click in to inspect; copy components from the source as needed.
+      </p>
+    </div>
+
+    <div class="grid-kits">
+
+      <a class="kit-card" href="ui_kits/web-app/index.html">
+        <div class="kit-preview preview-web">
+          <div class="pw-side">
+            <div class="pw-logo"></div>
+            <div class="pw-link active"></div>
+            <div class="pw-link"></div>
+            <div class="pw-link"></div>
+            <div class="pw-link"></div>
+            <div class="pw-link"></div>
+          </div>
+          <div class="pw-body">
+            <div class="pw-row">
+              <div class="pw-tile"><b>₹84,210</b>Today's sales</div>
+              <div class="pw-tile accent"><b>312</b>Bills</div>
+              <div class="pw-tile"><b>1.2k</b>Items</div>
+            </div>
+            <div class="pw-chart">
+              <i style="height:30%"></i><i style="height:55%"></i><i style="height:38%"></i>
+              <i style="height:72%"></i><i style="height:48%"></i><i style="height:88%"></i>
+              <i style="height:65%"></i><i style="height:74%"></i><i style="height:42%"></i>
+              <i style="height:60%"></i><i style="height:80%"></i><i style="height:55%"></i>
+            </div>
+            <div class="pw-row">
+              <div class="pw-tile" style="font-size:9px;line-height:1.5">GST due in 4d · ₹14,820 · auto-file ready</div>
+            </div>
+          </div>
+        </div>
+        <div class="kit-meta">
+          <h3 class="kit-name">Web admin dashboard</h3>
+          <p class="kit-desc">
+            Owner / operator console. Sidebar nav, KPI strip, module grid, AI copilot,
+            tables, drill-downs. Profiles swap between retail, coaching, salon, clinic.
+          </p>
+          <span class="kit-cta">Open prototype</span>
+        </div>
+      </a>
+
+      <a class="kit-card" href="ui_kits/mobile-app/index.html">
+        <div class="kit-preview preview-mobile">
+          <div class="pm-phone">
+            <div class="pm-screen">
+              <div class="pm-eyebrow">Wed · 11 May</div>
+              <div class="pm-greeting">नमस्ते, Aarav</div>
+              <div class="pm-kpi">₹12,480<small>Today's sales</small></div>
+              <div class="pm-row">
+                <div class="pm-pill accent">+ New bill</div>
+              </div>
+              <div class="pm-row">
+                <div class="pm-pill">Inventory · 1.2k</div>
+              </div>
+              <div class="pm-row">
+                <div class="pm-pill">GST due 4d</div>
+              </div>
+              <div class="pm-row">
+                <div class="pm-pill">AI Studio</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="kit-meta">
+          <h3 class="kit-name">Mobile (iOS)</h3>
+          <p class="kit-desc">
+            Owner-on-the-go. Home, POS billing, and AI Marketing Studio. Designed for
+            one-handed use, large hit targets, and offline-tolerant flows.
+          </p>
+          <span class="kit-cta">Open prototype</span>
+        </div>
+      </a>
+
+      <a class="kit-card" href="ui_kits/marketing-site/index.html">
+        <div class="kit-preview preview-marketing">
+          <div class="pmk-nav">
+            <span><i></i>Syllabrix</span>
+            <span class="pmk-cta">Start free</span>
+          </div>
+          <div>
+            <div class="pmk-h">Run your shop, <em>not your software.</em></div>
+            <div class="pmk-sub">One platform. POS, billing, GST, AI marketing. Built for Indian small business.</div>
+          </div>
+          <div class="pmk-actions">
+            <span class="pmk-btn">Start free</span>
+            <span class="pmk-btn ghost">Watch demo</span>
+          </div>
+        </div>
+        <div class="kit-meta">
+          <h3 class="kit-name">Marketing site</h3>
+          <p class="kit-desc">
+            Public-facing landing. Hero, modules grid, AI-studio showcase, pricing,
+            and trust block. The voice that earns the first signup.
+          </p>
+          <span class="kit-cta">Open prototype</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Library / next steps -->
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="section-num">04 / LIBRARY</div>
+        <h2 class="section-title">Where to go next</h2>
+      </div>
+      <p class="section-aside">
+        Every card is reviewable. Comment in-line to request changes — versions
+        stack in the Design System tab.
+      </p>
+    </div>
+
+    <div class="grid-foundations">
+      <a class="card" href="preview/components-buttons.html">
+        <span class="card-label">Component</span>
+        <h3 class="card-title">Buttons</h3>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:8px;justify-content:center">
+          <button style="background:var(--indigo-500);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-family:var(--font-body);font-weight:600;font-size:13px">Primary</button>
+          <button style="background:var(--saffron-400);color:var(--ink-900);border:none;padding:10px 16px;border-radius:8px;font-family:var(--font-body);font-weight:600;font-size:13px">Cyan</button>
+          <button style="background:transparent;color:var(--fg);border:1px solid var(--border);padding:10px 16px;border-radius:8px;font-family:var(--font-body);font-weight:600;font-size:13px">Ghost</button>
+        </div>
+        <div class="card-foot"><span>5 variants</span><span>3 sizes</span></div>
+      </a>
+
+      <a class="card" href="preview/components-kpi.html">
+        <span class="card-label">Component</span>
+        <h3 class="card-title">KPI tiles</h3>
+        <div class="card-body" style="display:flex;flex-direction:column;justify-content:center;gap:4px">
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--fg-muted)">Today's sales</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:32px;letter-spacing:-0.02em">₹84,210</div>
+          <div style="font-size:12px;color:var(--emerald-400);font-weight:600">▲ 12.4% vs yesterday</div>
+        </div>
+        <div class="card-foot"><span>4 sizes</span><span>2 themes</span></div>
+      </a>
+
+      <a class="card" href="preview/components-ai-callout.html">
+        <span class="card-label">Pattern</span>
+        <h3 class="card-title">AI callouts</h3>
+        <div class="card-body" style="background:linear-gradient(135deg,var(--indigo-800),var(--indigo-500));color:#fff;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;justify-content:center">
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--saffron-300)">Syllabrix AI</div>
+          <div style="font-family:var(--font-display);font-weight:600;font-size:13px;line-height:1.3">Sales dipped on Tuesdays. Try a 4–6 pm push notification?</div>
+          <div style="display:flex;gap:6px;margin-top:4px"><span style="background:var(--saffron-400);color:var(--ink-900);font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px">Set up</span><span style="background:rgba(255,255,255,0.1);font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px">Why?</span></div>
+        </div>
+        <div class="card-foot"><span>3 tones</span><span>Always cite</span></div>
+      </a>
+
+      <a class="card" href="preview/brand-logo.html">
+        <span class="card-label">Brand</span>
+        <h3 class="card-title">Logo &amp; mark</h3>
+        <div class="card-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+          <img src="assets/logo-mark.svg" alt="Syllabrix mark" style="width:72px;height:72px" />
+          <img src="assets/logo-wordmark.svg" alt="Syllabrix wordmark" style="height:24px" />
+        </div>
+        <div class="card-foot"><span>Mark · wordmark</span><span>2 finishes</span></div>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <span>Open <code>README.md</code> for the full written reference.</span>
+    <span>Brand and Product Design · Syllabrix · 2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

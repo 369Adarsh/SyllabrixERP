@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .field { font-family:'Plus Jakarta Sans', sans-serif; }
+  .field label { display:block; font-size:12px; font-weight:600; color:#3C3A30; margin-bottom:6px; }
+  .field input, .field select {
+    width:100%; box-sizing:border-box; font-family:inherit; font-size:14px;
+    padding:10px 12px; border-radius:8px; border:1px solid #E8E2D6;
+    background:#FFFFFF; color:#0A1825;
+  }
+  .field input:focus { outline:none; border-color:#192F3D; box-shadow: 0 0 0 3px #CFD7DD; }
+  .field.with-icon { position:relative; }
+  .field.with-icon input { padding-left:36px; }
+  .field.with-icon .ico { position:absolute; left:11px; top:33px; color:#8E8979; }
+  .help { font-size:12px; color:#5C5849; margin-top:4px; }
+  .err { font-size:12px; color:#B91C1C; margin-top:4px; }
+</style>
+</head>
+<body style="padding:24px 28px;">
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:18px;">
+    <div class="field">
+      <label>Business name</label>
+      <input value="Sharma Kirana Stores" />
+    </div>
+    <div class="field with-icon">
+      <label>Search</label>
+      <span class="ico">🔍</span>
+      <input placeholder="Find products, invoices, students…" />
+    </div>
+    <div class="field">
+      <label>GST number</label>
+      <input value="GSTIN09ABCDE1234F" style="border-color:#DC2626; box-shadow:0 0 0 3px #FCEAEA;" />
+      <div class="err">Doesn't look like a valid GSTIN.</div>
+    </div>
+  </div>
+</body></html>
