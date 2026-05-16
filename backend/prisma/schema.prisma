@@ -7,9 +7,439 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
+model Tenant {
+  id           String        @id @default(uuid())
+  name         String
+  businessType BusinessType
+  gstin        String?       @unique
+  pan          String?
+  phone        String
+  email        String        @unique
+  address      String?
+  city         String?
+  state        String?
+  pincode      String?
+  logoUrl      String?
+  plan         PlanType      @default(STARTER)
+  isActive     Boolean       @default(true)
+  modules      Json
+  currency     String        @default("INR")
+  locale       String        @default("en-IN")
+  timezone     String        @default("Asia/Kolkata")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments    Appointment[]
+  categories      Category[]
+  customers       Customer[]
+  expenses        Expense[]
+  feeRecords      FeeRecord[]
+  invoices        Invoice[]
+  leaseTenants    LeaseTenant[]
+  leaseUnits      LeaseUnit[]
+  products        Product[]
+  purchaseOrders  PurchaseOrder[]
+  services        Service[]
+  staff           Staff[]
+  students        Student[]
+  taxRates        TaxRate[]
+  transactions    Transaction[]
+  users           User[]
+  vendors          Vendor[]
+  whatsappMessages WhatsAppMessage[]
+  assetCategories  AssetCategory[]
+  assets           Asset[]
+  attendanceLogs   AttendanceLog[]
+  subscriptions    CustomerSubscription[]
+  campaigns        WhatsAppCampaign[]
+  vendorBills      VendorBill[]
+  bankAccounts     BankAccount[]
+  creditNotes      CreditNote[]
+  quotations       Quotation[]
+  payrollRuns      PayrollRun[]
+  recurringInvoices RecurringInvoice[]
+
+  @@map("tenants")
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  tenantId            String
+  name                String
+  email               String
+  password            String
+  role                UserRole  @default(STAFF)
+  language            String    @default("en")
+  isActive            Boolean   @default(true)
+  isEmailVerified     Boolean   @default(false)
+  emailVerifyToken    String?
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
+  refreshToken        String?
+  lastLogin           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Customer {
+  id            String        @id @default(uuid())
+  tenantId      String
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  gstin         String?
+  notes         String?
+  totalSpent    Float         @default(0)
+  creditBalance Float         @default(0)
+  creditLimit   Float         @default(0)
+  birthday      DateTime?
+  loyaltyPoints Int           @default(0)
+  visitCount    Int           @default(0)
+  lastVisitAt   DateTime?
+  tags          String[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  appointments      Appointment[]
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices          Invoice[]
+  transactions      Transaction[]
+  subscriptions     CustomerSubscription[]
+  creditNotes       CreditNote[]
+  quotations        Quotation[]
+  recurringInvoices RecurringInvoice[]
+
+  @@map("customers")
+}
+
+model Staff {
+  id              String           @id @default(uuid())
+  tenantId        String
+  name            String
+  phone           String?
+  email           String?
+  role            String
+  department      String?
+  salary          Float?
+  joinedAt        DateTime?
+  biometricId     String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  appointments    Appointment[]
+  attendanceLogs  AttendanceLog[]
+  payrollEntries  PayrollEntry[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("staff")
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  parentId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String            @id @default(uuid())
+  tenantId         String
+  categoryId       String?
+  name             String
+  description      String?
+  sku              String?
+  barcode          String?
+  unit             String            @default("pcs")
+  costPrice        Float             @default(0)
+  sellingPrice     Float
+  mrp              Float?
+  taxRateId        String?
+  stock            Float             @default(0)
+  lowStockAlert    Float             @default(5)
+  batchNumber      String?
+  expiryDate       DateTime?
+  imageUrl         String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  invoiceItems     InvoiceItem[]
+  purchaseItems    PurchaseItem[]
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  taxRate          TaxRate?          @relation(fields: [taxRateId], references: [id])
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stockMovements   StockMovement[]
+  transactionItems TransactionItem[]
+
+  @@unique([tenantId, sku])
+  @@map("products")
+}
+
+model TaxRate {
+  id        String    @id @default(uuid())
+  tenantId  String
+  name      String
+  rate      Float
+  isGst     Boolean   @default(true)
+  cgst      Float?
+  sgst      Float?
+  igst      Float?
+  createdAt DateTime  @default(now())
+  products  Product[]
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tax_rates")
+}
+
+model StockMovement {
+  id          String            @id @default(uuid())
+  tenantId    String
+  productId   String
+  type        StockMovementType
+  quantity    Float
+  beforeStock Float
+  afterStock  Float
+  reference   String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("stock_movements")
+}
+
+model Transaction {
+  id             String            @id @default(uuid())
+  tenantId       String
+  customerId     String?
+  invoiceId      String?           @unique
+  receiptNumber  String            @unique
+  subtotal       Float
+  discountAmount Float             @default(0)
+  taxAmount      Float             @default(0)
+  total          Float
+  amountPaid     Float
+  change         Float             @default(0)
+  paymentMethod  PaymentMethod     @default(CASH)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  items          TransactionItem[]
+  customer       Customer?         @relation(fields: [customerId], references: [id])
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String
+  productId     String
+  name          String
+  quantity      Float
+  unitPrice     Float
+  discount      Float       @default(0)
+  taxAmount     Float       @default(0)
+  total         Float
+  product       Product     @relation(fields: [productId], references: [id])
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("transaction_items")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  tenantId       String
+  customerId     String?
+  invoiceNumber  String        @unique
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime?
+  subtotal       Float
+  discountAmount Float         @default(0)
+  taxAmount      Float         @default(0)
+  total          Float
+  amountPaid     Float         @default(0)
+  balanceDue     Float
+  notes          String?
+  terms          String?
+  gstDetails         Json?
+  razorpayLinkId     String?
+  razorpayLinkUrl    String?
+  razorpayLinkStatus String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  items              InvoiceItem[]
+  customer           Customer?     @relation(fields: [customerId], references: [id])
+  tenant             Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payments           Payment[]
+  creditNotes        CreditNote[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Float
+  unitPrice   Float
+  discount    Float    @default(0)
+  taxRate     Float    @default(0)
+  taxAmount   Float    @default(0)
+  total       Float
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  invoiceId String
+  amount    Float
+  method    PaymentMethod
+  reference String?
+  notes     String?
+  paidAt    DateTime      @default(now())
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Service {
+  id           String        @id @default(uuid())
+  tenantId     String
+  name         String
+  description  String?
+  duration     Int
+  price        Float
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("services")
+}
+
+model Appointment {
+  id         String            @id @default(uuid())
+  tenantId   String
+  customerId String?
+  staffId    String?
+  serviceId  String?
+  title      String
+  notes      String?
+  status     AppointmentStatus @default(SCHEDULED)
+  startTime  DateTime
+  endTime    DateTime
+  price      Float?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  customer   Customer?         @relation(fields: [customerId], references: [id])
+  service    Service?          @relation(fields: [serviceId], references: [id])
+  staff      Staff?            @relation(fields: [staffId], references: [id])
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("appointments")
+}
+
+model Student {
+  id          String      @id @default(uuid())
+  tenantId    String
+  name        String
+  phone       String?
+  email       String?
+  parentName  String?
+  parentPhone String?
+  course      String?
+  batch       String?
+  enrolledAt  DateTime    @default(now())
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  feeRecords  FeeRecord[]
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("students")
+}
+
+model FeeRecord {
+  id            String         @id @default(uuid())
+  tenantId      String
+  studentId     String
+  description   String
+  amount        Float
+  discount      Float          @default(0)
+  netAmount     Float
+  dueDate       DateTime
+  status        FeeStatus      @default(PENDING)
+  paidAmount    Float          @default(0)
+  paidAt        DateTime?
+  paymentMethod PaymentMethod?
+  receiptNumber String?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("fee_records")
+}
+
+model LeaseUnit {
+  id          String        @id @default(uuid())
+  tenantId    String
+  unitNumber  String
+  floor       String?
+  area        Float?
+  description String?
+  isOccupied  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  leases      LeaseTenant[]
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, unitNumber])
+  @@map("lease_units")
+}
+
+model LeaseTenant {
+  id           String      @id @default(uuid())
+  tenantId     String
+  unitId       String
+  businessName String
+  contactName  String?
+  phone        String?
+  email        String?
+  monthlyRent  Float
+  deposit      Float       @default(0)
+  startDate    DateTime
+  endDate      DateTime?
+  status       LeaseStatus @default(ACTIVE)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unit         LeaseUnit   @relation(fields: [unitId], references: [id])
+
+  @@map("lease_tenants")
+}
 
 enum BusinessType {
+  // ── Existing ─────────────────────────────────────────────────────────────
   RETAIL
   KIRANA
   COACHING
@@ -21,6 +451,85 @@ enum BusinessType {
   FREELANCER
   WORKSHOP
   OTHER
+
+  // ── Retail & Commerce ────────────────────────────────────────────────────
+  MEDICAL_STORE
+  STATIONARY
+  SWEET_SHOP
+  BAKERY
+  JEWELLERY
+  HARDWARE
+  ELECTRICAL
+  CLOTHING
+  FOOTWEAR
+  ELECTRONICS
+  MOBILE_REPAIR
+  OPTICAL
+  BOOKSTORE
+  FLORIST
+
+  // ── Food & Beverage ──────────────────────────────────────────────────────
+  DHABA
+  CATERING
+  CLOUD_KITCHEN
+  JUICE_BAR
+  CANTEEN_MESS
+
+  // ── Events & Functions ───────────────────────────────────────────────────
+  EVENT_PLANNER
+  DECORATOR
+  TENT_HOUSE
+
+  // ── Healthcare ───────────────────────────────────────────────────────────
+  DENTAL
+  DIAGNOSTIC_LAB
+  PHYSIOTHERAPY
+  AYURVEDA
+  HOSPITAL
+  VET_CLINIC
+
+  // ── Beauty & Personal Care ───────────────────────────────────────────────
+  BEAUTY_PARLOUR
+  SPA
+  LAUNDRY
+  TAILORING
+  BARBERSHOP
+
+  // ── Education ────────────────────────────────────────────────────────────
+  HOME_TUITION
+  MUSIC_SCHOOL
+  DANCE_ACADEMY
+  DRIVING_SCHOOL
+  COMPUTER_TRAINING
+
+  // ── Professional Services ────────────────────────────────────────────────
+  CA_FIRM
+  LAW_FIRM
+  REAL_ESTATE
+  INSURANCE_AGENCY
+  TRAVEL_AGENCY
+  PHOTOGRAPHY
+  DIGITAL_AGENCY
+
+  // ── Transport & Logistics ────────────────────────────────────────────────
+  CAB_SERVICE
+  TRANSPORT
+  CAR_RENTAL
+  COURIER
+  PACKERS_MOVERS
+
+  // ── Construction & Design ────────────────────────────────────────────────
+  CONSTRUCTION
+  INTERIOR_DESIGN
+  CO_WORKING
+
+  // ── Trade & Supply (B2B) ─────────────────────────────────────────────────
+  DEALER
+  SUPPLIER
+  WHOLESALE
+
+  // ── Other Services ───────────────────────────────────────────────────────
+  PEST_CONTROL
 }
 
 enum UserRole {
@@ -84,434 +593,589 @@ enum StockMovementType {
   DAMAGE
 }
 
-// ─── Core: Tenant (Business) ──────────────────────────────────────────────────
+// ─── Vendors / Suppliers ──────────────────────────────────────────────────────
 
-model Tenant {
-  id              String       @id @default(uuid())
-  name            String
-  businessType    BusinessType
-  gstin           String?      @unique
-  pan             String?
-  phone           String
-  email           String       @unique
-  address         String?
-  city            String?
-  state           String?
-  pincode         String?
-  logoUrl         String?
-  plan            PlanType     @default(STARTER)
-  isActive        Boolean      @default(true)
-  modules         Json         // enabled modules list
-  currency        String       @default("INR")
-  locale          String       @default("en-IN")
-  timezone        String       @default("Asia/Kolkata")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+model Vendor {
+  id             String          @id @default(uuid())
+  tenantId       String
+  name           String
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  gstin          String?
+  paymentTerms   String?
+  notes          String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  purchaseOrders PurchaseOrder[]
+  bills          VendorBill[]
 
-  users           User[]
-  products        Product[]
-  categories      Category[]
-  invoices        Invoice[]
-  transactions    Transaction[]
-  appointments    Appointment[]
-  services        Service[]
-  feeRecords      FeeRecord[]
-  students        Student[]
-  leaseUnits      LeaseUnit[]
-  leaseTenants    LeaseTenant[]
-  staff           Staff[]
-  customers       Customer[]
-  taxRates        TaxRate[]
-
-  @@map("tenants")
+  @@map("vendors")
 }
 
-// ─── Users & Auth ─────────────────────────────────────────────────────────────
+model PurchaseOrder {
+  id           String               @id @default(uuid())
+  tenantId     String
+  vendorId     String?
+  poNumber     String
+  status       PurchaseOrderStatus  @default(DRAFT)
+  orderDate    DateTime             @default(now())
+  expectedDate DateTime?
+  receivedDate DateTime?
+  subtotal     Float                @default(0)
+  taxAmount    Float                @default(0)
+  total        Float                @default(0)
+  notes        String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  tenant       Tenant               @relation(fields: [tenantId], references: [id])
+  vendor       Vendor?              @relation(fields: [vendorId], references: [id])
+  items        PurchaseItem[]
 
-model User {
-  id              String    @id @default(uuid())
-  tenantId        String
-  name            String
-  email           String
-  password        String
-  role            UserRole  @default(STAFF)
-  isActive        Boolean   @default(true)
-  isEmailVerified Boolean   @default(false)
-  emailVerifyToken String?
-  passwordResetToken String?
-  passwordResetExpiry DateTime?
-  refreshToken    String?
-  lastLogin       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, email])
-  @@map("users")
+  @@map("purchase_orders")
 }
 
-// ─── Customers ────────────────────────────────────────────────────────────────
+model PurchaseItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  productId       String?
+  description     String
+  quantity        Float
+  unitCost        Float
+  taxRate         Float         @default(0)
+  taxAmount       Float         @default(0)
+  total           Float
+  receivedQty     Float         @default(0)
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product?      @relation(fields: [productId], references: [id])
 
-model Customer {
-  id          String    @id @default(uuid())
+  @@map("purchase_items")
+}
+
+// ─── Expenses ─────────────────────────────────────────────────────────────────
+
+model Expense {
+  id          String          @id @default(uuid())
   tenantId    String
-  name        String
-  phone       String?
-  email       String?
-  address     String?
-  gstin       String?
-  notes       String?
-  totalSpent  Float     @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoices      Invoice[]
-  transactions  Transaction[]
-  appointments  Appointment[]
-
-  @@map("customers")
-}
-
-// ─── Staff ────────────────────────────────────────────────────────────────────
-
-model Staff {
-  id          String    @id @default(uuid())
-  tenantId    String
-  name        String
-  phone       String?
-  email       String?
-  role        String
-  salary      Float?
-  joinedAt    DateTime?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  appointments  Appointment[]
-
-  @@map("staff")
-}
-
-// ─── Inventory ────────────────────────────────────────────────────────────────
-
-model Category {
-  id          String    @id @default(uuid())
-  tenantId    String
-  name        String
-  description String?
-  parentId    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  parent      Category?   @relation("CategoryTree", fields: [parentId], references: [id])
-  children    Category[]  @relation("CategoryTree")
-  products    Product[]
-
-  @@map("categories")
-}
-
-model Product {
-  id            String    @id @default(uuid())
-  tenantId      String
-  categoryId    String?
-  name          String
-  description   String?
-  sku           String?
-  barcode       String?
-  unit          String    @default("pcs")
-  costPrice     Float     @default(0)
-  sellingPrice  Float
-  mrp           Float?
-  taxRateId     String?
-  stock         Float     @default(0)
-  lowStockAlert Float     @default(5)
-  imageUrl      String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category        Category?         @relation(fields: [categoryId], references: [id])
-  taxRate         TaxRate?          @relation(fields: [taxRateId], references: [id])
-  invoiceItems    InvoiceItem[]
-  transactionItems TransactionItem[]
-  stockMovements  StockMovement[]
-
-  @@unique([tenantId, sku])
-  @@map("products")
-}
-
-model TaxRate {
-  id        String    @id @default(uuid())
-  tenantId  String
-  name      String
-  rate      Float
-  isGst     Boolean   @default(true)
-  cgst      Float?
-  sgst      Float?
-  igst      Float?
-  createdAt DateTime  @default(now())
-
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products  Product[]
-
-  @@map("tax_rates")
-}
-
-model StockMovement {
-  id          String            @id @default(uuid())
-  tenantId    String
-  productId   String
-  type        StockMovementType
-  quantity    Float
-  beforeStock Float
-  afterStock  Float
+  category    ExpenseCategory @default(OTHER)
+  description String
+  amount      Float
+  date        DateTime        @default(now())
+  method      PaymentMethod   @default(CASH)
   reference   String?
+  receipt     String?
   notes       String?
-  createdAt   DateTime          @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
 
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("stock_movements")
+  @@map("expenses")
 }
 
-// ─── POS / Transactions ───────────────────────────────────────────────────────
+// ─── WhatsApp Messaging ───────────────────────────────────────────────────────
 
-model Transaction {
-  id              String        @id @default(uuid())
-  tenantId        String
-  customerId      String?
-  invoiceId       String?       @unique
-  receiptNumber   String        @unique
-  subtotal        Float
-  discountAmount  Float         @default(0)
-  taxAmount       Float         @default(0)
-  total           Float
-  amountPaid      Float
-  change          Float         @default(0)
-  paymentMethod   PaymentMethod @default(CASH)
-  notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+model WhatsAppMessage {
+  id          String           @id @default(uuid())
+  tenantId    String
+  phone       String
+  contactName String?
+  direction   MessageDirection
+  body        String
+  waMessageId String?          @unique
+  status      MessageStatus    @default(SENT)
+  mediaUrl    String?
+  createdAt   DateTime         @default(now())
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
 
-  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer  Customer?         @relation(fields: [customerId], references: [id])
-  items     TransactionItem[]
-
-  @@map("transactions")
+  @@index([tenantId, phone])
+  @@map("whatsapp_messages")
 }
 
-model TransactionItem {
-  id            String  @id @default(uuid())
-  transactionId String
-  productId     String
-  name          String
-  quantity      Float
-  unitPrice     Float
-  discount      Float   @default(0)
-  taxAmount     Float   @default(0)
-  total         Float
-
-  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  product     Product     @relation(fields: [productId], references: [id])
-
-  @@map("transaction_items")
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
 }
 
-// ─── Invoicing ────────────────────────────────────────────────────────────────
-
-model Invoice {
-  id              String        @id @default(uuid())
-  tenantId        String
-  customerId      String?
-  invoiceNumber   String        @unique
-  status          InvoiceStatus @default(DRAFT)
-  issueDate       DateTime      @default(now())
-  dueDate         DateTime?
-  subtotal        Float
-  discountAmount  Float         @default(0)
-  taxAmount       Float         @default(0)
-  total           Float
-  amountPaid      Float         @default(0)
-  balanceDue      Float
-  notes           String?
-  terms           String?
-  gstDetails      Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer  Customer?     @relation(fields: [customerId], references: [id])
-  items     InvoiceItem[]
-  payments  Payment[]
-
-  @@map("invoices")
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }
 
-model InvoiceItem {
-  id          String  @id @default(uuid())
-  invoiceId   String
-  productId   String?
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIAL
+  RECEIVED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  RENT
+  UTILITIES
+  SALARIES
+  MARKETING
+  SUPPLIES
+  MAINTENANCE
+  TRANSPORT
+  TAXES
+  INSURANCE
+  OTHER
+}
+
+// ─── Asset Management ─────────────────────────────────────────────────────────
+
+model AssetCategory {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  wdvRate     Float    @default(15)
+  description String?
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  assets      Asset[]
+
+  @@map("asset_categories")
+}
+
+model Asset {
+  id                 String             @id @default(uuid())
+  tenantId           String
+  categoryId         String?
+  assetCode          String?
+  name               String
+  description        String?
+  serialNumber       String?
+  location           String?
+  assignedTo         String?
+  purchaseDate       DateTime
+  purchasePrice      Float
+  salvageValue       Float              @default(0)
+  usefulLifeYears    Int                @default(5)
+  depreciationMethod DepreciationMethod @default(SLM)
+  currentValue       Float
+  status             AssetStatus        @default(ACTIVE)
+  vendor             String?
+  warrantyExpiry     DateTime?
+  notes              String?
+  disposedAt         DateTime?
+  disposalPrice      Float?
+  disposalReason     String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  tenant             Tenant             @relation(fields: [tenantId], references: [id])
+  category           AssetCategory?     @relation(fields: [categoryId], references: [id])
+  maintenanceLogs    AssetMaintenance[]
+
+  @@map("assets")
+}
+
+model AssetMaintenance {
+  id          String          @id @default(uuid())
+  assetId     String
+  type        MaintenanceType @default(SCHEDULED)
+  description String
+  cost        Float           @default(0)
+  performedBy String?
+  performedAt DateTime        @default(now())
+  nextDueDate DateTime?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  asset       Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("asset_maintenance")
+}
+
+enum AssetStatus {
+  ACTIVE
+  UNDER_MAINTENANCE
+  DISPOSED
+  LOST
+  RETIRED
+}
+
+enum DepreciationMethod {
+  SLM
+  WDV
+}
+
+enum MaintenanceType {
+  SCHEDULED
+  REPAIR
+  INSPECTION
+  UPGRADE
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+model AttendanceLog {
+  id          String      @id @default(uuid())
+  tenantId    String
+  staffId     String
+  punchType   PunchType
+  punchTime   DateTime    @default(now())
+  method      PunchMethod @default(MANUAL)
+  deviceId    String?
+  notes       String?
+  createdAt   DateTime    @default(now())
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff       Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, staffId])
+  @@index([tenantId, punchTime])
+  @@map("attendance_logs")
+}
+
+enum PunchType {
+  IN
+  OUT
+}
+
+enum PunchMethod {
+  MANUAL
+  BIOMETRIC
+  RFID
+  MOBILE
+}
+
+// ─── Customer Subscriptions ───────────────────────────────────────────────────
+
+model CustomerSubscription {
+  id          String             @id @default(uuid())
+  tenantId    String
+  customerId  String
+  planName    String
+  startDate   DateTime
+  expiryDate  DateTime
+  amount      Float
+  status      SubscriptionStatus @default(ACTIVE)
+  autoRenew   Boolean            @default(true)
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  customer    Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@index([tenantId, expiryDate])
+  @@map("customer_subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PAUSED
+}
+
+// ─── WhatsApp Campaigns ───────────────────────────────────────────────────────
+
+model WhatsAppCampaign {
+  id          String          @id @default(uuid())
+  tenantId    String
+  name        String
+  message     String
+  segment     CampaignSegment
+  status      CampaignStatus  @default(DRAFT)
+  sentCount   Int             @default(0)
+  failedCount Int             @default(0)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_campaigns")
+}
+
+enum CampaignSegment {
+  ALL
+  EXPIRING_7
+  EXPIRING_30
+  INACTIVE_30
+  INACTIVE_60
+  VIP
+  BIRTHDAY_MONTH
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+  FAILED
+}
+
+// ─── Vendor Bills (Accounts Payable) ─────────────────────────────────────────
+
+model VendorBill {
+  id          String             @id @default(uuid())
+  tenantId    String
+  vendorId    String?
+  billNumber  String
+  status      BillStatus         @default(PENDING)
+  issueDate   DateTime           @default(now())
+  dueDate     DateTime?
+  subtotal    Float
+  taxAmount   Float              @default(0)
+  total       Float
+  amountPaid  Float              @default(0)
+  balanceDue  Float
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendor      Vendor?            @relation(fields: [vendorId], references: [id])
+  items       VendorBillItem[]
+  payments    VendorBillPayment[]
+
+  @@index([tenantId, status])
+  @@map("vendor_bills")
+}
+
+model VendorBillItem {
+  id          String     @id @default(uuid())
+  billId      String
   description String
   quantity    Float
   unitPrice   Float
-  discount    Float   @default(0)
-  taxRate     Float   @default(0)
-  taxAmount   Float   @default(0)
+  taxRate     Float      @default(0)
+  taxAmount   Float      @default(0)
   total       Float
+  bill        VendorBill @relation(fields: [billId], references: [id], onDelete: Cascade)
 
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product   Product? @relation(fields: [productId], references: [id])
-
-  @@map("invoice_items")
+  @@map("vendor_bill_items")
 }
 
-model Payment {
-  id            String        @id @default(uuid())
-  invoiceId     String
-  amount        Float
-  method        PaymentMethod
-  reference     String?
-  notes         String?
-  paidAt        DateTime      @default(now())
+model VendorBillPayment {
+  id        String     @id @default(uuid())
+  billId    String
+  amount    Float
+  method    String     @default("BANK")
+  reference String?
+  notes     String?
+  paidAt    DateTime   @default(now())
+  bill      VendorBill @relation(fields: [billId], references: [id], onDelete: Cascade)
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@map("payments")
+  @@map("vendor_bill_payments")
 }
 
-// ─── Appointments (Salon / Clinic) ────────────────────────────────────────────
+enum BillStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
 
-model Service {
+// ─── Bank Accounts ────────────────────────────────────────────────────────────
+
+model BankAccount {
+  id             String            @id @default(uuid())
+  tenantId       String
+  name           String
+  bankName       String
+  accountNumber  String?
+  ifscCode       String?
+  accountType    String            @default("CURRENT")
+  openingBalance Float             @default(0)
+  currentBalance Float             @default(0)
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transactions   BankTransaction[]
+
+  @@map("bank_accounts")
+}
+
+model BankTransaction {
+  id          String      @id @default(uuid())
+  accountId   String
+  type        String
+  amount      Float
+  description String
+  reference   String?
+  category    String?
+  date        DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  account     BankAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, date])
+  @@map("bank_transactions")
+}
+
+// ─── Credit Notes ─────────────────────────────────────────────────────────────
+
+model CreditNote {
+  id               String          @id @default(uuid())
+  tenantId         String
+  invoiceId        String?
+  customerId       String?
+  creditNoteNumber String          @unique
+  issueDate        DateTime        @default(now())
+  total            Float
+  reason           String?
+  status           String          @default("ISSUED")
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  tenant           Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  invoice          Invoice?        @relation(fields: [invoiceId], references: [id])
+  items            CreditNoteItem[]
+
+  @@index([tenantId])
+  @@map("credit_notes")
+}
+
+model CreditNoteItem {
+  id           String     @id @default(uuid())
+  creditNoteId String
+  description  String
+  quantity     Float
+  unitPrice    Float
+  taxRate      Float      @default(0)
+  taxAmount    Float      @default(0)
+  total        Float
+  creditNote   CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+
+  @@map("credit_note_items")
+}
+
+// ─── Quotations / Estimates ───────────────────────────────────────────────────
+
+model Quotation {
+  id                 String          @id @default(uuid())
+  tenantId           String
+  customerId         String?
+  quotationNumber    String          @unique
+  status             QuotationStatus @default(DRAFT)
+  issueDate          DateTime        @default(now())
+  expiryDate         DateTime?
+  subtotal           Float
+  discountAmount     Float           @default(0)
+  taxAmount          Float           @default(0)
+  total              Float
+  notes              String?
+  terms              String?
+  convertedInvoiceId String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer           Customer?       @relation(fields: [customerId], references: [id])
+  items              QuotationItem[]
+
+  @@index([tenantId, status])
+  @@map("quotations")
+}
+
+model QuotationItem {
   id          String    @id @default(uuid())
-  tenantId    String
-  name        String
-  description String?
-  duration    Int       // minutes
-  price       Float
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  quotationId String
+  description String
+  quantity    Float
+  unitPrice   Float
+  discount    Float     @default(0)
+  taxRate     Float     @default(0)
+  taxAmount   Float     @default(0)
+  total       Float
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  appointments  Appointment[]
-
-  @@map("services")
+  @@map("quotation_items")
 }
 
-model Appointment {
-  id          String            @id @default(uuid())
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+// ─── Payroll ──────────────────────────────────────────────────────────────────
+
+model PayrollRun {
+  id               String         @id @default(uuid())
+  tenantId         String
+  month            Int
+  year             Int
+  status           PayrollStatus  @default(DRAFT)
+  totalGross       Float          @default(0)
+  totalDeductions  Float          @default(0)
+  totalNet         Float          @default(0)
+  processedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entries          PayrollEntry[]
+
+  @@unique([tenantId, month, year])
+  @@map("payroll_runs")
+}
+
+model PayrollEntry {
+  id              String     @id @default(uuid())
+  payrollRunId    String
+  staffId         String
+  basicSalary     Float
+  hra             Float      @default(0)
+  allowances      Float      @default(0)
+  grossSalary     Float
+  pfEmployee      Float      @default(0)
+  pfEmployer      Float      @default(0)
+  esiEmployee     Float      @default(0)
+  esiEmployer     Float      @default(0)
+  professionalTax Float      @default(0)
+  tds             Float      @default(0)
+  otherDeductions Float      @default(0)
+  totalDeductions Float      @default(0)
+  netSalary       Float
+  workingDays     Int        @default(26)
+  presentDays     Int        @default(26)
+  status          String     @default("PENDING")
+  paidAt          DateTime?
+  payrollRun      PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  staff           Staff      @relation(fields: [staffId], references: [id])
+
+  @@map("payroll_entries")
+}
+
+enum PayrollStatus {
+  DRAFT
+  PROCESSED
+  PAID
+}
+
+// ─── Recurring Invoices ───────────────────────────────────────────────────────
+
+model RecurringInvoice {
+  id          String             @id @default(uuid())
   tenantId    String
   customerId  String?
-  staffId     String?
-  serviceId   String?
-  title       String
+  frequency   RecurringFrequency
+  nextRunDate DateTime
+  lastRunDate DateTime?
+  isActive    Boolean            @default(true)
+  items       Json
   notes       String?
-  status      AppointmentStatus @default(SCHEDULED)
-  startTime   DateTime
-  endTime     DateTime
-  price       Float?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  terms       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer    Customer?          @relation(fields: [customerId], references: [id])
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer  Customer? @relation(fields: [customerId], references: [id])
-  staff     Staff?    @relation(fields: [staffId], references: [id])
-  service   Service?  @relation(fields: [serviceId], references: [id])
-
-  @@map("appointments")
+  @@index([tenantId, isActive])
+  @@map("recurring_invoices")
 }
 
-// ─── Fees (Coaching Institute) ────────────────────────────────────────────────
-
-model Student {
-  id            String    @id @default(uuid())
-  tenantId      String
-  name          String
-  phone         String?
-  email         String?
-  parentName    String?
-  parentPhone   String?
-  course        String?
-  batch         String?
-  enrolledAt    DateTime  @default(now())
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  feeRecords  FeeRecord[]
-
-  @@map("students")
-}
-
-model FeeRecord {
-  id            String    @id @default(uuid())
-  tenantId      String
-  studentId     String
-  description   String
-  amount        Float
-  discount      Float     @default(0)
-  netAmount     Float
-  dueDate       DateTime
-  status        FeeStatus @default(PENDING)
-  paidAmount    Float     @default(0)
-  paidAt        DateTime?
-  paymentMethod PaymentMethod?
-  receiptNumber String?
-  notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@map("fee_records")
-}
-
-// ─── Lease (Mall / Complex) ───────────────────────────────────────────────────
-
-model LeaseUnit {
-  id          String    @id @default(uuid())
-  tenantId    String
-  unitNumber  String
-  floor       String?
-  area        Float?
-  description String?
-  isOccupied  Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  leases      LeaseTenant[]
-
-  @@unique([tenantId, unitNumber])
-  @@map("lease_units")
-}
-
-model LeaseTenant {
-  id            String      @id @default(uuid())
-  tenantId      String
-  unitId        String
-  businessName  String
-  contactName   String?
-  phone         String?
-  email         String?
-  monthlyRent   Float
-  deposit       Float       @default(0)
-  startDate     DateTime
-  endDate       DateTime?
-  status        LeaseStatus @default(ACTIVE)
-  notes         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  unit    LeaseUnit @relation(fields: [unitId], references: [id])
-
-  @@map("lease_tenants")
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }

@@ -42,6 +42,9 @@ const getStockMovements = async (req, res, next) => {
 const getLowStockProducts = async (req, res, next) => {
   try { ok(res, await svc.getLowStockProducts(req.tenantId)); } catch (e) { next(e); }
 };
+const getExpiringProducts = async (req, res, next) => {
+  try { ok(res, await svc.getExpiringProducts(req.tenantId, req.query.days)); } catch (e) { next(e); }
+};
 
 // Tax Rates
 const listTaxRates = async (req, res, next) => {
@@ -57,6 +60,6 @@ const deleteTaxRate = async (req, res, next) => {
 module.exports = {
   listCategories, createCategory, updateCategory, deleteCategory,
   listProducts, getProduct, createProduct, updateProduct, deleteProduct,
-  adjustStock, getStockMovements, getLowStockProducts,
+  adjustStock, getStockMovements, getLowStockProducts, getExpiringProducts,
   listTaxRates, createTaxRate, deleteTaxRate,
 };

@@ -76,6 +76,20 @@ const getLowStockProducts = (tenantId) =>
     AND stock <= "lowStockAlert"
   `;
 
+const getExpiringProducts = (tenantId, days = 30) => {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() + Number(days) * 24 * 60 * 60 * 1000);
+  return prisma.product.findMany({
+    where: {
+      tenantId,
+      isActive: true,
+      expiryDate: { not: null, lte: cutoff },
+    },
+    include: { category: { select: { name: true } } },
+    orderBy: { expiryDate: 'asc' },
+  });
+};
+
 // ── Tax Rates ──────────────────────────────────────────────────────────────
 
 const listTaxRates = (tenantId) => prisma.taxRate.findMany({ where: { tenantId } });
@@ -85,6 +99,6 @@ const deleteTaxRate = (tenantId, id) => prisma.taxRate.delete({ where: { id, ten
 module.exports = {
   listCategories, createCategory, updateCategory, deleteCategory,
   listProducts, getProduct, createProduct, updateProduct, deleteProduct,
-  adjustStock, getStockMovements, getLowStockProducts,
+  adjustStock, getStockMovements, getLowStockProducts, getExpiringProducts,
   listTaxRates, createTaxRate, deleteTaxRate,
 };

@@ -1,0 +1,23 @@
+# Claude Code internal settings
+.claude/
+
+# Backend — all real env files, never commit these
+backend/node_modules/
+backend/.env
+backend/.env.development
+backend/.env.quality
+backend/.env.production
+backend/dist/
+backend/*.log
+
+# Frontend — all real env files
+frontend/node_modules/
+frontend/.env
+frontend/.env.development
+frontend/.env.quality
+frontend/.env.production
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db

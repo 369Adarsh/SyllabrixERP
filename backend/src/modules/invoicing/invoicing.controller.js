@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const svc = require('./invoicing.service');
 const { ok, created } = require('../../utils/response');
 
@@ -19,5 +20,31 @@ const recordPayment = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try { ok(res, await svc.remove(req.tenantId, req.params.id), 'Invoice cancelled'); } catch (e) { next(e); }
 };
+const createPaymentLink = async (req, res, next) => {
+  try { ok(res, await svc.createPaymentLink(req.tenantId, req.params.id), 'Payment link ready'); } catch (e) { next(e); }
+};
 
-module.exports = { list, get, create, updateStatus, recordPayment, remove };
+// Called directly by Razorpay — no auth middleware, raw body for signature
+const razorpayWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : JSON.stringify(req.body);
+
+    if (secret && signature) {
+      const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+      if (signature !== expected) return res.status(400).json({ error: 'Invalid signature' });
+    }
+
+    const body = JSON.parse(rawBody);
+    if (body.event === 'payment_link.paid') {
+      await svc.handlePaymentLinkPaid(body.payload);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Razorpay webhook error:', err);
+    res.status(500).json({ error: 'Webhook error' });
+  }
+};
+
+module.exports = { list, get, create, updateStatus, recordPayment, remove, createPaymentLink, razorpayWebhook };

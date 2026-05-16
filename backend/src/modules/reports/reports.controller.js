@@ -17,4 +17,14 @@ const topCustomers = async (req, res, next) => {
   try { ok(res, await svc.topCustomers(req.tenantId, req.query)); } catch (e) { next(e); }
 };
 
-module.exports = { dashboard, salesReport, invoiceReport, topProducts, topCustomers };
+const profitLoss = async (req, res, next) => {
+  try { ok(res, await svc.profitLoss(req.tenantId, req.query)); } catch (e) { next(e); }
+};
+const cashFlow = async (req, res, next) => {
+  try { ok(res, await svc.cashFlow(req.tenantId, req.query)); } catch (e) { next(e); }
+};
+const gstr1 = async (req, res, next) => {
+  try { ok(res, await svc.gstr1(req.tenantId, req.query)); } catch (e) { next(e); }
+};
+
+module.exports = { dashboard, salesReport, invoiceReport, topProducts, topCustomers, profitLoss, cashFlow, gstr1 };

@@ -38,8 +38,10 @@ const logout = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    await authService.forgotPassword(req.body);
-    ok(res, {}, 'If the email is registered, a reset link has been sent');
+    const { sendPasswordResetEmail } = require('../../utils/email');
+    const token = await authService.forgotPassword(req.body);
+    if (token) await sendPasswordResetEmail(req.body.email, token);
+    ok(res, {}, 'If that email is registered, a reset link has been sent');
   } catch (err) { next(err); }
 };
 

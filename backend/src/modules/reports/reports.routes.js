@@ -8,5 +8,8 @@ router.get('/sales', ctrl.salesReport);
 router.get('/invoices', ctrl.invoiceReport);
 router.get('/top-products', ctrl.topProducts);
 router.get('/top-customers', ctrl.topCustomers);
+router.get('/pl', ctrl.profitLoss);
+router.get('/cash-flow', ctrl.cashFlow);
+router.get('/gstr1', ctrl.gstr1);
 
 module.exports = router;

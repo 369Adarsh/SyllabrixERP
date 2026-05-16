@@ -11,6 +11,7 @@ router.delete('/categories/:id', authorize('OWNER', 'ADMIN'), ctrl.deleteCategor
 
 router.get('/products', ctrl.listProducts);
 router.get('/products/low-stock', ctrl.getLowStockProducts);
+router.get('/products/expiring', ctrl.getExpiringProducts);
 router.get('/products/:id', ctrl.getProduct);
 router.post('/products', authorize('OWNER', 'ADMIN'), ctrl.createProduct);
 router.put('/products/:id', authorize('OWNER', 'ADMIN'), ctrl.updateProduct);

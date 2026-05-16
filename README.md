@@ -195,3 +195,135 @@ Then reach for components in `ui_kits/web-app/` or `ui_kits/mobile-app/`.
 3. **Typography licensing.** Bricolage Grotesque + Plus Jakarta Sans are free Google Fonts and pair naturally with the wordmark. If you've licensed something else (PP Neue Montreal, GT Walsheim), tell me and I'll swap.
 4. **Tone in regional languages.** The English voice is set. Voice in Hindi/Tamil/Marathi needs native-speaker review.
 5. **Photography library.** None curated yet — pull a real shoot of Indian small-business contexts before launch.
+
+---
+
+## Modules Built — Complete Registry
+
+> Last updated: 2026-05-16 · 18 backend modules · 20 frontend pages · 10 business types supported
+
+---
+
+### Backend Modules (`backend/src/modules/`)
+
+| # | Module | Route prefix | What it does |
+|---|---|---|---|
+| 1 | **Auth** | `/api/v1/auth` | Register, Login, Staff login, Refresh token, Logout, Forgot/reset password |
+| 2 | **Tenant** | `/api/v1/tenant` | Business profile, Module toggle, Business Adaptation Engine (`BUSINESS_MODULES` map) |
+| 3 | **Users** | `/api/v1/users` | Team member CRUD, Role management (OWNER/ADMIN/ACCOUNTANT/STAFF), Change password |
+| 4 | **Inventory** | `/api/v1/inventory` | Product categories, Products (barcode, SKU, expiry date, batch number), Stock adjustments, Tax rates (GST), Low-stock API |
+| 5 | **POS** | `/api/v1/pos` | Create sale, Stock auto-deduction, Transaction history, Receipt data |
+| 6 | **Invoicing** | `/api/v1/invoices` | Create invoice, Status lifecycle (DRAFT→SENT→PAID/OVERDUE), Payment recording, GST detail storage, Cancel |
+| 7 | **Appointments** | `/api/v1/appointments` | Service catalog, Appointment CRUD, Status workflow (SCHEDULED→CONFIRMED→IN_PROGRESS→COMPLETED/CANCELLED/NO_SHOW) |
+| 8 | **Fees** | `/api/v1/fees` | Student records, Fee records, Collect fee, Waive fee, Overdue query |
+| 9 | **Lease** | `/api/v1/lease` | Property units, Lease tenants, Terminate lease, Rent-due API |
+| 10 | **Reports** | `/api/v1/reports` | Business-type-adapted dashboard, Sales report, Invoice report, Top products, Top customers |
+| 11 | **AI** | `/api/v1/ai` | Gemini 1.5 Flash chat, Auto-generated business insights on dashboard |
+| 12 | **Customers** | `/api/v1/customers` | Customer CRUD, Total-spent tracking, Credit balance (Udhar), GSTIN storage |
+| 13 | **Vendors** | `/api/v1/vendors` | Vendor CRUD, Purchase orders, Receive goods (auto stock-in) |
+| 14 | **Expenses** | `/api/v1/expenses` | Expense CRUD, 10-category breakdown (Rent/Salaries/Marketing/…), Category summary |
+| 15 | **WhatsApp** | `/api/v1/whatsapp` | Send text/invoice/appointment-reminder/fee-reminder/rent-reminder, Bulk overdue-fee reminders, Inbound message webhook, Conversation threads |
+| 16 | **Assets** | `/api/v1/assets` | Asset categories (WDV rates), Asset CRUD, SLM & WDV depreciation (Indian IT Act), Maintenance logs, Disposal recording, Summary |
+| 17 | **Staff** | `/api/v1/staff` | Staff CRUD (name/role/department/salary/joinDate), Toggle active, Biometric ID enrollment field |
+| 18 | **Attendance** | `/api/v1/attendance` | Today's roster, Manual Punch IN/OUT, Date-range report, Hours-worked summary, **Device-push endpoint for ZKTeco / FingerJet biometric hardware** |
+
+---
+
+### Frontend Pages (`frontend/src/pages/`)
+
+| # | Page | Route | What it does |
+|---|---|---|---|
+| 1 | **Login** | `/login` | JWT login, business-owner email auth |
+| 2 | **Register** | `/register` | New tenant onboarding, business type selection → module assignment |
+| 3 | **Dashboard** | `/dashboard` | **Adapts KPIs + quick actions to business type** (10 different layouts) |
+| 4 | **Inventory** | `/inventory` | Products with barcode/SKU/expiry/batch, category tree, stock movements, tax rates, low-stock filter |
+| 5 | **Point of Sale** | `/pos` | Product grid, cart, **camera barcode scanner** (html5-qrcode), **USB barcode auto-detect** (Enter-to-add), cash/UPI/card payment, change calculator |
+| 6 | **Invoices** | `/invoices` | Create/manage invoices, status pills, payment recording, **A4 PDF/print modal**, **WhatsApp send button** per invoice |
+| 7 | **Customers** | `/customers` | CRUD, credit balance (Udhar), total spent, GST number |
+| 8 | **Appointments** | `/appointments` | Calendar-style list, service management, status workflow, **WhatsApp reminder** button |
+| 9 | **Fees** | `/fees` | Student records, fee collection, waiver, overdue tracking, **WhatsApp fee reminder** |
+| 10 | **Lease** | `/lease` | Property units, lease tenants, rent-due panel, terminate, **WhatsApp rent reminder** |
+| 11 | **Vendors & Purchases** | `/vendors` | Vendor list, purchase order creation, receive goods |
+| 12 | **Expenses** | `/expenses` | Expense log, category breakdown with progress bars, date/category/method filters |
+| 13 | **Assets** | `/assets` | Asset list, depreciation progress bar per row, detail panel with schedule table, maintenance history, disposal modal, default Indian IT Act categories |
+| 14 | **Staff & Attendance** | `/staff` | Staff CRUD (biometric ID), today's punch IN/OUT roster, hours worked, date-range report, **biometric device webhook panel** |
+| 15 | **Reports** | `/reports` | Sales chart (daily/monthly), invoice breakdown, top products, top customers |
+| 16 | **WhatsApp** | `/whatsapp` | Two-panel inbox, conversation threads, unread badges, send field (Enter to send, Shift+Enter newline) |
+| 17 | **AI Copilot** | `/ai` | Gemini-powered business chat, full conversation history, business-context aware |
+| 18 | **Settings** | `/settings` | Business profile, team management, role change, change password |
+| 19 | **InvoiceView** *(modal)* | — | A4 invoice preview with business header, GST table, payment history; Print/PDF + WhatsApp send |
+| 20 | **POS Receipt** *(modal)* | — | Thermal 80mm receipt, Print, WhatsApp send (named customer direct; walk-in shows phone input) |
+
+---
+
+### Add-on Features (cross-cutting)
+
+| Feature | Where | Details |
+|---|---|---|
+| **Multilingual UI** | Sidebar switcher | English, हिंदी (Hindi), தமிழ் (Tamil), తెలుగు (Telugu), मराठी (Marathi) — auto-detects browser language, persists to localStorage |
+| **Barcode Scanner** | POS, Inventory | Camera mode via `html5-qrcode`; USB scanner via keyboard-input auto-detect (type + Enter) |
+| **Biometric Attendance** | Staff page + backend | ZKTeco/FingerJet push to `POST /api/v1/attendance/device-punch`; manual punch fallback |
+| **Business Adaptation Engine** | Dashboard + Sidebar | KPIs, quick actions, and visible nav change per business type at login |
+| **WhatsApp Commerce** | Invoices, POS, Appointments, Fees, Lease | Send formatted messages directly from every relevant page; inbound inbox |
+| **Invoice PDF / Print** | Invoices | Browser print-to-PDF — no external library, clean A4 layout |
+| **Thermal Receipt** | POS | 80mm CSS format, print-ready |
+| **AI Insights** | Dashboard | 3 actionable insights generated by Gemini on every dashboard load |
+| **Row-Level Security** | Supabase | Deny-all RLS for anon/authenticated roles on all 22 tables; backend superuser bypasses |
+| **Role-Based Access** | Entire app | OWNER / ADMIN / ACCOUNTANT / STAFF — both API middleware and UI guards |
+| **Seed Accounts** | `backend/prisma/seed.js` | 10 test businesses covering all types, all `Test@1234` |
+
+---
+
+### Database Models (Prisma · Supabase PostgreSQL)
+
+| # | Model | Table | Purpose |
+|---|---|---|---|
+| 1 | Tenant | `tenants` | Business account, modules JSON, plan, locale |
+| 2 | User | `users` | Login credentials, role, language preference |
+| 3 | Customer | `customers` | Customers with Udhar credit balance |
+| 4 | Staff | `staff` | Employees with biometric ID + department |
+| 5 | AttendanceLog | `attendance_logs` | Punch IN/OUT, method (MANUAL/BIOMETRIC/RFID), device ID |
+| 6 | Category | `categories` | Inventory product categories (tree structure) |
+| 7 | Product | `products` | Items with barcode, SKU, expiry date, batch number |
+| 8 | TaxRate | `tax_rates` | GST slabs (CGST/SGST/IGST) |
+| 9 | StockMovement | `stock_movements` | Audit trail: PURCHASE/SALE/ADJUSTMENT/RETURN/DAMAGE |
+| 10 | Transaction | `transactions` | POS sales |
+| 11 | TransactionItem | `transaction_items` | Line items per POS sale |
+| 12 | Invoice | `invoices` | B2B invoices with GST details |
+| 13 | InvoiceItem | `invoice_items` | Line items per invoice |
+| 14 | Payment | `payments` | Partial/full payments against invoices |
+| 15 | Service | `services` | Appointment service catalog |
+| 16 | Appointment | `appointments` | Bookings with status workflow |
+| 17 | Student | `students` | Students/members for coaching & gym |
+| 18 | FeeRecord | `fee_records` | Fee ledger with collect/waive |
+| 19 | LeaseUnit | `lease_units` | Property units |
+| 20 | LeaseTenant | `lease_tenants` | Lease agreements |
+| 21 | Vendor | `vendors` | Suppliers |
+| 22 | PurchaseOrder | `purchase_orders` | POs with line items and receive workflow |
+| 23 | PurchaseItem | `purchase_items` | Line items per PO |
+| 24 | Expense | `expenses` | Business expenses by category |
+| 25 | WhatsAppMessage | `whatsapp_messages` | Inbound/outbound WhatsApp log |
+| 26 | AssetCategory | `asset_categories` | Asset types with WDV depreciation rate |
+| 27 | Asset | `assets` | Fixed assets with SLM/WDV depreciation |
+| 28 | AssetMaintenance | `asset_maintenance` | Maintenance/repair logs per asset |
+
+---
+
+### Pending — What to build next
+
+| Priority | Feature | Status |
+|---|---|---|
+| 🔴 High | Forgot password frontend page | Backend ready, frontend page missing |
+| 🔴 High | Customer Udhar/credit UI | Schema ready (`creditBalance`, `creditLimit`), no UI yet |
+| 🔴 High | Razorpay UPI payment link per invoice | Not started — highest Indian market impact |
+| 🟡 Medium | Product expiry alerts | Schema ready (`expiryDate`), no dashboard alert |
+| 🟡 Medium | Nightly WhatsApp business digest | Not started — daily P&L to owner's WhatsApp at 10 PM |
+| 🟡 Medium | GSTR-1 / GST compliance export | Not started |
+| 🟡 Medium | Pagination on all list APIs | All APIs return all records |
+| 🟡 Medium | Returns/Refunds formal flow | `RETURN` stock type exists, no UI |
+| 🟡 Medium | Staff payroll report | Salary field exists, no payroll calculation |
+| 🟢 Low | AI promotional video generation | Signature README feature — complex, not started |
+| 🟢 Low | WhatsApp Catalog sync | Not started |
+| 🟢 Low | Multi-branch / multi-location | Not started |
+| 🟢 Low | Dark mode | Design tokens defined, not wired |
+| ⚙️ Infra | Deploy to Railway + Vercel | Not done — WhatsApp webhook needs public URL |

@@ -8,6 +8,7 @@ router.get('/:id', ctrl.get);
 router.post('/', ctrl.create);
 router.patch('/:id/status', authorize('OWNER', 'ADMIN', 'ACCOUNTANT'), ctrl.updateStatus);
 router.post('/:id/payments', ctrl.recordPayment);
+router.post('/:id/payment-link', ctrl.createPaymentLink);
 router.delete('/:id', authorize('OWNER', 'ADMIN'), ctrl.remove);
 
 module.exports = router;
