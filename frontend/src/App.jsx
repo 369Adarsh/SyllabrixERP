@@ -77,7 +77,7 @@ function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/dashboard" replace />;
-  window.location.href = '/landing.html';
+  window.location.replace('/landing.html');
   return null;
 }
 
