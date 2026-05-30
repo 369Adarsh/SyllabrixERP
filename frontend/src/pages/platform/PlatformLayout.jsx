@@ -86,9 +86,7 @@ export default function PlatformLayout() {
       {/* Logo */}
       <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid #1E2D3D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ background: '#fff', borderRadius: 10, padding: '7px 12px', display: 'inline-block', marginBottom: 6 }}>
-            <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
-          </div>
+          <img src="/logo-wordmark.svg" alt="Syllabrix" style={{ height: 30, objectFit: 'contain', display: 'block', marginBottom: 6 }} />
           <div style={{ fontSize: 9, color: '#1FB8D6', letterSpacing: '0.14em', fontWeight: 700, textTransform: 'uppercase' }}>
             Nerve Center
           </div>
@@ -188,6 +186,14 @@ export default function PlatformLayout() {
           }
           .nc-overlay.open { display: block; }
           .nc-close-btn { display: block !important; }
+
+          /* Content page responsive overrides */
+          main > div { padding: 16px !important; }
+          main h1 { font-size: 18px !important; }
+          main h2 { font-size: 16px !important; }
+          main table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          main > div > div[style*="display: flex"] { flex-wrap: wrap !important; }
+          main > div > div[style*="gap"] { gap: 12px !important; }
         }
         @media (min-width: 768px) {
           .nc-mobile-topbar { display: none !important; }
