@@ -145,6 +145,26 @@ const changePlan = async (id, plan, adminName) => {
 const addTenantNote = (tenantId, content, createdBy) =>
   prisma.tenantNote.create({ data: { tenantId, content, createdBy } });
 
+const terminateTenant = async (id, adminName) => {
+  const tenant = await prisma.tenant.findUnique({ where: { id }, select: { name: true, email: true, syllabrixId: true } });
+  if (!tenant) throw Object.assign(new Error('Tenant not found'), { statusCode: 404 });
+  // Log before delete (audit record won't survive cascade)
+  await prisma.auditLog.create({
+    data: {
+      tenantId: id,
+      actorType: 'SUPER_ADMIN',
+      actorId: 'system',
+      actorName: adminName,
+      action: 'TERMINATE_TENANT',
+      resource: 'tenant',
+      resourceId: id,
+      details: { name: tenant.name, email: tenant.email, syllabrixId: tenant.syllabrixId },
+    },
+  }).catch(() => {}); // best-effort — if audit fails don't block deletion
+  await prisma.tenant.delete({ where: { id } });
+  return { terminated: true, name: tenant.name };
+};
+
 // ── Role Requests ──────────────────────────────────────────────────────────
 
 const listRoleRequests = (status) =>
@@ -1218,7 +1238,7 @@ const reorderLandingPhotos = async (updates) => {
 
 module.exports = {
   login, verifyToken, getMe, getDashboard,
-  listTenants, getTenant, toggleTenant, changePlan, addTenantNote,
+  listTenants, getTenant, toggleTenant, changePlan, addTenantNote, terminateTenant,
   listRoleRequests, resolveRoleRequest,
   getAuditLogs,
   listAdmins, createAdmin, seedDefaultAdmin,

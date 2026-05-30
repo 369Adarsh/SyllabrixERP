@@ -37,6 +37,10 @@ const addNote = async (req, res, next) => {
   try { created(res, await svc.addTenantNote(req.params.id, req.body.content, req.saAdmin.name || 'Admin'), 'Note added'); } catch (e) { next(e); }
 };
 
+const terminateTenant = async (req, res, next) => {
+  try { ok(res, await svc.terminateTenant(req.params.id, req.saAdmin.name || 'Admin'), 'Tenant terminated and all data erased'); } catch (e) { next(e); }
+};
+
 const listRoleRequests = async (req, res, next) => {
   try { ok(res, await svc.listRoleRequests(req.query.status)); } catch (e) { next(e); }
 };
@@ -264,7 +268,7 @@ const reorderLandingPhotos = async (req, res, next) => { try { ok(res, await svc
 
 module.exports = {
   login, getMe, getDashboard,
-  listTenants, getTenant, toggleTenant, changePlan, addNote,
+  listTenants, getTenant, toggleTenant, changePlan, addNote, terminateTenant,
   listRoleRequests, resolveRoleRequest,
   getAuditLogs, listAdmins, createAdmin,
   listAuditReports, patchAuditReport,

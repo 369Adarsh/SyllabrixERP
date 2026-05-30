@@ -51,6 +51,7 @@ router.get('/tenants/:id', authorizeSA('SUPER', 'ADMIN', 'SUPPORT', 'COMPLIANCE'
 router.patch('/tenants/:id/toggle', authorizeSA('SUPER', 'ADMIN'), ctrl.toggleTenant);
 router.patch('/tenants/:id/plan', authorizeSA('SUPER', 'ADMIN'), ctrl.changePlan);
 router.post('/tenants/:id/notes', authorizeSA('SUPER', 'ADMIN', 'SUPPORT', 'COMPLIANCE'), ctrl.addNote);
+router.delete('/tenants/:id/terminate', authorizeSA('SUPER'), ctrl.terminateTenant);
 
 // Role requests
 router.get('/role-requests', authorizeSA('SUPER', 'ADMIN'), ctrl.listRoleRequests);

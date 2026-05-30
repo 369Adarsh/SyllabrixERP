@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getSATenants, getSATenant, toggleSATenant, changeSATenantPlan, addSATenantNote, getSAAuditReports } from '../../api/platform';
+import { getSATenants, getSATenant, toggleSATenant, changeSATenantPlan, addSATenantNote, getSAAuditReports, terminateSATenant } from '../../api/platform';
 import { MODULE_REGISTRY, MODULE_CATEGORY_COLORS, DEFAULT_ROLES, EXTRA_ROLES } from '../../config/platformCatalog';
 import { ChevronDown, ChevronRight, Search, X, Building2, Store, Users, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -64,6 +64,9 @@ export default function Tenants() {
   const [complaintsLoadedFor, setComplaintsLoadedFor] = useState(null);
   const [collapsed, setCollapsed] = useState({}); // category code → bool
   const [expandedTenants, setExpandedTenants] = useState({}); // tenant id → bool
+  const [terminateModal, setTerminateModal] = useState(null); // { id, name } | null
+  const [terminateConfirm, setTerminateConfirm] = useState('');
+  const [terminating, setTerminating] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -154,6 +157,21 @@ export default function Tenants() {
       setNote('');
       openDetail(selected);
     } catch { toast.error('Failed to add note'); }
+  };
+
+  const handleTerminate = async () => {
+    if (terminateConfirm !== terminateModal?.name) return;
+    setTerminating(true);
+    try {
+      await terminateSATenant(terminateModal.id);
+      toast.success(`${terminateModal.name} — account terminated and all data erased`);
+      setTerminateModal(null);
+      setTerminateConfirm('');
+      setSelected(null);
+      setDetail(null);
+      load();
+    } catch { toast.error('Termination failed'); }
+    finally { setTerminating(false); }
   };
 
   const toggleCat  = (code) => setCollapsed(p => ({ ...p, [code]: !p[code] }));
@@ -337,6 +355,58 @@ export default function Tenants() {
         )}
       </div>
 
+      {/* ── Terminate confirmation modal ──────────────────────────────────── */}
+      {terminateModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: '#111C27', border: '1px solid #EF444440', borderRadius: 16, padding: 32, maxWidth: 440, width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(239,68,68,0.15)', border: '1px solid #EF444440', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                ⚠️
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#F87171' }}>Terminate Business Account</div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>This action is permanent and cannot be undone</div>
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #EF444430', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: '#FCA5A5', lineHeight: 1.6 }}>
+                This will <strong style={{ color: '#F87171' }}>permanently erase</strong> the account for <strong style={{ color: '#FECACA' }}>{terminateModal.name}</strong> including all users, invoices, customers, inventory, staff records, and every other piece of data. It cannot be recovered.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 8 }}>
+                Type <strong style={{ color: '#F1F5F9', fontFamily: 'monospace' }}>{terminateModal.name}</strong> to confirm:
+              </div>
+              <input
+                value={terminateConfirm}
+                onChange={e => setTerminateConfirm(e.target.value)}
+                placeholder={terminateModal.name}
+                autoFocus
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: '#0B131C', border: `1px solid ${terminateConfirm === terminateModal.name ? '#EF4444' : '#1E2D3D'}`, borderRadius: 8, color: '#F1F5F9', fontSize: 13, outline: 'none', fontFamily: 'monospace' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => { setTerminateModal(null); setTerminateConfirm(''); }}
+                style={{ flex: 1, padding: '10px', background: '#1E2D3D', border: 'none', borderRadius: 8, color: '#94A3B8', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTerminate}
+                disabled={terminateConfirm !== terminateModal.name || terminating}
+                style={{ flex: 1, padding: '10px', background: terminateConfirm === terminateModal.name ? '#EF4444' : '#1E2D3D', border: 'none', borderRadius: 8, color: terminateConfirm === terminateModal.name ? '#fff' : '#475569', fontWeight: 700, fontSize: 13, cursor: terminateConfirm === terminateModal.name ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}
+              >
+                {terminating ? 'Terminating…' : 'Terminate Forever'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Right: detail panel ────────────────────────────────────────────── */}
       {selected && (
         <div style={{ flex: '0 0 42%', overflowY: 'auto', padding: 24, background: '#111C27', borderLeft: '1px solid #1E2D3D' }}>
@@ -395,7 +465,7 @@ export default function Tenants() {
             <div style={{ color: '#64748B', fontSize: 13, textAlign: 'center', padding: 40 }}>Loading…</div>
           ) : detail && (
             <>
-              {detailTab === 'info'       && <InfoTab detail={detail} onToggle={() => handleToggle(selected)} />}
+              {detailTab === 'info'       && <InfoTab detail={detail} onToggle={() => handleToggle(selected)} onTerminate={() => { setTerminateModal({ id: selected, name: detail.name }); setTerminateConfirm(''); }} />}
               {detailTab === 'plan'       && <PlanTab detail={detail} newPlan={newPlan} setNewPlan={setNewPlan} onSave={handlePlanChange} />}
               {detailTab === 'notes'      && <NotesTab detail={detail} note={note} setNote={setNote} onAdd={handleAddNote} />}
               {detailTab === 'modules'    && <ModulesTab detail={detail} />}
@@ -431,7 +501,7 @@ const StatusDot = ({ active }) => (
 
 // ── Tab components ────────────────────────────────────────────────────────────
 
-const InfoTab = ({ detail, onToggle }) => (
+const InfoTab = ({ detail, onToggle, onTerminate }) => (
   <div>
     {[
       ['Business Name', detail.name],
@@ -477,6 +547,19 @@ const InfoTab = ({ detail, onToggle }) => (
     }}>
       {detail.isActive ? '🚫 Suspend Tenant' : '✅ Reactivate Tenant'}
     </button>
+
+    <div style={{ marginTop: 24, borderTop: '1px solid #1E2D3D', paddingTop: 20 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Danger Zone</div>
+      <button onClick={onTerminate} style={{
+        width: '100%', padding: '10px',
+        background: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.35)',
+        borderRadius: 8, color: '#F87171',
+        fontWeight: 700, fontSize: 13, cursor: 'pointer',
+      }}>
+        💀 Terminate Account &amp; Erase All Data
+      </button>
+    </div>
   </div>
 );
 

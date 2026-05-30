@@ -42,6 +42,7 @@ export const getSATenant = (id) => api.get(`/tenants/${id}`);
 export const toggleSATenant = (id) => api.patch(`/tenants/${id}/toggle`);
 export const changeSATenantPlan = (id, plan) => api.patch(`/tenants/${id}/plan`, { plan });
 export const addSATenantNote = (id, note) => api.post(`/tenants/${id}/notes`, { content: note });
+export const terminateSATenant = (id) => api.delete(`/tenants/${id}/terminate`);
 
 // Support
 export const getSATickets = (params) => api.get('/support/admin', { params });
