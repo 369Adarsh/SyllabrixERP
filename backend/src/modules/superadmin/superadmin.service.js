@@ -782,16 +782,17 @@ const createAdmin = async ({ name, email, password, role }) => {
 };
 
 const seedDefaultAdmin = async () => {
-  const exists = await prisma.superAdmin.findUnique({ where: { email: 'admin@syllabrix.com' } });
-  if (exists) return;
   const initPassword = process.env.SA_INIT_PASSWORD;
   if (!initPassword) {
     console.warn('[WARN] SA_INIT_PASSWORD not set — skipping default superadmin seed. Set this env var to create the first admin.');
     return;
   }
+  const initEmail = process.env.SA_INIT_EMAIL || 'support@syllabrix.com';
+  const exists = await prisma.superAdmin.findUnique({ where: { email: initEmail } });
+  if (exists) return;
   const hashed = await bcrypt.hash(initPassword, 14);
-  await prisma.superAdmin.create({ data: { name: 'Syllabrix Admin', email: 'admin@syllabrix.com', password: hashed, role: 'SUPER' } });
-  console.log('✅ Default super admin created: admin@syllabrix.com');
+  await prisma.superAdmin.create({ data: { name: 'Syllabrix Admin', email: initEmail, password: hashed, role: 'SUPER' } });
+  console.log(`✅ Default super admin created: ${initEmail}`);
 };
 
 // ── Plan Builder ───────────────────────────────────────────────────────────
