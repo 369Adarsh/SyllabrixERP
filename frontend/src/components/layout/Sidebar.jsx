@@ -155,11 +155,13 @@ export default function Sidebar({ isOpen, onClose, isMobile, onOpenReport }) {
       <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
 
         {/* Syllabrix platform logo */}
-        <img
-          src="/logo-wordmark.svg"
-          alt="Syllabrix"
-          style={{ height: 32, objectFit: 'contain', display: 'block', marginBottom: 12 }}
-        />
+        <div style={{ background: 'rgba(255,255,255,0.95)', borderRadius: 10, padding: '5px 14px 5px 10px', display: 'inline-flex', alignItems: 'center', marginBottom: 12 }}>
+          <img
+            src="/logo.png"
+            alt="Syllabrix"
+            style={{ height: 32, objectFit: 'contain', display: 'block' }}
+          />
+        </div>
 
         <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 10 }} />
 
