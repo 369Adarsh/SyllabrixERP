@@ -20,6 +20,9 @@ frontend/.env.quality
 frontend/.env.production
 frontend/dist/
 
+# QA / internal tracking sheets — never commit
+*.csv
+
 # OS
 .DS_Store
 Thumbs.db
