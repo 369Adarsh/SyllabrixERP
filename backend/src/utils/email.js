@@ -1,6 +1,18 @@
 const nodemailer = require('nodemailer');
 const config = require('../config/env');
 
+// ── Resend (preferred for production) ─────────────────────────────────────────
+const sendViaResend = async ({ to, subject, html }) => {
+  const { Resend } = require('resend');
+  const client = new Resend(process.env.RESEND_API_KEY);
+  const from = config.fromEmail
+    ? `Syllabrix <${config.fromEmail}>`
+    : 'Syllabrix <onboarding@resend.dev>';
+  const { error } = await client.emails.send({ from, to, subject, html });
+  if (error) throw new Error(error.message);
+};
+
+// ── Nodemailer (fallback for local dev via SMTP) ───────────────────────────────
 const createTransporter = () => {
   const user = config.smtpUser;
   const pass = config.smtpPass;
@@ -115,12 +127,6 @@ const sendVerificationEmail = async (toEmail, businessName, token) => {
   const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://localhost:5173';
   const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
 
-  const transporter = createTransporter();
-  if (!transporter) {
-    logFallback('EMAIL VERIFICATION LINK', verifyLink);
-    return;
-  }
-
   const html = layout({
     frontendUrl,
     preheader: `Verify your email to activate your Syllabrix account${businessName ? ` for ${businessName}` : ''}.`,
@@ -180,12 +186,13 @@ const sendVerificationEmail = async (toEmail, businessName, token) => {
     footerNote: 'If you did not create a Syllabrix account, you can safely ignore this email. No account will be activated without clicking the button above.',
   });
 
-  await transporter.sendMail({
-    from: FROM(),
-    to: toEmail,
-    subject: '✉️ Verify your Syllabrix account',
-    html,
-  });
+  if (process.env.RESEND_API_KEY) {
+    await sendViaResend({ to: toEmail, subject: '✉️ Verify your Syllabrix account', html });
+  } else {
+    const transporter = createTransporter();
+    if (!transporter) { logFallback('EMAIL VERIFICATION LINK', verifyLink); return; }
+    await transporter.sendMail({ from: FROM(), to: toEmail, subject: '✉️ Verify your Syllabrix account', html });
+  }
   console.log(`[EMAIL] Verification sent to ${toEmail}`);
 };
 
@@ -194,11 +201,7 @@ const sendPasswordResetEmail = async (toEmail, token) => {
   const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://localhost:5173';
   const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
-  const transporter = createTransporter();
-  if (!transporter) {
-    logFallback('PASSWORD RESET LINK', resetLink);
-    return;
-  }
+
 
   const html = layout({
     frontendUrl,
@@ -272,12 +275,14 @@ const sendPasswordResetEmail = async (toEmail, token) => {
     footerNote: 'This password reset link is valid for 1 hour. After that, you will need to request a new one.',
   });
 
-  await transporter.sendMail({
-    from: FROM(),
-    to: toEmail,
-    subject: '🔑 Reset your Syllabrix password',
-    html,
-  });
+  if (process.env.RESEND_API_KEY) {
+    await sendViaResend({ to: toEmail, subject: '🔑 Reset your Syllabrix password', html });
+  } else {
+    const transporter = createTransporter();
+    if (!transporter) { logFallback('PASSWORD RESET LINK', resetLink); return; }
+    await transporter.sendMail({ from: FROM(), to: toEmail, subject: '🔑 Reset your Syllabrix password', html });
+  }
+  console.log(`[EMAIL] Password reset sent to ${toEmail}`);
 };
 
 module.exports = { sendVerificationEmail, sendPasswordResetEmail };
