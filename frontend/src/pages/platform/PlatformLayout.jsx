@@ -136,12 +136,23 @@ export default function PlatformLayout() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0F1923', overflow: 'hidden' }}>
         {/* Mobile Top Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: '#0B131C', borderBottom: '1px solid #1E2D3D', flexShrink: 0 }}>
-          <button onClick={() => setDrawerOpen(true)} style={{ background: 'none', border: 'none', color: '#27DCFF', fontSize: 24, cursor: 'pointer', padding: 0, lineHeight: 1 }}>☰</button>
-          <div style={{ background: '#fff', borderRadius: 8, padding: '4px 10px' }}>
-            <img src="/logo.png" alt="Syllabrix" style={{ height: 22, objectFit: 'contain', display: 'block' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: '#0B131C', borderBottom: '1px solid #1E2D3D', flexShrink: 0 }}>
+          <button onClick={() => setDrawerOpen(true)} style={{ background: 'none', border: 'none', color: '#27DCFF', fontSize: 24, cursor: 'pointer', padding: 0, lineHeight: 1, flexShrink: 0 }}>☰</button>
+          <div style={{ background: '#fff', borderRadius: 7, padding: '3px 9px', flexShrink: 0 }}>
+            <img src="/logo.png" alt="Syllabrix" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
           </div>
-          <span style={{ fontSize: 9, color: '#1FB8D6', letterSpacing: '0.14em', fontWeight: 700, textTransform: 'uppercase' }}>Nerve Center</span>
+          <span style={{ fontSize: 9, color: '#1FB8D6', letterSpacing: '0.14em', fontWeight: 700, textTransform: 'uppercase', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>Nerve Center</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#1FB8D6,#27DCFF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#0B131C' }}>
+                {admin?.name?.[0]?.toUpperCase() || 'A'}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#CBD5E1', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin?.name?.split(' ')[0] || 'Admin'}</span>
+            </div>
+            <button onClick={handleLogout} style={{ background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.25)', borderRadius: 6, color: '#F87171', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '4px 10px', whiteSpace: 'nowrap' }}>
+              Sign out
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}
