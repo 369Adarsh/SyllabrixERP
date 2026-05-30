@@ -220,7 +220,10 @@ export default function Register() {
     const e = {};
     if (!form.name.trim()) e.name = 'Your name is required';
     if (!form.email) e.email = 'Email is required';
-    if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
+    if (form.password.length < 8) e.password = 'Minimum 8 characters';
+    else if (!/[A-Z]/.test(form.password)) e.password = 'Must contain at least one uppercase letter (A–Z)';
+    else if (!/[a-z]/.test(form.password)) e.password = 'Must contain at least one lowercase letter (a–z)';
+    else if (!/[0-9]/.test(form.password)) e.password = 'Must contain at least one number (0–9)';
     if (!form.confirmPassword) e.confirmPassword = 'Please confirm your password';
     else if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
     if (!form.phone || form.phone.length < 10) e.phone = 'Valid phone number required';
@@ -238,7 +241,16 @@ export default function Register() {
       await register(form);
       setVerified(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      const data = err.response?.data;
+      // Show specific field errors from backend Zod validation
+      if (data?.errors?.length) {
+        const fieldErrors = {};
+        data.errors.forEach(({ field, message }) => { if (field) fieldErrors[field] = message; });
+        if (Object.keys(fieldErrors).length) { setErrors(fieldErrors); }
+        else toast.error(data.errors[0]?.message || data.message || 'Registration failed');
+      } else {
+        toast.error(data?.message || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -302,7 +314,12 @@ export default function Register() {
               {errors.businessType && <span style={{ fontSize: 12, color: 'var(--vermilion)' }}>{errors.businessType}</span>}
             </div>
             <Input label="Email address" type="email" placeholder="you@business.com" value={form.email} onChange={set('email')} error={errors.email} />
-            <PasswordInput label="Password" placeholder="Minimum 8 characters" value={form.password} onChange={set('password')} error={errors.password} autoComplete="new-password" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <PasswordInput label="Password" placeholder="Min 8 chars, A–Z, a–z, 0–9" value={form.password} onChange={set('password')} error={errors.password} autoComplete="new-password" />
+              {!errors.password && (
+                <span style={{ fontSize: 11, color: '#9CA3AF' }}>Must include uppercase, lowercase and a number</span>
+              )}
+            </div>
             <PasswordInput label="Confirm password" placeholder="Re-enter your password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} autoComplete="new-password" />
             <Button type="submit" fullWidth loading={loading} size="lg">Create my account</Button>
           </form>
