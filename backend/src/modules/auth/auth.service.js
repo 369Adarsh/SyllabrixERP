@@ -281,7 +281,7 @@ const resendVerification = async ({ email }) => {
   if (!user || user.isEmailVerified) return; // silent — don't leak account info
   const token = crypto.randomBytes(32).toString('hex');
   await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: token } });
-  await sendVerificationEmail(email, tenant.name, token);
+  sendVerificationEmail(email, tenant.name, token).catch(err => console.error('[EMAIL] Resend verification failed:', err.message));
 };
 
 const sanitize = ({ password, refreshToken, passwordResetToken, ...rest }) => rest;

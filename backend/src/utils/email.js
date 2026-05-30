@@ -5,12 +5,16 @@ const createTransporter = () => {
   const user = config.smtpUser;
   const pass = config.smtpPass;
   if (!user || !pass) return null;
+  const host = config.smtpHost || 'smtpout.secureserver.net';
+  const port = Number(config.smtpPort) || 587;
+  const secure = port === 465;
   return nodemailer.createTransport({
-    host: config.smtpHost || 'smtpout.secureserver.net',
-    port: Number(config.smtpPort) || 587,
-    secure: false,
+    host,
+    port,
+    secure,
     auth: { user, pass },
     tls: { rejectUnauthorized: false },
+    ...(port === 587 && { requireTLS: true }),
   });
 };
 
