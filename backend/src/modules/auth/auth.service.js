@@ -52,7 +52,7 @@ const register = async ({ name, email, password, phone, businessName, businessTy
   const emailVerifyToken = crypto.randomBytes(32).toString('hex');
 
   const [hashed, [tenantSyllabrixId, userSyllabrixId]] = await Promise.all([
-    bcrypt.hash(password, 14),
+    bcrypt.hash(password, 10),
     nextNSyllabrixIds(2),
   ]);
   const modules = await getModulesForBusinessType(businessType);
@@ -101,6 +101,11 @@ const login = async ({ email, password }) => {
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
+
+  // Transparently upgrade old high-cost hashes to rounds=10 on successful login
+  if (bcrypt.getRounds(user.password) > 10) {
+    bcrypt.hash(password, 10).then(h => prisma.user.update({ where: { id: user.id }, data: { password: h } })).catch(() => {});
+  }
 
   if (!user.isEmailVerified) throw Object.assign(new Error('Please verify your email address before logging in. Check your inbox for the verification link.'), { statusCode: 403, code: 'EMAIL_NOT_VERIFIED' });
 
@@ -224,7 +229,7 @@ const resetPassword = async ({ token, password }) => {
 
   if (!user) throw Object.assign(new Error('Token invalid or expired'), { statusCode: 400 });
 
-  const hashed = await bcrypt.hash(password, 14);
+  const hashed = await bcrypt.hash(password, 10);
   // Invalidate password reset token AND all active sessions on password change
   await prisma.user.update({
     where: { id: user.id },

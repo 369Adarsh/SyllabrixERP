@@ -186,6 +186,7 @@ const sendVerificationEmail = async (toEmail, businessName, token) => {
     subject: '✉️ Verify your Syllabrix account',
     html,
   });
+  console.log(`[EMAIL] Verification sent to ${toEmail}`);
 };
 
 // ── Password Reset Email ───────────────────────────────────────────────────────

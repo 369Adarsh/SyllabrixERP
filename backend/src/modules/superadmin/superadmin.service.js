@@ -797,7 +797,7 @@ const listAdmins = () => prisma.superAdmin.findMany({
 });
 
 const createAdmin = async ({ name, email, password, role }) => {
-  const hashed = await bcrypt.hash(password, 12);
+  const hashed = await bcrypt.hash(password, 10);
   return prisma.superAdmin.create({ data: { name, email, password: hashed, role }, select: { id: true, name: true, email: true, role: true } });
 };
 
@@ -810,7 +810,7 @@ const seedDefaultAdmin = async () => {
   const initEmail = process.env.SA_INIT_EMAIL || 'support@syllabrix.com';
   const exists = await prisma.superAdmin.findUnique({ where: { email: initEmail } });
   if (exists) return;
-  const hashed = await bcrypt.hash(initPassword, 14);
+  const hashed = await bcrypt.hash(initPassword, 10);
   await prisma.superAdmin.create({ data: { name: 'Syllabrix Admin', email: initEmail, password: hashed, role: 'SUPER' } });
   console.log(`✅ Default super admin created: ${initEmail}`);
 };
