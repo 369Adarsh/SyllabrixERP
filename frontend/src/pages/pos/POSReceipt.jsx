@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { X, Printer, MessageCircle } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 const fmtDate = (d) => new Date(d || Date.now()).toLocaleString('en-IN', {
@@ -116,14 +117,40 @@ export default function POSReceipt({ receipt, onClose, onNewSale }) {
     return p;
   };
 
-  const sendViaWA = (phone) => {
-    const text = buildReceiptText();
+  const sendViaWA = useCallback(async (phone) => {
     const normalized = normalizePhone(phone);
+
+    // Try Web Share API with PNG image (works on mobile browsers including Chrome/Safari)
+    if (navigator.canShare && printRef.current) {
+      try {
+        const canvas = await html2canvas(printRef.current, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false,
+        });
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        const file = new File([blob], `receipt-${receipt.receiptNumber || 'bill'}.png`, { type: 'image/png' });
+
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Bill from ${tenant?.name || 'Store'}`,
+          });
+          return;
+        }
+      } catch {
+        // fall through to wa.me link below
+      }
+    }
+
+    // Desktop / unsupported browser fallback — open wa.me with text
+    const text = buildReceiptText();
     const url = normalized
       ? `https://wa.me/${normalized}?text=${encodeURIComponent(text)}`
       : `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
-  };
+  }, [receipt, tenant, printRef]);
 
   const handleWAClick = () => {
     const phone = receipt.customer?.phone;

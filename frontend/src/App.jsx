@@ -72,13 +72,13 @@ import BusinessBuilder from './pages/platform/BusinessBuilder';
 import ApiKeys from './pages/platform/ApiKeys';
 import NerveRoles from './pages/platform/NerveRoles';
 import LandingMedia from './pages/platform/LandingMedia';
-import Landing from './pages/Landing';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/dashboard" replace />;
-  return <Landing />;
+  window.location.replace('/landing.html');
+  return null;
 }
 
 const Placeholder = ({ name }) => (
