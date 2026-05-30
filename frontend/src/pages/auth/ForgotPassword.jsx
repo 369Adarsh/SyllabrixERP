@@ -10,6 +10,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [devLink, setDevLink] = useState('');
   const [error, setError] = useState('');
 
   const submit = async (e) => {
@@ -19,7 +20,8 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email });
+      const res = await api.post('/auth/forgot-password', { email });
+      if (res.data?.data?.devResetLink) setDevLink(res.data.data.devResetLink);
       setSent(true);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Something went wrong. Try again.');
@@ -51,9 +53,15 @@ export default function ForgotPassword() {
               <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.6, margin: '0 0 6px' }}>
                 If <strong>{email}</strong> is registered, we've sent a password reset link.
               </p>
-              <p style={{ color: '#9CA3AF', fontSize: 13, lineHeight: 1.6, margin: '0 0 28px' }}>
+              <p style={{ color: '#9CA3AF', fontSize: 13, lineHeight: 1.6, margin: '0 0 16px' }}>
                 The link expires in 1 hour. Check your spam folder if you don't see it.
               </p>
+              {devLink && (
+                <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 8, padding: '12px 14px', marginBottom: 16, textAlign: 'left' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#92400E' }}>DEV MODE — Email not configured. Use this link:</p>
+                  <a href={devLink} style={{ fontSize: 12, color: '#1D4ED8', wordBreak: 'break-all' }}>{devLink}</a>
+                </div>
+              )}
               <Button
                 fullWidth
                 onClick={() => { setSent(false); setEmail(''); }}

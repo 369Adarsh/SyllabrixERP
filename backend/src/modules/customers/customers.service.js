@@ -1,6 +1,6 @@
 const prisma = require('../../config/prisma');
 
-const list = (tenantId, { search } = {}) => {
+const list = async (tenantId, { search, page, limit = 50 } = {}) => {
   const where = { tenantId };
   if (search) {
     where.OR = [
@@ -9,17 +9,16 @@ const list = (tenantId, { search } = {}) => {
       { email: { contains: search, mode: 'insensitive' } },
     ];
   }
-  return prisma.customer.findMany({
-    where,
-    orderBy: { name: 'asc' },
-    include: {
-      subscriptions: {
-        where: { status: 'ACTIVE' },
-        orderBy: { expiryDate: 'asc' },
-        take: 1,
-      },
-    },
-  });
+  const include = { subscriptions: { where: { status: 'ACTIVE' }, orderBy: { expiryDate: 'asc' }, take: 1 } };
+  if (!page) {
+    return prisma.customer.findMany({ where, orderBy: { name: 'asc' }, include });
+  }
+  const p = Number(page), l = Number(limit);
+  const [customers, total] = await Promise.all([
+    prisma.customer.findMany({ where, orderBy: { name: 'asc' }, skip: (p - 1) * l, take: l, include }),
+    prisma.customer.count({ where }),
+  ]);
+  return { customers, total, page: p, limit: l, totalPages: Math.ceil(total / l) };
 };
 
 const getProfile = async (tenantId, id) => {
@@ -58,15 +57,30 @@ const getProfile = async (tenantId, id) => {
   return { ...customer, messages };
 };
 
-const create = (tenantId, data) => {
-  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags'];
+const generateGymMembershipId = async (tenantId) => {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
+  const prefix = (tenant?.name || 'GYM').replace(/[^A-Z]/g, '').slice(0, 3) || 'MBR';
+  const last = await prisma.customer.findFirst({
+    where: { tenantId, gymMembershipId: { not: null } },
+    orderBy: { createdAt: 'desc' },
+    select: { gymMembershipId: true },
+  });
+  const lastNum = last?.gymMembershipId ? parseInt(last.gymMembershipId.replace(/\D/g, '')) || 0 : 0;
+  return `${prefix}${String(lastNum + 1).padStart(4, '0')}`;
+};
+
+const create = async (tenantId, data) => {
+  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'personalTrainerId'];
   const payload = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)));
   if (payload.birthday) payload.birthday = new Date(payload.birthday);
+  if (data.isGymMember) {
+    payload.gymMembershipId = await generateGymMembershipId(tenantId);
+  }
   return prisma.customer.create({ data: { ...payload, tenantId } });
 };
 
 const update = (tenantId, id, data) => {
-  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'creditLimit'];
+  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'creditLimit', 'personalTrainerId', 'gymMembershipId'];
   const payload = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)));
   if (payload.birthday) payload.birthday = new Date(payload.birthday);
   return prisma.customer.update({ where: { id, tenantId }, data: payload });

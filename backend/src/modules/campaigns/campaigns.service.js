@@ -125,4 +125,17 @@ const send = async (tenantId, campaignId) => {
   return { ...updated, sent, failed, total: customers.length };
 };
 
-module.exports = { list, create, remove, previewSegment, send };
+const personalizeMessage = (msg, customer, businessName) =>
+  msg
+    .replace(/\{\{name\}\}/g, customer.name || '')
+    .replace(/\{\{businessName\}\}/g, businessName || '')
+    .replace(/\{\{expiryDate\}\}/g, customer.subscriptions?.[0]?.expiryDate
+      ? new Date(customer.subscriptions[0].expiryDate).toLocaleDateString('en-IN') : '');
+
+const markSent = (tenantId, id, { sent, failed }) =>
+  prisma.whatsAppCampaign.update({
+    where: { id, tenantId },
+    data: { status: 'SENT', sentCount: sent, failedCount: failed, sentAt: new Date() },
+  });
+
+module.exports = { list, create, remove, previewSegment, send, resolveSegment, personalizeMessage, markSent };

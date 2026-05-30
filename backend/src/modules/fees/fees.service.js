@@ -51,9 +51,13 @@ const createFee = async (tenantId, data) => {
 const collectFee = async (tenantId, feeId, { amount, method, notes }) => {
   const fee = await prisma.feeRecord.findUnique({ where: { id: feeId, tenantId } });
   if (!fee) throw Object.assign(new Error('Fee record not found'), { statusCode: 404 });
+  if (fee.status === 'PAID' || fee.status === 'WAIVED') throw Object.assign(new Error(`Fee is already ${fee.status.toLowerCase()}`), { statusCode: 400 });
 
-  const receiptNumber = await generateFeeReceiptNumber(tenantId);
-  const newPaid = fee.paidAmount + amount;
+  const outstanding = fee.netAmount - fee.paidAmount;
+  if (Number(amount) > outstanding) throw Object.assign(new Error(`Amount ₹${amount} exceeds outstanding balance of ₹${outstanding.toFixed(2)}`), { statusCode: 400 });
+
+  const receiptNumber = await generateFeeReceiptNumber();
+  const newPaid = fee.paidAmount + Number(amount);
   const status = newPaid >= fee.netAmount ? 'PAID' : 'PARTIAL';
 
   return prisma.feeRecord.update({
@@ -65,6 +69,20 @@ const collectFee = async (tenantId, feeId, { amount, method, notes }) => {
       paidAt: new Date(),
       receiptNumber,
       notes,
+    },
+  });
+};
+
+const updateFee = async (tenantId, feeId, data) => {
+  const netAmount = data.amount - (data.discount || 0);
+  return prisma.feeRecord.update({
+    where: { id: feeId, tenantId },
+    data: {
+      description: data.description,
+      amount: data.amount,
+      discount: data.discount || 0,
+      netAmount,
+      dueDate: new Date(data.dueDate),
     },
   });
 };
@@ -81,5 +99,5 @@ const getOverdueFees = (tenantId) =>
 
 module.exports = {
   listStudents, getStudent, createStudent, updateStudent,
-  listFees, createFee, collectFee, waiveFee, getOverdueFees,
+  listFees, createFee, updateFee, collectFee, waiveFee, getOverdueFees,
 };

@@ -1,30 +1,28 @@
 const svc = require('./reports.service');
 const { ok } = require('../../utils/response');
 
-const dashboard = async (req, res, next) => {
-  try { ok(res, await svc.dashboard(req.tenantId)); } catch (e) { next(e); }
+const h = (fn) => async (req, res, next) => {
+  try {
+    const params = { ...req.query };
+    if (req.user?.role === 'MANAGER' && req.user.branchId) params.branchId = req.user.branchId;
+    ok(res, await fn(req.tenantId, params));
+  } catch (e) { next(e); }
 };
-const salesReport = async (req, res, next) => {
-  try { ok(res, await svc.salesReport(req.tenantId, req.query)); } catch (e) { next(e); }
-};
-const invoiceReport = async (req, res, next) => {
-  try { ok(res, await svc.invoiceReport(req.tenantId, req.query)); } catch (e) { next(e); }
-};
-const topProducts = async (req, res, next) => {
-  try { ok(res, await svc.topProducts(req.tenantId, req.query)); } catch (e) { next(e); }
-};
-const topCustomers = async (req, res, next) => {
-  try { ok(res, await svc.topCustomers(req.tenantId, req.query)); } catch (e) { next(e); }
-};
+const hNoQuery = h; // unified — always pass query params (branchId support)
 
-const profitLoss = async (req, res, next) => {
-  try { ok(res, await svc.profitLoss(req.tenantId, req.query)); } catch (e) { next(e); }
+module.exports = {
+  dashboard:      h(svc.dashboard),
+  salesReport:    h(svc.salesReport),
+  invoiceReport:  h(svc.invoiceReport),
+  topProducts:    h(svc.topProducts),
+  topCustomers:   h(svc.topCustomers),
+  profitLoss:     h(svc.profitLoss),
+  balanceSheet:   hNoQuery(svc.balanceSheet),
+  cashFlow:       h(svc.cashFlow),
+  gstr1:          h(svc.gstr1),
+  gstr3b:         h(svc.gstr3b),
+  tdsReport:      h(svc.tdsReport),
+  cashBook:       h(svc.cashBook),
+  creditorAging:  hNoQuery(svc.creditorAging),
+  demandTrends:   h(svc.demandTrends),
 };
-const cashFlow = async (req, res, next) => {
-  try { ok(res, await svc.cashFlow(req.tenantId, req.query)); } catch (e) { next(e); }
-};
-const gstr1 = async (req, res, next) => {
-  try { ok(res, await svc.gstr1(req.tenantId, req.query)); } catch (e) { next(e); }
-};
-
-module.exports = { dashboard, salesReport, invoiceReport, topProducts, topCustomers, profitLoss, cashFlow, gstr1 };

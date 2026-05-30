@@ -36,6 +36,65 @@ function InsightCard({ type, message, action }) {
   );
 }
 
+function renderInline(text, keyBase) {
+  const parts = [];
+  let remaining = text;
+  let k = 0;
+  while (remaining.length > 0) {
+    const bold   = remaining.match(/\*\*(.+?)\*\*/);
+    const italic = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
+    const code   = remaining.match(/`([^`]+)`/);
+    const candidates = [bold, italic, code].filter(Boolean);
+    if (!candidates.length) { parts.push(<span key={`${keyBase}-t${k++}`}>{remaining}</span>); break; }
+    const first = candidates.reduce((a, b) => a.index <= b.index ? a : b);
+    if (first.index > 0) parts.push(<span key={`${keyBase}-t${k++}`}>{remaining.slice(0, first.index)}</span>);
+    if (first === bold)   parts.push(<strong key={`${keyBase}-b${k++}`}>{first[1]}</strong>);
+    else if (first === code) parts.push(<code key={`${keyBase}-c${k++}`} style={{ background: '#F3F4F6', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace', fontSize: 13 }}>{first[1]}</code>);
+    else parts.push(<em key={`${keyBase}-i${k++}`}>{first[1]}</em>);
+    remaining = remaining.slice(first.index + first[0].length);
+  }
+  return parts;
+}
+
+function MarkdownMessage({ content }) {
+  const blocks = content.split(/\n\n+/);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {blocks.map((block, bi) => {
+        const lines = block.split('\n').filter(l => l.trim());
+        if (!lines.length) return null;
+
+        if (/^#{1,3} /.test(lines[0])) {
+          const level = lines[0].match(/^(#{1,3}) /)[1].length;
+          const text = lines[0].replace(/^#{1,3} /, '');
+          const sz = [17, 15, 14][level - 1];
+          return <div key={bi} style={{ fontWeight: 700, fontSize: sz, color: 'var(--navy)', marginTop: 4 }}>{renderInline(text, `h${bi}`)}</div>;
+        }
+
+        const isBullet = lines.every(l => /^[-*•]\s/.test(l));
+        const isNumbered = lines.every(l => /^\d+\.\s/.test(l));
+
+        if (isBullet) {
+          return (
+            <ul key={bi} style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {lines.map((l, li) => <li key={li} style={{ fontSize: 14, lineHeight: 1.55 }}>{renderInline(l.replace(/^[-*•]\s+/, ''), `ul${bi}-${li}`)}</li>)}
+            </ul>
+          );
+        }
+        if (isNumbered) {
+          return (
+            <ol key={bi} style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {lines.map((l, li) => <li key={li} style={{ fontSize: 14, lineHeight: 1.55 }}>{renderInline(l.replace(/^\d+\.\s+/, ''), `ol${bi}-${li}`)}</li>)}
+            </ol>
+          );
+        }
+
+        return <p key={bi} style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>{renderInline(lines.join(' '), `p${bi}`)}</p>;
+      })}
+    </div>
+  );
+}
+
 function ChatBubble({ msg }) {
   const isUser = msg.role === 'user';
   return (
@@ -54,10 +113,9 @@ function ChatBubble({ msg }) {
         fontSize: 14,
         lineHeight: 1.6,
         border: isUser ? 'none' : '1px solid var(--border)',
-        whiteSpace: 'pre-wrap',
         boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
       }}>
-        {msg.content}
+        {isUser ? msg.content : <MarkdownMessage content={msg.content} />}
       </div>
     </div>
   );
@@ -109,7 +167,11 @@ export default function AICopilot() {
       const reply = r.data.data?.reply || r.data.reply || 'No response';
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'AI is unavailable. Make sure ANTHROPIC_API_KEY is set in the backend .env.';
+      const raw = err.response?.data?.message || '';
+      const isQuota = raw.toLowerCase().includes('quota') || raw.toLowerCase().includes('429');
+      const errMsg = isQuota
+        ? 'Free AI quota exhausted for today. Add ANTHROPIC_API_KEY to backend .env for unlimited access, or try again tomorrow.'
+        : raw || 'AI is unavailable right now. Check that GEMINI_API_KEY or ANTHROPIC_API_KEY is set in the backend .env.';
       setMessages(prev => [...prev, { role: 'assistant', content: errMsg }]);
     } finally {
       setLoading(false);

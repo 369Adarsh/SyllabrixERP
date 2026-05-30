@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { P } from '../../styles/page';
 import { getBills, createBill, payBill, cancelBill, getBillsSummary, getVendors } from '../../api';
 import { Plus, FileText, Search, X, AlertCircle, Clock, CheckCircle, Truck } from 'lucide-react';
 import Card from '../../components/ui/Card';
@@ -124,6 +126,7 @@ function PayModal({ bill, onClose, onDone }) {
 }
 
 export default function Bills() {
+  const { isMobile } = useBreakpoint();
   const [bills, setBills] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -147,17 +150,17 @@ export default function Bills() {
   const filtered = bills.filter(b => !search || b.vendor?.name?.toLowerCase().includes(search.toLowerCase()) || b.billNumber?.includes(search));
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1100, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Vendor Bills</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>Accounts payable — money you owe vendors</p>
+          <h1 style={P.h1(isMobile)}>Vendor Bills</h1>
+          <p style={P.sub}>Accounts payable — money you owe vendors</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} style={{ marginRight: 6 }} />New Bill</Button>
       </div>
 
       {summary && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>
           {[
             { label: 'Pending', value: fmt(summary.pendingAmount), sub: `${summary.pendingCount} bills`, icon: Clock, color: '#D97706' },
             { label: 'Overdue', value: fmt(summary.overdueAmount), sub: `${summary.overdueCount} bills`, icon: AlertCircle, color: '#DC2626' },
@@ -179,42 +182,43 @@ export default function Bills() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+      <div style={{ ...P.bar, marginBottom: 20 }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bills..."
-            style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: '#fff', boxSizing: 'border-box' }} />
+            style={{ ...P.searchInput }} />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '9px 14px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...P.input, width: 'auto' }}>
           <option value="">All</option>
           {Object.keys(STATUS).map(s => <option key={s} value={s}>{STATUS[s].label}</option>)}
         </select>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#F9FAFB', borderBottom: '1px solid var(--border)' }}>
+      <div style={P.tableWrap}>
+        <div style={P.tableScroll}>
+        <table style={P.table}>
+          <thead style={P.thead}>
+            <tr>
               {['Bill #', 'Vendor', 'Date', 'Due Date', 'Total', 'Balance', 'Status', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                <th key={h} style={P.th()}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>Loading...</td></tr>
-            : filtered.length === 0 ? <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}><FileText size={32} style={{ display: 'block', margin: '0 auto 8px', opacity: 0.4 }} />No bills yet</td></tr>
-            : filtered.map(bill => {
+            {loading ? <tr><td colSpan={8} style={P.empty}>Loading...</td></tr>
+            : filtered.length === 0 ? <tr><td colSpan={8} style={P.empty}><FileText size={32} style={{ display: 'block', margin: '0 auto 8px', opacity: 0.4 }} />No bills yet</td></tr>
+            : filtered.map((bill, i) => {
               const st = STATUS[bill.status] || STATUS.PENDING;
               return (
-                <tr key={bill.id} style={{ borderBottom: '1px solid var(--border)' }} onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = ''}>
-                  <td style={{ padding: '14px 16px', fontWeight: 600, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{bill.billNumber}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 14 }}>{bill.vendor?.name || <span style={{ color: '#9CA3AF' }}>—</span>}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(bill.createdAt)}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 13, color: bill.status === 'OVERDUE' ? '#DC2626' : '#6B7280' }}>{fmtDate(bill.dueDate)}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600 }}>{fmt(bill.total)}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: bill.balanceDue > 0 ? '#DC2626' : '#16A34A' }}>{fmt(bill.balanceDue)}</td>
-                  <td style={{ padding: '14px 16px' }}><span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{st.label}</span></td>
-                  <td style={{ padding: '14px 16px' }}>
+                <tr key={bill.id} style={{ ...P.tr(i, filtered.length), cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                  <td style={{ ...P.td(), fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{bill.billNumber}</td>
+                  <td style={P.td()}>{bill.vendor?.name || <span style={{ color: '#9CA3AF' }}>—</span>}</td>
+                  <td style={{ ...P.td(), color: '#6B7280' }}>{fmtDate(bill.createdAt)}</td>
+                  <td style={{ ...P.td(), color: bill.status === 'OVERDUE' ? '#DC2626' : '#6B7280' }}>{fmtDate(bill.dueDate)}</td>
+                  <td style={{ ...P.td(), fontWeight: 600 }}>{fmt(bill.total)}</td>
+                  <td style={{ ...P.td(), fontWeight: 600, color: bill.balanceDue > 0 ? '#DC2626' : '#16A34A' }}>{fmt(bill.balanceDue)}</td>
+                  <td style={P.td()}><span style={{ background: st.bg, color: st.color, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{st.label}</span></td>
+                  <td style={P.td()}>
                     {!['PAID', 'CANCELLED'].includes(bill.status) && (
                       <button onClick={() => setPayBillItem(bill)} style={{ fontSize: 13, color: 'var(--emerald)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Pay</button>
                     )}
@@ -224,6 +228,7 @@ export default function Bills() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showCreate && <CreateBillModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
@@ -231,3 +236,4 @@ export default function Bills() {
     </div>
   );
 }
+

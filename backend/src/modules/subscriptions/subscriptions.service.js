@@ -1,4 +1,5 @@
 const prisma = require('../../config/prisma');
+const { generateInvoiceNumber } = require('../../utils/generateNumber');
 
 const list = (tenantId, customerId) =>
   prisma.customerSubscription.findMany({
@@ -6,20 +7,76 @@ const list = (tenantId, customerId) =>
     orderBy: { expiryDate: 'desc' },
   });
 
-const create = (tenantId, customerId, data) => {
-  const { planName, startDate, expiryDate, amount, autoRenew, notes } = data;
-  return prisma.customerSubscription.create({
-    data: {
-      tenantId,
-      customerId,
-      planName,
-      startDate: new Date(startDate),
-      expiryDate: new Date(expiryDate),
-      amount: parseFloat(amount),
-      autoRenew: autoRenew !== false,
-      notes,
-    },
-  });
+const VALID_METHODS = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CHEQUE'];
+
+const create = async (tenantId, customerId, data) => {
+  const { planName, startDate, expiryDate, amount, autoRenew, notes, paymentMethod } = data;
+  const price = parseFloat(amount) || 0;
+  const isPaid = paymentMethod && VALID_METHODS.includes(paymentMethod.toUpperCase());
+  const method = isPaid ? paymentMethod.toUpperCase() : null;
+
+  const [subscription, invoiceNumber] = await Promise.all([
+    prisma.customerSubscription.create({
+      data: {
+        tenantId,
+        customerId,
+        planName,
+        startDate: new Date(startDate),
+        expiryDate: new Date(expiryDate),
+        amount: price,
+        autoRenew: autoRenew !== false,
+        notes,
+      },
+    }),
+    generateInvoiceNumber(),
+  ]);
+
+  if (price > 0) {
+    const start = new Date(startDate);
+    const expiry = new Date(expiryDate);
+    const periodLabel = `${start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} – ${expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        tenantId,
+        customerId,
+        invoiceNumber,
+        status: isPaid ? 'PAID' : 'DRAFT',
+        subtotal: price,
+        taxAmount: 0,
+        discountAmount: 0,
+        total: price,
+        amountPaid: isPaid ? price : 0,
+        balanceDue: isPaid ? 0 : price,
+        notes: `Membership: ${planName} · ${periodLabel}`,
+        items: {
+          create: [{
+            description: `${planName} Membership (${periodLabel})`,
+            quantity: 1,
+            unitPrice: price,
+            discount: 0,
+            taxRate: 0,
+            taxAmount: 0,
+            total: price,
+          }],
+        },
+      },
+    });
+
+    // Record payment immediately when collected at desk
+    if (isPaid) {
+      await prisma.payment.create({
+        data: {
+          invoiceId: invoice.id,
+          amount: price,
+          method,
+          notes: `Collected at registration — ${planName}`,
+        },
+      });
+    }
+  }
+
+  return subscription;
 };
 
 const updateStatus = (tenantId, id, status) =>

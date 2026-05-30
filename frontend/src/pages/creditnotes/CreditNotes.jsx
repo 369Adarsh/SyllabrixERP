@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { P } from '../../styles/page';
 import { getCreditNotes, createCreditNote, updateCreditNoteStatus, getCustomers, getInvoices } from '../../api';
 import { Plus, FileX, X, ChevronDown, ChevronUp } from 'lucide-react';
 import Card from '../../components/ui/Card';
@@ -10,7 +12,7 @@ import toast from 'react-hot-toast';
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const STATUS_COLOR = { DRAFT: 'secondary', APPROVED: 'success', APPLIED: 'info', VOID: 'error' };
+const STATUS_COLOR = { DRAFT: 'secondary', ISSUED: 'warning', APPROVED: 'success', APPLIED: 'info', VOID: 'error' };
 
 function CreateCreditNoteModal({ onClose, onCreated }) {
   const [customers, setCustomers] = useState([]);
@@ -134,12 +136,12 @@ function CNRow({ cn, onRefresh }) {
         <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: 13, color: 'var(--navy)' }}>{cn.creditNoteNumber || `CN-${cn.id.slice(-6).toUpperCase()}`}</td>
         <td style={{ padding: '12px 16px', fontSize: 13 }}>{cn.customer?.name || '—'}</td>
         <td style={{ padding: '12px 16px', fontSize: 13, color: '#6B7280' }}>{cn.reason}</td>
-        <td style={{ padding: '12px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(cn.date)}</td>
+        <td style={{ padding: '12px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(cn.issueDate || cn.createdAt)}</td>
         <td style={{ padding: '12px 16px', fontWeight: 700, fontSize: 13 }}>{fmt(cn.total)}</td>
         <td style={{ padding: '12px 16px' }}><Badge variant={STATUS_COLOR[cn.status]}>{cn.status}</Badge></td>
         <td style={{ padding: '12px 16px' }}>
           <div style={{ display: 'flex', gap: 6 }}>
-            {cn.status === 'DRAFT' && <button onClick={(e) => { e.stopPropagation(); approve(); }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--emerald)', color: 'var(--emerald)', background: 'none', cursor: 'pointer', fontWeight: 600 }}>Approve</button>}
+            {(cn.status === 'DRAFT' || cn.status === 'ISSUED') && <button onClick={(e) => { e.stopPropagation(); approve(); }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--emerald)', color: 'var(--emerald)', background: 'none', cursor: 'pointer', fontWeight: 600 }}>Approve</button>}
             {cn.status !== 'VOID' && cn.status !== 'APPLIED' && <button onClick={(e) => { e.stopPropagation(); voidNote(); }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--vermilion)', color: 'var(--vermilion)', background: 'none', cursor: 'pointer', fontWeight: 600 }}>Void</button>}
             {expanded ? <ChevronUp size={14} color="#9CA3AF" /> : <ChevronDown size={14} color="#9CA3AF" />}
           </div>
@@ -152,7 +154,7 @@ function CNRow({ cn, onRefresh }) {
               <thead><tr style={{ color: '#6B7280' }}><th style={{ textAlign: 'left', paddingBottom: 4 }}>Description</th><th style={{ textAlign: 'right', paddingBottom: 4 }}>Qty</th><th style={{ textAlign: 'right', paddingBottom: 4 }}>Unit Price</th><th style={{ textAlign: 'right', paddingBottom: 4 }}>Tax</th><th style={{ textAlign: 'right', paddingBottom: 4 }}>Amount</th></tr></thead>
               <tbody>
                 {cn.items.map((it, i) => (
-                  <tr key={i}><td style={{ paddingBottom: 2 }}>{it.description}</td><td style={{ textAlign: 'right' }}>{it.quantity}</td><td style={{ textAlign: 'right' }}>{fmt(it.unitPrice)}</td><td style={{ textAlign: 'right' }}>{it.taxRate}%</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(it.amount)}</td></tr>
+                  <tr key={i}><td style={{ paddingBottom: 2 }}>{it.description}</td><td style={{ textAlign: 'right' }}>{it.quantity}</td><td style={{ textAlign: 'right' }}>{fmt(it.unitPrice)}</td><td style={{ textAlign: 'right' }}>{it.taxRate}%</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(it.total)}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -164,6 +166,7 @@ function CNRow({ cn, onRefresh }) {
 }
 
 export default function CreditNotes() {
+  const { isMobile } = useBreakpoint();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -184,18 +187,18 @@ export default function CreditNotes() {
   const totalApplied = notes.filter(n => n.status === 'APPLIED').reduce((s, n) => s + Number(n.total || 0), 0);
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1100, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Credit Notes</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>Manage refunds and adjustments for your customers</p>
+          <h1 style={P.h1(isMobile)}>Credit Notes</h1>
+          <p style={P.sub}>Manage refunds and adjustments for your customers</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} style={{ marginRight: 6 }} />New Credit Note</Button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 16 }}>
         {[
-          { label: 'Pending Approval', value: notes.filter(n => n.status === 'DRAFT').length, sub: `${notes.filter(n => n.status === 'DRAFT').length} notes`, color: '#F59E0B' },
+          { label: 'Pending Approval', value: notes.filter(n => n.status === 'DRAFT' || n.status === 'ISSUED').length, sub: `${notes.filter(n => n.status === 'DRAFT' || n.status === 'ISSUED').length} notes`, color: '#F59E0B' },
           { label: 'Approved (Unused)', value: fmt(totalApproved), sub: `${notes.filter(n => n.status === 'APPROVED').length} notes`, color: 'var(--navy)' },
           { label: 'Applied to Invoices', value: fmt(totalApplied), sub: `${notes.filter(n => n.status === 'APPLIED').length} notes`, color: 'var(--emerald)' },
         ].map(({ label, value, sub, color }) => (
@@ -208,32 +211,64 @@ export default function CreditNotes() {
       </div>
 
       <Card style={{ padding: 0 }}>
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-          {['ALL', 'DRAFT', 'APPROVED', 'APPLIED', 'VOID'].map(s => (
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['ALL', 'DRAFT', 'ISSUED', 'APPROVED', 'APPLIED', 'VOID'].map(s => (
             <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: filter === s ? 'var(--navy)' : '#F3F4F6', color: filter === s ? '#fff' : '#6B7280' }}>{s}</button>
           ))}
         </div>
         {loading ? (
           <p style={{ color: '#9CA3AF', textAlign: 'center', padding: 48 }}>Loading…</p>
+        ) : isMobile ? (
+          <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {notes.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 48, color: '#9CA3AF' }}>
+                <FileX size={36} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
+                No credit notes found
+              </div>
+            )}
+            {notes.map(cn => (
+              <div key={cn.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>{cn.creditNoteNumber || `CN-${cn.id.slice(-6).toUpperCase()}`}</div>
+                  <Badge variant={STATUS_COLOR[cn.status]}>{cn.status}</Badge>
+                </div>
+                <div style={{ fontSize: 13, color: '#374151', marginBottom: 4 }}>{cn.customer?.name || 'No customer'}</div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>{cn.reason} · {fmtDate(cn.issueDate || cn.createdAt)}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>{fmt(cn.total)}</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(cn.status === 'DRAFT' || cn.status === 'ISSUED') && (
+                      <button onClick={() => { updateCreditNoteStatus(cn.id, 'APPROVED').then(() => { toast.success('Approved'); load(); }).catch(() => toast.error('Failed')); }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--emerald)', color: 'var(--emerald)', background: 'none', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
+                    )}
+                    {cn.status !== 'VOID' && cn.status !== 'APPLIED' && (
+                      <button onClick={() => { updateCreditNoteStatus(cn.id, 'VOID').then(() => { toast.success('Voided'); load(); }).catch(() => toast.error('Failed')); }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--vermilion)', color: 'var(--vermilion)', background: 'none', cursor: 'pointer', fontWeight: 600 }}>Void</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#F9FAFB' }}>
+          <div style={P.tableScroll}>
+          <table style={P.table}>
+            <thead style={P.thead}>
+              <tr>
                 {['Credit Note #', 'Customer', 'Reason', 'Date', 'Amount', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                  <th key={h} style={P.th()}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {notes.map(cn => <CNRow key={cn.id} cn={cn} onRefresh={load} />)}
               {notes.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 48, color: '#9CA3AF' }}>
+                <tr><td colSpan={7} style={P.empty}>
                   <FileX size={36} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
                   No credit notes found
                 </td></tr>
               )}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
 
@@ -241,3 +276,4 @@ export default function CreditNotes() {
     </div>
   );
 }
+

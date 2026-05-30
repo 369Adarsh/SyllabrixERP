@@ -1,9 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getStudents, createStudent, getFees, createFee, collectFee, getOverdueFees, sendWAFeeReminder, bulkWAFeeReminders } from '../../api';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { getStudents, createStudent, getFees, createFee, collectFee, getOverdueFees, bulkWAFeeReminders } from '../../api';
+import KpiBar from '../../components/ui/KpiBar';
+import { P } from '../../styles/page';
 import { Plus, GraduationCap, Search, X, AlertTriangle, IndianRupee, CheckCircle, MessageCircle } from 'lucide-react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+
+const EDUCATION_TYPES = ['COACHING', 'HOME_TUITION', 'MUSIC_SCHOOL', 'DANCE_ACADEMY', 'DRIVING_SCHOOL', 'COMPUTER_TRAINING'];
 
 const STATUS_STYLES = {
   PENDING:  { bg: '#FFFBEB', color: '#D97706', label: 'Pending' },
@@ -21,10 +27,11 @@ function Badge({ status }) {
   return <span style={{ background: s.bg, color: s.color, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{s.label}</span>;
 }
 
-function AddStudentModal({ onClose, onAdded }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', course: '', batchTime: '' });
+function AddStudentModal({ onClose, onAdded, label = 'Member' }) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', course: '', batch: '' });
   const [loading, setLoading] = useState(false);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const isStudent = label === 'Student';
 
   const submit = async (e) => {
     e.preventDefault();
@@ -32,7 +39,7 @@ function AddStudentModal({ onClose, onAdded }) {
     setLoading(true);
     try {
       await createStudent(form);
-      toast.success('Member added');
+      toast.success(`${label} added`);
       onAdded();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed');
@@ -45,20 +52,20 @@ function AddStudentModal({ onClose, onAdded }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480, padding: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--navy)' }}>Add Member</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--navy)' }}>Add {label}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}><X size={20} /></button>
         </div>
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input label="Full name *" placeholder="Vikas Yadav" value={form.name} onChange={set('name')} />
+          <Input label="Full name *" placeholder={isStudent ? 'Ananya Sharma' : 'Vikas Yadav'} value={form.name} onChange={set('name')} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Input label="Phone" type="tel" placeholder="9876543210" value={form.phone} onChange={set('phone')} />
-            <Input label="Email" type="email" placeholder="vikas@email.com" value={form.email} onChange={set('email')} />
+            <Input label="Email" type="email" placeholder="email@example.com" value={form.email} onChange={set('email')} />
           </div>
-          <Input label="Plan / Course" placeholder="e.g. Monthly Membership, Weight Loss" value={form.course} onChange={set('course')} />
-          <Input label="Batch / Slot" placeholder="e.g. Morning 6AM, Evening 6PM" value={form.batchTime} onChange={set('batchTime')} />
+          <Input label={isStudent ? 'Class / Course' : 'Plan / Course'} placeholder={isStudent ? 'e.g. Class 10 — Maths, Science' : 'e.g. Monthly Membership'} value={form.course} onChange={set('course')} />
+          <Input label="Batch / Slot" placeholder={isStudent ? 'e.g. Morning 7AM, Mon–Wed–Fri' : 'e.g. Morning 6AM, Evening 6PM'} value={form.batch} onChange={set('batch')} />
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 4 }}>
             <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button type="submit" loading={loading}>Add member</Button>
+            <Button type="submit" loading={loading}>Add {label.toLowerCase()}</Button>
           </div>
         </form>
       </div>
@@ -66,14 +73,14 @@ function AddStudentModal({ onClose, onAdded }) {
   );
 }
 
-function CreateFeeModal({ students, onClose, onCreated }) {
+function CreateFeeModal({ students, onClose, onCreated, label = 'Member' }) {
   const [form, setForm] = useState({ studentId: '', description: '', amount: '', dueDate: '', period: '' });
   const [loading, setLoading] = useState(false);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.studentId || !form.amount || !form.dueDate) return toast.error('Member, amount and due date are required');
+    if (!form.studentId || !form.amount || !form.dueDate) return toast.error(`${label}, amount and due date are required`);
     setLoading(true);
     try {
       await createFee({ studentId: form.studentId, description: form.description, amount: Number(form.amount), dueDate: form.dueDate, period: form.period });
@@ -95,9 +102,9 @@ function CreateFeeModal({ students, onClose, onCreated }) {
         </div>
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Member *</label>
+            <label style={{ fontSize: 13, fontWeight: 600 }}>{label} *</label>
             <select value={form.studentId} onChange={set('studentId')} style={{ padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: '#fff' }}>
-              <option value="">Select member</option>
+              <option value="">Select {label.toLowerCase()}</option>
               {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
@@ -118,10 +125,12 @@ function CreateFeeModal({ students, onClose, onCreated }) {
 }
 
 function CollectModal({ fee, onClose, onCollected }) {
+  const { tenant } = useAuth();
   const balance = (fee.netAmount || fee.amount || 0) - (fee.paidAmount || 0);
   const [amount, setAmount] = useState(String(balance || fee.amount || ''));
   const [method, setMethod] = useState('CASH');
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(null);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -129,14 +138,49 @@ function CollectModal({ fee, onClose, onCollected }) {
     setLoading(true);
     try {
       await collectFee(fee.id, { amount: Number(amount), method });
-      toast.success('Payment collected!');
-      onCollected();
+      setDone({ amount: Number(amount), method });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed');
     } finally {
       setLoading(false);
     }
   };
+
+  if (done) {
+    const phone = fee.student?.phone;
+    const name = fee.student?.name || 'Student';
+    const businessName = tenant?.name || 'us';
+    const msg = `Hi ${name}, your payment of ₹${done.amount.toLocaleString('en-IN')} via ${done.method} for *${fee.description || 'fee'}* has been received. Thank you! — ${businessName}`;
+    const waUrl = phone
+      ? `https://wa.me/91${phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(msg)}`
+      : null;
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 380, padding: 32, textAlign: 'center' }}>
+          <div style={{ width: 56, height: 56, background: '#F0FDF4', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <CheckCircle size={28} color="#16A34A" />
+          </div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--navy)', marginBottom: 6 }}>Payment Collected!</h3>
+          <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 20 }}>
+            ₹{done.amount.toLocaleString('en-IN')} via {done.method} from {name}
+          </p>
+          {waUrl && (
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onCollected}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#25D366', color: '#fff', padding: '11px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 14, marginBottom: 10 }}
+            >
+              <MessageCircle size={16} />
+              Send Receipt on WhatsApp
+            </a>
+          )}
+          <Button variant="ghost" onClick={onCollected} style={{ width: '100%' }}>Done</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -167,6 +211,19 @@ function CollectModal({ fee, onClose, onCollected }) {
 }
 
 export default function Fees() {
+  const { tenant } = useAuth();
+  const { isMobile } = useBreakpoint();
+  const isEducation = EDUCATION_TYPES.includes(tenant?.businessType);
+  const L = {
+    member: isEducation ? 'Student' : 'Member',
+    members: isEducation ? 'Students' : 'Members',
+    addMember: isEducation ? 'Add Student' : 'Add Member',
+    totalMembers: isEducation ? 'Total Students' : 'Total Members',
+    membersTab: isEducation ? 'Students' : 'Members',
+    noMembers: isEducation ? 'No students yet' : 'No members yet',
+    addFirst: isEducation ? 'Click "+ Add Student" to enrol your first student' : 'Add your first member to get started',
+  };
+
   const [tab, setTab] = useState('fees'); // 'fees' | 'members'
   const [fees, setFees] = useState([]);
   const [students, setStudents] = useState([]);
@@ -200,41 +257,28 @@ export default function Fees() {
   const totalPending = fees.filter(f => ['PENDING', 'PARTIAL'].includes(f.status)).reduce((s, f) => s + ((f.amount || 0) - (f.paidAmount || 0)), 0);
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1100, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Fees</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>{students.length} members, {fees.length} fee records</p>
+          <h1 style={P.h1(isMobile)}>Fees</h1>
+          <p style={P.sub}>{students.length} {L.members.toLowerCase()}, {fees.length} fee records</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Button variant="ghost" onClick={() => setModal('student')}><Plus size={15} style={{ marginRight: 5 }} />Add Member</Button>
-          <Button onClick={() => setModal('fee')}><Plus size={15} style={{ marginRight: 5 }} />Create Fee</Button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button variant="ghost" onClick={() => setModal('student')}><Plus size={15} style={{ marginRight: 4 }} />{isMobile ? L.member : L.addMember}</Button>
+          <Button onClick={() => setModal('fee')}><Plus size={15} style={{ marginRight: 4 }} />{isMobile ? 'Fee' : 'Create Fee'}</Button>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        {[
-          { label: 'Total Members', value: students.length, color: 'var(--cyan)', icon: GraduationCap },
-          { label: 'Collected', value: fmt(totalCollected), color: '#16A34A', icon: CheckCircle },
-          { label: 'Pending', value: fmt(totalPending), color: '#D97706', icon: IndianRupee },
-          { label: 'Overdue', value: overdue.length, color: '#DC2626', icon: AlertTriangle },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} style={{ background: '#fff', borderRadius: 12, padding: '18px 20px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 42, height: 42, background: color + '18', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon size={18} color={color} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--navy)', letterSpacing: '-0.02em' }}>{value}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <KpiBar stats={[
+        { label: L.totalMembers, value: students.length, color: 'var(--cyan)', icon: GraduationCap },
+        { label: 'Collected', value: fmt(totalCollected), color: '#16A34A', icon: CheckCircle },
+        { label: 'Pending', value: fmt(totalPending), color: '#D97706', icon: IndianRupee },
+        { label: 'Overdue', value: overdue.length, color: '#DC2626', icon: AlertTriangle },
+      ]} />
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#F3F4F6', borderRadius: 10, padding: 4, width: 'fit-content' }}>
-        {[{ id: 'fees', label: 'Fee Records' }, { id: 'members', label: 'Members' }].map(t => (
+        {[{ id: 'fees', label: 'Fee Records' }, { id: 'members', label: L.membersTab }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '7px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600,
             background: tab === t.id ? '#fff' : 'transparent',
@@ -246,23 +290,24 @@ export default function Fees() {
 
       {tab === 'fees' && (
         <>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+          <div style={P.bar}>
             <div style={{ position: 'relative', flex: 1 }}>
               <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by member name..."
-                style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: '#fff', boxSizing: 'border-box' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search by ${L.member.toLowerCase()} name...`}
+                style={P.searchInput} />
             </div>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '9px 14px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...P.input, width: 'auto' }}>
               <option value="">All status</option>
               {Object.keys(STATUS_STYLES).map(s => <option key={s} value={s}>{STATUS_STYLES[s].label}</option>)}
             </select>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#F9FAFB', borderBottom: '1px solid var(--border)' }}>
-                  {['Member', 'Description', 'Amount', 'Paid', 'Due Date', 'Status', ''].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+          <div style={P.tableWrap}>
+            <div style={P.tableScroll}>
+            <table style={{ ...P.table, minWidth: isMobile ? 560 : 'unset' }}>
+              <thead style={P.thead}>
+                <tr>
+                  {[L.member, 'Description', 'Amount', 'Paid', 'Due Date', 'Status', ''].map(h => (
+                    <th key={h} style={P.th()}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -271,17 +316,17 @@ export default function Fees() {
                   <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>Loading...</td></tr>
                 ) : fees.length === 0 ? (
                   <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>No fee records yet</td></tr>
-                ) : fees.map(f => (
-                  <tr key={f.id} style={{ borderBottom: '1px solid var(--border)' }}
+                ) : fees.map((f, i) => (
+                  <tr key={f.id} style={P.tr(i, fees.length)}
                     onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
                     onMouseLeave={e => e.currentTarget.style.background = ''}>
-                    <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 500 }}>{f.student?.name || '—'}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{f.description || '—'}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600 }}>{fmt(f.amount)}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 14, color: '#16A34A', fontWeight: 600 }}>{fmt(f.paidAmount)}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(f.dueDate)}</td>
-                    <td style={{ padding: '14px 16px' }}><Badge status={f.status} /></td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ ...P.td(), fontWeight: 500 }}>{f.student?.name || '—'}</td>
+                    <td style={{ ...P.td(), color: '#6B7280' }}>{f.description || '—'}</td>
+                    <td style={{ ...P.td(), fontWeight: 600 }}>{fmt(f.amount)}</td>
+                    <td style={{ ...P.td(), color: '#16A34A', fontWeight: 600 }}>{fmt(f.paidAmount)}</td>
+                    <td style={{ ...P.td(), color: '#6B7280' }}>{fmtDate(f.dueDate)}</td>
+                    <td style={P.td()}><Badge status={f.status} /></td>
+                    <td style={P.td()}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         {['PENDING', 'PARTIAL', 'OVERDUE'].includes(f.status) && (
                           <button onClick={() => setCollectFeeItem(f)} style={{ fontSize: 13, color: 'var(--cyan)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
@@ -290,8 +335,14 @@ export default function Fees() {
                         )}
                         {(f.student?.phone || f.student?.parentPhone) && ['PENDING', 'PARTIAL', 'OVERDUE'].includes(f.status) && (
                           <button
-                            onClick={async () => { try { await sendWAFeeReminder(f.id); toast.success('Reminder sent via WhatsApp'); } catch { toast.error('Failed to send'); } }}
-                            title="Send WhatsApp Reminder"
+                            onClick={() => {
+                              const rawPhone = (f.student.phone || f.student.parentPhone).replace(/\D/g, '').slice(-10);
+                              const balance = ((f.netAmount || f.amount || 0) - (f.paidAmount || 0)).toLocaleString('en-IN');
+                              const due = f.dueDate ? new Date(f.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
+                              const msg = `Hi, this is a reminder that *${f.student?.name || 'Student'}*'s ${f.description || 'fee'} of *₹${balance}* is due${due ? ` on ${due}` : ''}. Please pay at your earliest convenience. Thank you!`;
+                              window.open(`https://wa.me/91${rawPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                            }}
+                            title="Send WhatsApp reminder"
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#25D366', padding: 2 }}
                           >
                             <MessageCircle size={14} />
@@ -303,6 +354,7 @@ export default function Fees() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
@@ -312,8 +364,8 @@ export default function Fees() {
           {students.length === 0 ? (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 64, color: '#9CA3AF' }}>
               <GraduationCap size={40} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.3 }} />
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>No members yet</div>
-              <div style={{ fontSize: 14 }}>Add your first gym member</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>{L.noMembers}</div>
+              <div style={{ fontSize: 14 }}>{L.addFirst}</div>
             </div>
           ) : students.map(s => (
             <div key={s.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--border)', padding: '18px 20px' }}>
@@ -326,16 +378,25 @@ export default function Fees() {
                   {s.course && <div style={{ fontSize: 12, color: '#6B7280' }}>{s.course}</div>}
                 </div>
               </div>
-              {s.phone && <div style={{ fontSize: 13, color: '#6B7280' }}>{s.phone}</div>}
-              {s.batchTime && <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{s.batchTime}</div>}
+              {s.phone && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                  <div style={{ fontSize: 13, color: '#6B7280' }}>{s.phone}</div>
+                  <button onClick={() => { const p = '91' + s.phone.replace(/\D/g, '').slice(-10); window.open(`https://wa.me/${p}?text=${encodeURIComponent(`Hi ${s.name.split(' ')[0]}! `)}`, '_blank'); }}
+                    title="Chat on WhatsApp" style={{ background: '#DCFCE7', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#16A34A', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
+                    <MessageCircle size={11} /> Chat
+                  </button>
+                </div>
+              )}
+              {s.batch && <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{s.batch}</div>}
             </div>
           ))}
         </div>
       )}
 
-      {modal === 'student' && <AddStudentModal onClose={() => setModal(null)} onAdded={() => { setModal(null); loadFees(); }} />}
-      {modal === 'fee' && <CreateFeeModal students={students} onClose={() => setModal(null)} onCreated={() => { setModal(null); loadFees(); }} />}
+      {modal === 'student' && <AddStudentModal label={L.member} onClose={() => setModal(null)} onAdded={() => { setModal(null); loadFees(); }} />}
+      {modal === 'fee' && <CreateFeeModal label={L.member} students={students} onClose={() => setModal(null)} onCreated={() => { setModal(null); loadFees(); }} />}
       {collectFeeItem && <CollectModal fee={collectFeeItem} onClose={() => setCollectFeeItem(null)} onCollected={() => { setCollectFeeItem(null); loadFees(); }} />}
     </div>
   );
 }
+

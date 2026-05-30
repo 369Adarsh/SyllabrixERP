@@ -33,10 +33,10 @@ const computeStaffDay = (staff) => {
   };
 };
 
-const today = async (tenantId) => {
+const today = async (tenantId, { branchId } = {}) => {
   const { start, end } = todayRange();
   const allStaff = await prisma.staff.findMany({
-    where: { tenantId, isActive: true },
+    where: { tenantId, isActive: true, ...(branchId && { branchId }) },
     include: {
       attendanceLogs: {
         where: { tenantId, punchTime: { gte: start, lt: end } },
@@ -85,22 +85,23 @@ const devicePunch = async (tenantId, biometricId, punchType, punchTime, deviceId
   });
 };
 
-const report = async (tenantId, fromDate, toDate, staffId) => {
+const report = async (tenantId, fromDate, toDate, staffId, branchId) => {
   const where = {
     tenantId,
     punchTime: { gte: new Date(fromDate), lte: new Date(`${toDate}T23:59:59`) },
   };
   if (staffId) where.staffId = staffId;
+  if (branchId) where.staff = { branchId };
   return prisma.attendanceLog.findMany({
     where,
-    include: { staff: { select: { id: true, name: true, role: true, department: true } } },
+    include: { staff: { select: { id: true, name: true, role: true, department: true, branchId: true } } },
     orderBy: [{ staffId: 'asc' }, { punchTime: 'asc' }],
   });
 };
 
 // Aggregate report: daily summary per staff for a date range
-const summary = async (tenantId, fromDate, toDate) => {
-  const logs = await report(tenantId, fromDate, toDate, null);
+const summary = async (tenantId, fromDate, toDate, branchId) => {
+  const logs = await report(tenantId, fromDate, toDate, null, branchId);
   const byStaff = {};
   for (const log of logs) {
     const sid = log.staffId;

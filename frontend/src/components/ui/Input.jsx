@@ -6,7 +6,7 @@ export default function Input({ label, error, hint, type = 'text', ...props }) {
         type={type}
         style={{
           padding: '9px 12px',
-          border: `1px solid ${error ? 'var(--vermilion)' : 'var(--border)'}`,
+          border: `1.5px solid ${error ? 'var(--vermilion)' : 'var(--border)'}`,
           borderRadius: 'var(--radius-md)',
           background: '#fff',
           fontSize: 14,

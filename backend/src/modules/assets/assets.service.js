@@ -2,14 +2,15 @@ const prisma = require('../../config/prisma');
 
 // ── Depreciation helpers ─────────────────────────────────────────────────────
 
-const yearsElapsed = (purchaseDate) => {
-  const ms = Date.now() - new Date(purchaseDate).getTime();
+const yearsElapsed = (from, to = null) => {
+  const end = to ? new Date(to).getTime() : Date.now();
+  const ms = end - new Date(from).getTime();
   return Math.max(0, ms / (1000 * 60 * 60 * 24 * 365.25));
 };
 
 const calcCurrentValue = (asset) => {
   const { purchasePrice, salvageValue, usefulLifeYears, depreciationMethod, purchaseDate, disposedAt } = asset;
-  const years = yearsElapsed(disposedAt || purchaseDate);
+  const years = yearsElapsed(purchaseDate, disposedAt || null);
 
   if (depreciationMethod === 'SLM') {
     const annualDep = (purchasePrice - salvageValue) / (usefulLifeYears || 5);
@@ -67,10 +68,11 @@ const deleteCategory = (tenantId, id) =>
 
 // ── Assets ───────────────────────────────────────────────────────────────────
 
-const list = async (tenantId, { status, categoryId, search } = {}) => {
+const list = async (tenantId, { status, categoryId, search, branchId } = {}) => {
   const where = { tenantId };
   if (status) where.status = status;
   if (categoryId) where.categoryId = categoryId;
+  if (branchId) where.branchId = branchId;
   if (search) where.name = { contains: search, mode: 'insensitive' };
 
   const assets = await prisma.asset.findMany({
@@ -201,9 +203,7 @@ const summary = async (tenantId) => {
   });
 
   const withValues = assets.map(a => ({ ...a, cv: calcCurrentValue(a) }));
-  const active = withValues.filter(a => a.status === 'ACTIVE');
-  const underMaintenance = withValues.filter(a => a.status === 'UNDER_MAINTENANCE');
-  const disposed = withValues.filter(a => a.status === 'DISPOSED');
+  const byStatus = (s) => withValues.filter(a => a.status === s);
 
   const dueSoon = withValues.filter(a => {
     const next = a.maintenanceLogs?.[0]?.nextDueDate;
@@ -216,9 +216,11 @@ const summary = async (tenantId) => {
     totalPurchaseValue: assets.reduce((s, a) => s + a.purchasePrice, 0),
     totalCurrentValue: withValues.reduce((s, a) => s + a.cv, 0),
     totalDepreciation: withValues.reduce((s, a) => s + (a.purchasePrice - a.cv), 0),
-    active: active.length,
-    underMaintenance: underMaintenance.length,
-    disposed: disposed.length,
+    active: byStatus('ACTIVE').length,
+    underMaintenance: byStatus('UNDER_MAINTENANCE').length,
+    disposed: byStatus('DISPOSED').length,
+    lost: byStatus('LOST').length,
+    retired: byStatus('RETIRED').length,
     maintenanceDueSoon: dueSoon.length,
   };
 };

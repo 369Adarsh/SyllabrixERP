@@ -11,8 +11,22 @@ dotenv.config({ path: envFile });
 
 const required = (key) => {
   const val = process.env[key];
-  if (!val && ENV === 'production') {
-    throw new Error(`Missing required env var in production: ${key}`);
+  if (!val) {
+    if (ENV === 'production') throw new Error(`[FATAL] Missing required env var: ${key}`);
+    console.warn(`[WARN] Missing env var: ${key} — set this before going to production`);
+  }
+  return val;
+};
+
+// Secrets must never use placeholder defaults in any environment once set
+const secret = (key, devDefault) => {
+  const val = process.env[key];
+  if (!val) {
+    if (ENV === 'production') throw new Error(`[FATAL] Missing secret: ${key}`);
+    return devDefault;
+  }
+  if (ENV === 'production' && val.length < 32) {
+    throw new Error(`[FATAL] Secret ${key} is too short — minimum 32 characters required`);
   }
   return val;
 };
@@ -22,10 +36,11 @@ const config = {
   port: process.env.PORT || 5000,
   nodeEnv: ENV,
 
-  jwtSecret: process.env.JWT_SECRET || 'change-this-in-production',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'change-this-in-production',
+  jwtSecret: secret('JWT_SECRET', 'dev-jwt-secret-change-before-production-min32chars'),
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  jwtRefreshSecret: secret('JWT_REFRESH_SECRET', 'dev-refresh-secret-change-before-production-min32chars'),
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  saJwtSecret: secret('SA_JWT_SECRET', 'dev-superadmin-secret-change-before-production-min32chars'),
 
   databaseUrl: required('DATABASE_URL'),
 
@@ -35,6 +50,8 @@ const config = {
   smtpPass: process.env.SMTP_PASS,
   fromEmail: process.env.FROM_EMAIL || 'noreply@syllabrix.com',
 
+  groqApiKey: process.env.GROQ_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
 
   whatsappToken: process.env.WHATSAPP_TOKEN,

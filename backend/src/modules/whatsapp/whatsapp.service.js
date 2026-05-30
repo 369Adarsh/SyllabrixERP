@@ -2,7 +2,7 @@ const axios = require('axios');
 const prisma = require('../../config/prisma');
 const config = require('../../config/env');
 
-const WA_BASE = `https://graph.facebook.com/v19.0/${config.whatsappPhoneId}/messages`;
+const WA_BASE = () => `https://graph.facebook.com/v19.0/${config.whatsappPhoneId}/messages`;
 const WA_HEADERS = () => ({
   Authorization: `Bearer ${config.whatsappToken}`,
   'Content-Type': 'application/json',
@@ -12,8 +12,35 @@ const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractio
 
 // ── Core send ────────────────────────────────────────────────────────────────
 const sendRaw = async (payload) => {
-  const { data } = await axios.post(WA_BASE, payload, { headers: WA_HEADERS() });
-  return data;
+  try {
+    const { data } = await axios.post(WA_BASE(), payload, { headers: WA_HEADERS() });
+    return data;
+  } catch (err) {
+    // Surface Meta's actual error message instead of generic axios error
+    const metaError = err.response?.data?.error;
+    if (metaError) {
+      const msg = metaError.error_user_msg || metaError.message || 'WhatsApp API error';
+      const code = metaError.code;
+      // Common Meta error codes with friendly messages
+      const friendly = {
+        131030: 'Recipient phone number is not registered on WhatsApp.',
+        131047: 'Message failed — recipient may have opted out or number is invalid.',
+        131026: 'Recipient number is not on WhatsApp.',
+        100:    'Invalid phone number format. Use 10-digit Indian mobile number.',
+        190:    'WhatsApp access token has expired. Please refresh it in Meta Developer Console.',
+        200:    'Permission denied — check your WhatsApp Business account permissions.',
+        368:    'Your WhatsApp Business account has been temporarily blocked.',
+        // Test account limitation
+        131051: 'This number is not in your test recipients list. Add it in Meta Developer Console → WhatsApp → API Setup.',
+      };
+      const readableMsg = friendly[code] || `${msg} (Meta error code: ${code})`;
+      const e = new Error(readableMsg);
+      e.statusCode = 400;
+      e.metaCode = code;
+      throw e;
+    }
+    throw err;
+  }
 };
 
 const sendText = async (tenantId, phone, body, contactName = null) => {
@@ -162,8 +189,9 @@ const handleInbound = async (tenantId, entry) => {
 // ── Util ─────────────────────────────────────────────────────────────────────
 function normalizePhone(phone) {
   let p = phone.replace(/\D/g, '');
-  if (p.startsWith('0')) p = p.slice(1);
-  if (!p.startsWith('91') && p.length === 10) p = '91' + p;
+  if (p.startsWith('0')) p = p.slice(1);          // strip STD trunk prefix
+  if (p.length === 10) p = '91' + p;              // always add country code for 10-digit numbers
+  if (p.startsWith('+')) p = p.slice(1);          // strip + if present
   return p;
 }
 

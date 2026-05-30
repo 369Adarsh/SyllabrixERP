@@ -1,16 +1,27 @@
 const prisma = require('../../config/prisma');
 
-let billCounter = {};
-
-const generateBillNumber = async (tenantId) => {
-  const count = await prisma.vendorBill.count({ where: { tenantId } });
-  return `BILL-${String(count + 1).padStart(4, '0')}`;
+const pad5 = (n) => String(n).padStart(5, '0');
+const yymm = () => {
+  const d = new Date();
+  return `${d.getFullYear().toString().slice(-2)}${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const list = (tenantId, { vendorId, status } = {}) => {
+const generateBillNumber = async () => {
+  const prefix = `SYLBIL-${yymm()}`;
+  const last = await prisma.vendorBill.findFirst({
+    where: { billNumber: { startsWith: prefix } },
+    orderBy: { billNumber: 'desc' },
+    select: { billNumber: true },
+  });
+  const seq = last ? (parseInt(last.billNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad5(seq)}`;
+};
+
+const list = (tenantId, { vendorId, status, branchId } = {}) => {
   const where = { tenantId };
   if (vendorId) where.vendorId = vendorId;
   if (status) where.status = status;
+  if (branchId) where.branchId = branchId;
   return prisma.vendorBill.findMany({
     where,
     include: { vendor: { select: { id: true, name: true } }, items: true, payments: true },
@@ -24,8 +35,8 @@ const get = (tenantId, id) =>
     include: { vendor: true, items: true, payments: true },
   });
 
-const create = async (tenantId, { vendorId, dueDate, notes, items = [], taxAmount = 0 }) => {
-  const billNumber = await generateBillNumber(tenantId);
+const create = async (tenantId, { vendorId, branchId, dueDate, notes, items = [], taxAmount = 0 }) => {
+  const billNumber = await generateBillNumber();
   const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   const itemTax = items.reduce((s, i) => s + (i.taxAmount || 0), 0);
   const tax = taxAmount || itemTax;
@@ -33,7 +44,7 @@ const create = async (tenantId, { vendorId, dueDate, notes, items = [], taxAmoun
 
   return prisma.vendorBill.create({
     data: {
-      tenantId, vendorId: vendorId || null, billNumber,
+      tenantId, vendorId: vendorId || null, branchId: branchId || null, billNumber,
       dueDate: dueDate ? new Date(dueDate) : null,
       notes, subtotal, taxAmount: tax, total, balanceDue: total,
       items: {
@@ -68,7 +79,7 @@ const recordPayment = async (tenantId, billId, { amount, method = 'BANK', refere
 
 const markOverdue = async () => {
   await prisma.vendorBill.updateMany({
-    where: { status: 'PENDING', dueDate: { lt: new Date() } },
+    where: { status: { in: ['PENDING', 'PARTIAL'] }, dueDate: { lt: new Date() } },
     data: { status: 'OVERDUE' },
   });
 };
@@ -76,11 +87,12 @@ const markOverdue = async () => {
 const remove = (tenantId, id) =>
   prisma.vendorBill.update({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
 
-const summary = async (tenantId) => {
+const summary = async (tenantId, { branchId } = {}) => {
+  const base = { tenantId, ...(branchId && { branchId }) };
   const [pending, overdue, paidMonth] = await Promise.all([
-    prisma.vendorBill.aggregate({ where: { tenantId, status: { in: ['PENDING', 'PARTIAL'] } }, _sum: { balanceDue: true }, _count: true }),
-    prisma.vendorBill.aggregate({ where: { tenantId, status: 'OVERDUE' }, _sum: { balanceDue: true }, _count: true }),
-    prisma.vendorBill.aggregate({ where: { tenantId, status: 'PAID', updatedAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } }, _sum: { total: true } }),
+    prisma.vendorBill.aggregate({ where: { ...base, status: { in: ['PENDING', 'PARTIAL'] } }, _sum: { balanceDue: true }, _count: true }),
+    prisma.vendorBill.aggregate({ where: { ...base, status: 'OVERDUE' }, _sum: { balanceDue: true }, _count: true }),
+    prisma.vendorBill.aggregate({ where: { ...base, status: 'PAID', updatedAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } }, _sum: { total: true } }),
   ]);
   return {
     pendingAmount: pending._sum.balanceDue || 0,

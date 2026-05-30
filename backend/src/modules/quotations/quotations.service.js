@@ -6,10 +6,11 @@ const generateQuoteNumber = async (tenantId) => {
   return `QT-${String(count + 1).padStart(4, '0')}`;
 };
 
-const list = (tenantId, { customerId, status } = {}) => {
+const list = (tenantId, { customerId, status, branchId } = {}) => {
   const where = { tenantId };
   if (customerId) where.customerId = customerId;
   if (status) where.status = status;
+  if (branchId) where.branchId = branchId;
   return prisma.quotation.findMany({
     where,
     include: { customer: { select: { id: true, name: true } }, items: true },
@@ -23,7 +24,7 @@ const get = (tenantId, id) =>
     include: { customer: true, items: true },
   });
 
-const create = async (tenantId, { customerId, expiryDate, notes, terms, items = [], discountAmount = 0 }) => {
+const create = async (tenantId, { customerId, branchId, expiryDate, notes, terms, items = [], discountAmount = 0 }) => {
   const quotationNumber = await generateQuoteNumber(tenantId);
   const subtotal = items.reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
   const taxAmount = items.reduce((s, i) => s + (i.taxAmount || 0), 0);
@@ -32,6 +33,7 @@ const create = async (tenantId, { customerId, expiryDate, notes, terms, items = 
   return prisma.quotation.create({
     data: {
       tenantId, customerId: customerId || null, quotationNumber,
+      ...(branchId && { branchId }),
       expiryDate: expiryDate ? new Date(expiryDate) : null,
       notes, terms, subtotal, discountAmount: Number(discountAmount), taxAmount, total,
       items: {
@@ -59,7 +61,7 @@ const convertToInvoice = async (tenantId, id) => {
   if (!quote) throw Object.assign(new Error('Quotation not found'), { statusCode: 404 });
   if (quote.status === 'CONVERTED') throw Object.assign(new Error('Already converted'), { statusCode: 400 });
 
-  const invoiceNumber = await generateInvoiceNumber(tenantId);
+  const invoiceNumber = await generateInvoiceNumber();
 
   const invoice = await prisma.invoice.create({
     data: {

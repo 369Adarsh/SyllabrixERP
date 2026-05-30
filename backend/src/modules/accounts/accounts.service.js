@@ -35,7 +35,11 @@ const addTransaction = async (tenantId, accountId, { type, amount, description, 
 };
 
 const totalBalance = async (tenantId) => {
-  const accounts = await prisma.bankAccount.findMany({ where: { tenantId, isActive: true }, select: { currentBalance: true } });
+  // Exclude LOAN accounts — they are liabilities, not liquid cash
+  const accounts = await prisma.bankAccount.findMany({
+    where: { tenantId, isActive: true, accountType: { not: 'LOAN' } },
+    select: { currentBalance: true },
+  });
   return accounts.reduce((s, a) => s + a.currentBalance, 0);
 };
 

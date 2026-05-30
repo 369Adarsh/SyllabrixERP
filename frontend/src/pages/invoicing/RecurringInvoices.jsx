@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { P } from '../../styles/page';
 import { getRecurringInvoices, createRecurringInvoice, toggleRecurringInvoice, deleteRecurringInvoice, generateDueInvoices, getCustomers } from '../../api';
 import { RefreshCw, Plus, Repeat, Trash2, X, Play, Pause } from 'lucide-react';
 import Card from '../../components/ui/Card';
@@ -114,6 +116,7 @@ function CreateModal({ onClose, onCreated }) {
 }
 
 export default function RecurringInvoices() {
+  const { isMobile } = useBreakpoint();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -159,11 +162,11 @@ export default function RecurringInvoices() {
   }, 0);
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1000 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1000, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Recurring Invoices</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>Auto-generate invoices on a fixed schedule — weekly, monthly, quarterly, yearly</p>
+          <h1 style={P.h1(isMobile)}>Recurring Invoices</h1>
+          <p style={P.sub}>Auto-generate invoices on a fixed schedule — weekly, monthly, quarterly, yearly</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="ghost" onClick={generate} loading={generating}><RefreshCw size={14} style={{ marginRight: 6 }} />Generate Due</Button>
@@ -177,37 +180,38 @@ export default function RecurringInvoices() {
         <Card><div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Total Schedules</div><div style={{ fontSize: 26, fontWeight: 800, color: '#6B7280', fontFamily: 'var(--font-display)' }}>{records.length}</div></Card>
       </div>
 
-      <Card style={{ padding: 0 }}>
+      <div style={P.tableWrap}>
+        <div style={P.tableScroll}>
         {loading ? (
           <p style={{ color: '#9CA3AF', textAlign: 'center', padding: 48 }}>Loading…</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#F9FAFB' }}>
+          <table style={P.table}>
+            <thead style={P.thead}>
+              <tr>
                 {['Customer', 'Items', 'Per Invoice', 'Frequency', 'Next Run', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                  <th key={h} style={P.th()}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {records.map(r => {
+              {records.map((r, i) => {
                 const items = Array.isArray(r.items) ? r.items : [];
                 const total = items.reduce((s, it) => s + Number(it.quantity || 1) * Number(it.unitPrice || 0) * (1 + Number(it.taxRate || 0) / 100), 0);
                 const isDue = new Date(r.nextRunDate) <= new Date();
                 return (
-                  <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600 }}>{r.customer?.name || <span style={{ color: '#9CA3AF' }}>No customer</span>}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 12, color: '#6B7280', maxWidth: 200 }}>
+                  <tr key={r.id} style={P.tr(i, records.length)}>
+                    <td style={{ ...P.td(), fontWeight: 600 }}>{r.customer?.name || <span style={{ color: '#9CA3AF' }}>No customer</span>}</td>
+                    <td style={{ ...P.td(), color: '#6B7280', maxWidth: 200 }}>
                       {items.slice(0, 2).map(it => it.description).join(', ')}
                       {items.length > 2 && ` +${items.length - 2} more`}
                     </td>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, fontSize: 13 }}>{fmt(total)}</td>
-                    <td style={{ padding: '12px 16px' }}><Badge variant={FREQ_COLORS[r.frequency]}>{FREQ_LABELS[r.frequency]}</Badge></td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: isDue && r.isActive ? 'var(--vermilion)' : '#6B7280', fontWeight: isDue && r.isActive ? 700 : 400 }}>
+                    <td style={{ ...P.td(), fontWeight: 700 }}>{fmt(total)}</td>
+                    <td style={P.td()}><Badge variant={FREQ_COLORS[r.frequency]}>{FREQ_LABELS[r.frequency]}</Badge></td>
+                    <td style={{ ...P.td(), color: isDue && r.isActive ? 'var(--vermilion)' : '#6B7280', fontWeight: isDue && r.isActive ? 700 : 400 }}>
                       {fmtDate(r.nextRunDate)}{isDue && r.isActive ? ' (DUE)' : ''}
                     </td>
-                    <td style={{ padding: '12px 16px' }}><Badge variant={r.isActive ? 'success' : 'secondary'}>{r.isActive ? 'Active' : 'Paused'}</Badge></td>
-                    <td style={{ padding: '12px 16px' }}>
+                    <td style={P.td()}><Badge variant={r.isActive ? 'success' : 'secondary'}>{r.isActive ? 'Active' : 'Paused'}</Badge></td>
+                    <td style={P.td()}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => toggle(r.id)} title={r.isActive ? 'Pause' : 'Resume'} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', color: r.isActive ? 'var(--amber)' : 'var(--emerald)' }}>
                           {r.isActive ? <Pause size={13} /> : <Play size={13} />}
@@ -221,7 +225,7 @@ export default function RecurringInvoices() {
                 );
               })}
               {records.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 48, color: '#9CA3AF' }}>
+                <tr><td colSpan={7} style={P.empty}>
                   <Repeat size={36} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
                   No recurring schedules. Add one to auto-generate invoices.
                 </td></tr>
@@ -229,7 +233,8 @@ export default function RecurringInvoices() {
             </tbody>
           </table>
         )}
-      </Card>
+        </div>
+      </div>
 
       {showCreate && <CreateModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
     </div>

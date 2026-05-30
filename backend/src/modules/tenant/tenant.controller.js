@@ -9,6 +9,15 @@ const updateProfile = async (req, res, next) => {
   try { ok(res, await svc.updateProfile(req.tenantId, req.body), 'Profile updated'); } catch (e) { next(e); }
 };
 
+const uploadLogo = async (req, res, next) => {
+  try {
+    if (!req.file) throw Object.assign(new Error('No file uploaded'), { statusCode: 400 });
+    const logoUrl = `${req.protocol}://${req.get('host')}/uploads/logos/${req.file.filename}`;
+    await svc.updateProfile(req.tenantId, { logoUrl });
+    ok(res, { logoUrl }, 'Logo updated');
+  } catch (e) { next(e); }
+};
+
 const getModules = async (req, res, next) => {
   try { ok(res, await svc.getModules(req.tenantId)); } catch (e) { next(e); }
 };
@@ -24,4 +33,4 @@ const getStats = async (req, res, next) => {
   try { ok(res, await svc.getStats(req.tenantId)); } catch (e) { next(e); }
 };
 
-module.exports = { getProfile, updateProfile, getModules, toggleModule, getStats };
+module.exports = { getProfile, updateProfile, uploadLogo, getModules, toggleModule, getStats };

@@ -1,20 +1,23 @@
 const { z } = require('zod');
 
 const registerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  phone: z.string().min(10),
-  businessName: z.string().min(2),
-  businessType: z.enum([
-    'RETAIL','KIRANA','COACHING','SALON','CLINIC',
-    'RESTAURANT','GYM','MALL','FREELANCER','WORKSHOP','OTHER',
-  ]),
+  name:         z.string().min(2).max(100).trim(),
+  email:        z.string().email().max(254).toLowerCase(),
+  password:     z.string().min(8).max(128)
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+  phone:        z.string().min(10).max(15).regex(/^\d+$/, 'Phone must contain only digits'),
+  businessName: z.string().min(2).max(150).trim(),
+  businessType: z.string().min(2).max(50),
 });
 
+// Login schema intentionally does not validate password complexity —
+// we always run bcrypt.compare and return "Invalid credentials" regardless,
+// to avoid revealing whether the password format is wrong vs account not found.
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email:    z.string().email().max(254).toLowerCase(),
+  password: z.string().min(1).max(128),
 });
 
 const refreshSchema = z.object({

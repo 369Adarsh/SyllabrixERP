@@ -11,6 +11,7 @@ router.put('/students/:id', ctrl.updateStudent);
 router.get('/', ctrl.listFees);
 router.get('/overdue', ctrl.getOverdueFees);
 router.post('/', authorize('OWNER', 'ADMIN', 'ACCOUNTANT'), ctrl.createFee);
+router.put('/:id', authorize('OWNER', 'ADMIN', 'ACCOUNTANT'), ctrl.updateFee);
 router.post('/:id/collect', ctrl.collectFee);
 router.patch('/:id/waive', authorize('OWNER', 'ADMIN'), ctrl.waiveFee);
 

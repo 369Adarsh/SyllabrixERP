@@ -8,29 +8,35 @@
     "dev:quality": "cross-env NODE_ENV=quality nodemon src/server.js",
     "start": "cross-env NODE_ENV=production node src/server.js",
     "start:quality": "cross-env NODE_ENV=quality node src/server.js",
-    "db:push": "cross-env NODE_ENV=development npx prisma db push",
-    "db:push:quality": "cross-env NODE_ENV=quality npx prisma db push",
-    "db:push:prod": "cross-env NODE_ENV=production npx prisma db push",
-    "db:studio": "cross-env NODE_ENV=development npx prisma studio",
-    "db:studio:quality": "cross-env NODE_ENV=quality npx prisma studio",
-    "db:generate": "prisma generate"
+    "db:push": "dotenv -e .env.development -- npx prisma db push",
+    "db:push:quality": "dotenv -e .env.quality -- npx prisma db push",
+    "db:push:prod": "dotenv -e .env.production -- npx prisma db push",
+    "db:studio": "dotenv -e .env.development -- npx prisma studio",
+    "db:studio:quality": "dotenv -e .env.quality -- npx prisma studio",
+    "db:generate": "prisma generate",
+    "test": "cross-env NODE_ENV=development jest --runInBand --forceExit --detectOpenHandles",
+    "test:watch": "cross-env NODE_ENV=development jest --runInBand --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^2.7.0",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.22.0",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "express-validator": "^7.3.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^8.0.7",
     "prisma": "^5.22.0",
     "uuid": "^14.0.0",
@@ -38,6 +44,9 @@
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
-    "nodemon": "^3.1.14"
+    "dotenv-cli": "^11.0.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

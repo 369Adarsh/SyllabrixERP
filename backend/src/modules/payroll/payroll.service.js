@@ -97,7 +97,7 @@ const processPayroll = async (tenantId, month, year) => {
 
   const attendanceCounts = await prisma.attendanceLog.groupBy({
     by: ['staffId'],
-    where: { tenantId, punchIn: { gte: startDate, lte: endDate }, punchOut: { not: null } },
+    where: { tenantId, punchTime: { gte: startDate, lte: endDate }, punchType: 'IN' },
     _count: { id: true },
   });
   const attendanceMap = Object.fromEntries(attendanceCounts.map(a => [a.staffId, a._count.id]));
@@ -121,7 +121,7 @@ const processPayroll = async (tenantId, month, year) => {
 
   return prisma.payrollRun.findUnique({
     where: { id: run.id },
-    include: { entries: { include: { staff: { select: { id: true, name: true, designation: true } } } } },
+    include: { entries: { include: { staff: { select: { id: true, name: true, role: true } } } } },
   });
 };
 

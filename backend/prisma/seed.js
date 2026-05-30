@@ -22,7 +22,7 @@ const BUSINESS_MODULES = {
   SALON:      ['appointments', 'pos', 'inventory', 'invoicing', 'staff', 'customers', 'reports'],
   CLINIC:     ['appointments', 'invoicing', 'staff', 'customers', 'reports'],
   RESTAURANT: ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
-  GYM:        ['fees', 'appointments', 'invoicing', 'staff', 'customers', 'reports'],
+  GYM:        ['fees', 'appointments', 'staff', 'attendance', 'customers', 'reports', 'pos', 'inventory', 'assets', 'membershipplans', 'training', 'expenses', 'whatsapp', 'campaigns', 'ai', 'automation'],
   MALL:       ['lease', 'invoicing', 'reports'],
   FREELANCER: ['invoicing', 'customers', 'reports'],
   WORKSHOP:   ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
@@ -38,7 +38,7 @@ async function createTenant({ businessName, businessType, ownerName, email, phon
   const existing = await prisma.tenant.findUnique({ where: { email } });
   if (existing) {
     console.log(`  ⚡ Already exists: ${businessName} — skipping`);
-    return existing;
+    return null;
   }
 
   const tenant = await prisma.tenant.create({
@@ -81,6 +81,7 @@ async function seedRetail() {
     city: 'Delhi', state: 'Delhi', address: '12, Lajpat Nagar, New Delhi',
     gstin: '07AABCR1234A1Z5',
   });
+  if (!t) return;
 
   const cat = await prisma.category.create({ data: { tenantId: t.id, name: 'Mobile Phones' } });
   const cat2 = await prisma.category.create({ data: { tenantId: t.id, name: 'Accessories' } });
@@ -142,6 +143,7 @@ async function seedKirana() {
     city: 'Mumbai', state: 'Maharashtra', address: '45, Dharavi Road, Mumbai',
     gstin: '27AABCS5678B1Z3',
   });
+  if (!t) return;
 
   const cat = await prisma.category.create({ data: { tenantId: t.id, name: 'Grains & Pulses' } });
   const cat2 = await prisma.category.create({ data: { tenantId: t.id, name: 'Beverages' } });
@@ -188,6 +190,7 @@ async function seedCoaching() {
     city: 'Ahmedabad', state: 'Gujarat', address: 'Plot 7, Satellite Area, Ahmedabad',
     gstin: '24AABCA9012C1Z1',
   });
+  if (!t) return;
 
   const s1 = await prisma.student.create({ data: { tenantId: t.id, name: 'Aryan Patel', phone: '9870001001', email: 'aryan@gmail.com', parentName: 'Sunil Patel', parentPhone: '9870001002', course: 'JEE Mains', batch: 'Batch A — Morning', enrolledAt: d(90) } });
   const s2 = await prisma.student.create({ data: { tenantId: t.id, name: 'Sneha Shah', phone: '9870002001', parentName: 'Meena Shah', parentPhone: '9870002002', course: 'NEET', batch: 'Batch B — Evening', enrolledAt: d(60) } });
@@ -226,6 +229,7 @@ async function seedSalon() {
     city: 'Bangalore', state: 'Karnataka', address: 'Shop 4, Koramangala 5th Block, Bangalore',
     gstin: '29AABCG3456D1Z7',
   });
+  if (!t) return;
 
   // Staff
   await prisma.staff.createMany({ data: [
@@ -302,6 +306,7 @@ async function seedClinic() {
     city: 'Hyderabad', state: 'Telangana', address: '23, Banjara Hills, Hyderabad',
     gstin: '36AABCR7890E1Z2',
   });
+  if (!t) return;
 
   // Staff / Doctors
   await prisma.staff.createMany({ data: [
@@ -360,6 +365,7 @@ async function seedRestaurant() {
     city: 'Chennai', state: 'Tamil Nadu', address: '7, Anna Nagar, Chennai',
     gstin: '33AABCS2345F1Z6',
   });
+  if (!t) return;
 
   const cat1 = await prisma.category.create({ data: { tenantId: t.id, name: 'Starters' } });
   const cat2 = await prisma.category.create({ data: { tenantId: t.id, name: 'Main Course' } });
@@ -407,6 +413,7 @@ async function seedGym() {
     city: 'Pune', state: 'Maharashtra', address: '88, Aundh, Pune',
     gstin: '27AABCF4567G1Z8',
   });
+  if (!t) return;
 
   // Staff
   await prisma.staff.createMany({ data: [
@@ -462,6 +469,7 @@ async function seedMall() {
     city: 'Jaipur', state: 'Rajasthan', address: 'Tonk Road, Jaipur',
     gstin: '08AABCM1122H1Z4',
   });
+  if (!t) return;
 
   // Lease units
   const u1 = await prisma.leaseUnit.create({ data: { tenantId: t.id, unitNumber: 'G-01', floor: 'Ground', area: 450, description: 'Main entrance, corner shop' } });
@@ -506,6 +514,7 @@ async function seedFreelancer() {
     city: 'Hyderabad', state: 'Telangana', address: 'Banjara Hills, Hyderabad',
     gstin: null,
   });
+  if (!t) return;
 
   const c1 = await prisma.customer.create({ data: { tenantId: t.id, name: 'TechStart Pvt Ltd', phone: '9944201001', email: 'ceo@techstart.com', notes: 'Startup client — UI/UX projects', totalSpent: 75000 } });
   const c2 = await prisma.customer.create({ data: { tenantId: t.id, name: 'Retail Brands Inc', phone: '9944202002', email: 'marketing@retailbrands.com', totalSpent: 35000 } });
@@ -562,6 +571,7 @@ async function seedWorkshop() {
     city: 'Chandigarh', state: 'Punjab', address: 'Industrial Area Phase 1, Chandigarh',
     gstin: '03AABCM9876I1Z3',
   });
+  if (!t) return;
 
   const cat = await prisma.category.create({ data: { tenantId: t.id, name: 'Engine Parts' } });
   const cat2 = await prisma.category.create({ data: { tenantId: t.id, name: 'Tyres & Wheels' } });
@@ -606,6 +616,385 @@ async function seedWorkshop() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SHARMA GROCERY CHAIN — Multi-branch demo tenant (4 branches, 1 year data)
+// Login: raj@sharmachain.test / Test@1234
+// Branch managers: amit@, sunita@, mohan@, neha@ (all @sharmachain.test)
+// ═══════════════════════════════════════════════════════════════════════════
+async function seedSharmaChain() {
+  const existing = await prisma.tenant.findUnique({ where: { email: 'raj@sharmachain.test' } });
+  if (existing) { console.log('  ⚡ Already exists: Sharma Grocery Chain — skipping'); return; }
+
+  // ── Tenant ──────────────────────────────────────────────────────────────
+  const t = await prisma.tenant.create({
+    data: {
+      name: 'Sharma Grocery Chain',
+      businessType: 'KIRANA',
+      email: 'raj@sharmachain.test',
+      phone: '9876501234',
+      address: 'Plot 12, Main Market, Indore',
+      city: 'Indore',
+      state: 'Madhya Pradesh',
+      gstin: '23ABCRS1234A1Z7',
+      hasBranches: true,
+      modules: BUSINESS_MODULES.KIRANA,
+      users: {
+        create: {
+          name: 'Raj Sharma',
+          email: 'raj@sharmachain.test',
+          password: hashed(PASS),
+          role: 'OWNER',
+          isEmailVerified: true,
+        },
+      },
+    },
+  });
+  const tid = t.id;
+  const owner = await prisma.user.findFirst({ where: { tenantId: tid, role: 'OWNER' } });
+
+  // ── Branches ─────────────────────────────────────────────────────────────
+  const [b1, b2, b3, b4] = await Promise.all([
+    prisma.branch.create({ data: { tenantId: tid, name: 'Main Market',    code: 'MAIN', isHQ: true,  address: 'Plot 12, Main Market, Indore',      city: 'Indore', phone: '9876501234', gstin: '23ABCRS1234A1Z7' } }),
+    prisma.branch.create({ data: { tenantId: tid, name: 'Station Road',   code: 'STRD', isHQ: false, address: '45, Station Road, Indore',           city: 'Indore', phone: '9876502234', gstin: '23ABCRS1234B1Z8' } }),
+    prisma.branch.create({ data: { tenantId: tid, name: 'Vijay Nagar',    code: 'VJNR', isHQ: false, address: 'Shop 7, Vijay Nagar Square, Indore',  city: 'Indore', phone: '9876503234' } }),
+    prisma.branch.create({ data: { tenantId: tid, name: 'Palasia Square', code: 'PLSA', isHQ: false, address: '2/1 Palasia Square, Indore',          city: 'Indore', phone: '9876504234' } }),
+  ]);
+
+  // ── Tax rates ─────────────────────────────────────────────────────────────
+  const [gst5, gst12] = await Promise.all([
+    prisma.taxRate.create({ data: { tenantId: tid, name: 'GST 5%',  rate: 5,  isGst: true, cgst: 2.5, sgst: 2.5 } }),
+    prisma.taxRate.create({ data: { tenantId: tid, name: 'GST 12%', rate: 12, isGst: true, cgst: 6,   sgst: 6   } }),
+  ]);
+
+  // ── Categories ────────────────────────────────────────────────────────────
+  const [catGrain, catOil, catSpice, catSnack, catBev, catCare, catDairy] = await Promise.all([
+    prisma.category.create({ data: { tenantId: tid, name: 'Grains & Pulses', color: '#059669' } }),
+    prisma.category.create({ data: { tenantId: tid, name: 'Oils & Ghee',     color: '#F59E0B' } }),
+    prisma.category.create({ data: { tenantId: tid, name: 'Spices & Masalas',color: '#EF4444' } }),
+    prisma.category.create({ data: { tenantId: tid, name: 'Packaged Snacks', color: '#F97316' } }),
+    prisma.category.create({ data: { tenantId: tid, name: 'Beverages',       color: '#3B82F6' } }),
+    prisma.category.create({ data: { tenantId: tid, name: 'Personal Care',   color: '#8B5CF6' } }),
+    prisma.category.create({ data: { tenantId: tid, name: 'Dairy',           color: '#06B6D4' } }),
+  ]);
+
+  // ── Products (36 SKUs) ────────────────────────────────────────────────────
+  const prods = await Promise.all([
+    // Grains & Pulses (0-6)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id, taxRateId: gst5.id, name: 'Basmati Rice 5kg',       sku: 'SC-RICE-BSM', hsnCode: '1006', costPrice: 280,  sellingPrice: 349,  mrp: 375,  stock: 200, unit: 'bag', lowStockAlert: 30 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id,                     name: 'Regular Rice 5kg',        sku: 'SC-RICE-REG', hsnCode: '1006', costPrice: 190,  sellingPrice: 235,  mrp: 260,  stock: 300, unit: 'bag', lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id, taxRateId: gst5.id, name: 'Aata 10kg',               sku: 'SC-ATA-10',   hsnCode: '1101', costPrice: 320,  sellingPrice: 385,  mrp: 420,  stock: 250, unit: 'bag', lowStockAlert: 30 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id,                     name: 'Chana Dal 1kg',           sku: 'SC-DAL-CHN',  hsnCode: '0713', costPrice: 85,   sellingPrice: 110,  mrp: 125,  stock: 400, unit: 'kg',  lowStockAlert: 50 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id,                     name: 'Moong Dal 1kg',           sku: 'SC-DAL-MNG',  hsnCode: '0713', costPrice: 95,   sellingPrice: 125,  mrp: 140,  stock: 350, unit: 'kg',  lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id,                     name: 'Toor Dal 1kg',            sku: 'SC-DAL-TOR',  hsnCode: '0713', costPrice: 110,  sellingPrice: 145,  mrp: 165,  stock: 380, unit: 'kg',  lowStockAlert: 50 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catGrain.id,                     name: 'Urad Dal 1kg',            sku: 'SC-DAL-URD',  hsnCode: '0713', costPrice: 90,   sellingPrice: 118,  mrp: 135,  stock: 320, unit: 'kg',  lowStockAlert: 40 } }),
+    // Oils & Ghee (7-10)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catOil.id,   taxRateId: gst5.id, name: 'Sunflower Oil 1L',        sku: 'SC-OIL-SFW1', hsnCode: '1512', costPrice: 130,  sellingPrice: 155,  mrp: 175,  stock: 300, unit: 'bottle', lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catOil.id,   taxRateId: gst5.id, name: 'Mustard Oil 1L',          sku: 'SC-OIL-MST1', hsnCode: '1514', costPrice: 150,  sellingPrice: 175,  mrp: 195,  stock: 240, unit: 'bottle', lowStockAlert: 30 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catOil.id,   taxRateId: gst5.id, name: 'Fortune Refined Oil 5L',  sku: 'SC-OIL-FRT5', hsnCode: '1512', costPrice: 610,  sellingPrice: 739,  mrp: 799,  stock: 120, unit: 'tin',    lowStockAlert: 15 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catOil.id,   taxRateId: gst5.id, name: 'Amul Pure Ghee 500g',     sku: 'SC-GHE-AML',  hsnCode: '0405', costPrice: 300,  sellingPrice: 370,  mrp: 400,  stock: 150, unit: 'tin',    lowStockAlert: 20 } }),
+    // Spices (11-17)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Rock Salt 1kg',           sku: 'SC-SLT-RK1',  hsnCode: '2501', costPrice: 18,   sellingPrice: 25,   mrp: 30,   stock: 500, unit: 'kg',     lowStockAlert: 80 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Sugar 1kg',               sku: 'SC-SUG-1',    hsnCode: '1701', costPrice: 42,   sellingPrice: 52,   mrp: 60,   stock: 600, unit: 'kg',     lowStockAlert: 100 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Tata Tea Premium 250g',   sku: 'SC-TEA-250',  hsnCode: '0902', costPrice: 90,   sellingPrice: 115,  mrp: 130,  stock: 280, unit: 'pkt',    lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Turmeric Powder 100g',    sku: 'SC-SPC-TRM',  hsnCode: '0910', costPrice: 30,   sellingPrice: 45,   mrp: 55,   stock: 350, unit: 'pkt',    lowStockAlert: 50 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Red Chilli Powder 100g',  sku: 'SC-SPC-RCP',  hsnCode: '0904', costPrice: 35,   sellingPrice: 50,   mrp: 60,   stock: 320, unit: 'pkt',    lowStockAlert: 50 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Coriander Powder 100g',   sku: 'SC-SPC-CRP',  hsnCode: '0909', costPrice: 28,   sellingPrice: 42,   mrp: 50,   stock: 300, unit: 'pkt',    lowStockAlert: 50 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSpice.id,                     name: 'Everest Garam Masala 50g',sku: 'SC-SPC-GM50', hsnCode: '0910', costPrice: 55,   sellingPrice: 78,   mrp: 90,   stock: 200, unit: 'pkt',    lowStockAlert: 30 } }),
+    // Packaged Snacks (18-22)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSnack.id, taxRateId: gst12.id, name: 'Parle G 800g',           sku: 'SC-BSC-PRG',  hsnCode: '1905', costPrice: 40,   sellingPrice: 55,   mrp: 60,   stock: 400, unit: 'pkt',    lowStockAlert: 60 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSnack.id, taxRateId: gst12.id, name: 'Britannia Marie 500g',   sku: 'SC-BSC-MRG',  hsnCode: '1905', costPrice: 48,   sellingPrice: 65,   mrp: 72,   stock: 350, unit: 'pkt',    lowStockAlert: 50 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSnack.id, taxRateId: gst12.id, name: 'Lays Classic 80g',       sku: 'SC-CHI-LYS',  hsnCode: '2008', costPrice: 15,   sellingPrice: 20,   mrp: 20,   stock: 500, unit: 'pcs',    lowStockAlert: 80 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSnack.id, taxRateId: gst12.id, name: 'Haldiram Namkeen 200g',  sku: 'SC-NMK-HLD',  hsnCode: '2008', costPrice: 65,   sellingPrice: 90,   mrp: 100,  stock: 280, unit: 'pkt',    lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catSnack.id, taxRateId: gst12.id, name: 'KitKat 4-Finger',        sku: 'SC-CHO-KKT',  hsnCode: '1806', costPrice: 38,   sellingPrice: 55,   mrp: 60,   stock: 300, unit: 'pcs',    lowStockAlert: 50 } }),
+    // Beverages (23-26)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catBev.id,   taxRateId: gst12.id, name: 'Cold Drink 600ml',       sku: 'SC-CDR-600',  hsnCode: '2202', costPrice: 28,   sellingPrice: 40,   mrp: 40,   stock: 500, unit: 'bottle', lowStockAlert: 80 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catBev.id,                        name: 'Mineral Water 1L',       sku: 'SC-WTR-1L',   hsnCode: '2201', costPrice: 12,   sellingPrice: 20,   mrp: 20,   stock: 600, unit: 'bottle', lowStockAlert: 100 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catBev.id,   taxRateId: gst12.id, name: 'Tropicana Juice 1L',     sku: 'SC-JCE-TRP',  hsnCode: '2009', costPrice: 80,   sellingPrice: 110,  mrp: 125,  stock: 150, unit: 'bottle', lowStockAlert: 20 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catBev.id,   taxRateId: gst12.id, name: 'Boost Health Drink 500g',sku: 'SC-HLT-BST',  hsnCode: '1904', costPrice: 210,  sellingPrice: 275,  mrp: 299,  stock: 100, unit: 'tin',    lowStockAlert: 15 } }),
+    // Personal Care (27-32)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catCare.id,  taxRateId: gst12.id, name: 'Surf Excel 500g',        sku: 'SC-DET-SRF',  hsnCode: '3402', costPrice: 55,   sellingPrice: 75,   mrp: 85,   stock: 300, unit: 'pkt',    lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catCare.id,  taxRateId: gst12.id, name: 'Ariel 1kg',              sku: 'SC-DET-ARL',  hsnCode: '3402', costPrice: 185,  sellingPrice: 245,  mrp: 270,  stock: 200, unit: 'pkt',    lowStockAlert: 30 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catCare.id,  taxRateId: gst12.id, name: 'Lifebuoy Soap 100g',     sku: 'SC-SOP-LFB',  hsnCode: '3401', costPrice: 22,   sellingPrice: 32,   mrp: 35,   stock: 500, unit: 'pcs',    lowStockAlert: 80 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catCare.id,  taxRateId: gst12.id, name: 'Head & Shoulders 400ml', sku: 'SC-SHP-HNS',  hsnCode: '3305', costPrice: 220,  sellingPrice: 295,  mrp: 329,  stock: 150, unit: 'bottle', lowStockAlert: 20 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catCare.id,  taxRateId: gst12.id, name: 'Colgate 200g',           sku: 'SC-TPT-COL',  hsnCode: '3306', costPrice: 75,   sellingPrice: 98,   mrp: 110,  stock: 300, unit: 'pcs',    lowStockAlert: 40 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catCare.id,  taxRateId: gst12.id, name: 'Dettol Handwash 250ml',  sku: 'SC-HWS-DTL',  hsnCode: '3401', costPrice: 78,   sellingPrice: 105,  mrp: 120,  stock: 200, unit: 'bottle', lowStockAlert: 30 } }),
+    // Dairy (33-35)
+    prisma.product.create({ data: { tenantId: tid, categoryId: catDairy.id, taxRateId: gst5.id,  name: 'Amul Butter 500g',       sku: 'SC-BTR-AML',  hsnCode: '0405', costPrice: 218,  sellingPrice: 265,  mrp: 290,  stock: 120, unit: 'pkt',    lowStockAlert: 15 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catDairy.id, taxRateId: gst5.id,  name: 'Amul Milk 1L',           sku: 'SC-MLK-AML',  hsnCode: '0401', costPrice: 62,   sellingPrice: 72,   mrp: 75,   stock: 200, unit: 'pouch',  lowStockAlert: 30 } }),
+    prisma.product.create({ data: { tenantId: tid, categoryId: catDairy.id, taxRateId: gst5.id,  name: 'Mother Dairy Curd 400g', sku: 'SC-CRD-MTH',  hsnCode: '0403', costPrice: 42,   sellingPrice: 55,   mrp: 60,   stock: 150, unit: 'pkt',    lowStockAlert: 20 } }),
+  ]);
+
+  // ── Branch stock distribution ─────────────────────────────────────────────
+  // HQ gets ~40%, Station Road 30%, Vijay Nagar 20%, Palasia 10%
+  const branchArr = [b1, b2, b3, b4];
+  const stockShare = [0.40, 0.30, 0.20, 0.10];
+  const branchStockData = [];
+  for (let bi = 0; bi < branchArr.length; bi++) {
+    for (let pi = 0; pi < prods.length; pi++) {
+      branchStockData.push({
+        tenantId: tid,
+        branchId: branchArr[bi].id,
+        productId: prods[pi].id,
+        quantity: Math.max(5, Math.round(prods[pi].stock * stockShare[bi] * (0.85 + (pi * 3 + bi * 7) % 30 / 100))),
+      });
+    }
+  }
+  await prisma.branchStock.createMany({ data: branchStockData });
+
+  // ── Branch manager login accounts ─────────────────────────────────────────
+  const [mgr1, mgr2, mgr3, mgr4] = await Promise.all([
+    prisma.user.create({ data: { tenantId: tid, name: 'Amit Sharma',  email: 'amit@sharmachain.test',   password: hashed(PASS), role: 'MANAGER', branchId: b1.id, isEmailVerified: true } }),
+    prisma.user.create({ data: { tenantId: tid, name: 'Sunita Yadav', email: 'sunita@sharmachain.test', password: hashed(PASS), role: 'MANAGER', branchId: b2.id, isEmailVerified: true } }),
+    prisma.user.create({ data: { tenantId: tid, name: 'Mohan Lal',    email: 'mohan@sharmachain.test',  password: hashed(PASS), role: 'MANAGER', branchId: b3.id, isEmailVerified: true } }),
+    prisma.user.create({ data: { tenantId: tid, name: 'Neha Jain',    email: 'neha@sharmachain.test',   password: hashed(PASS), role: 'MANAGER', branchId: b4.id, isEmailVerified: true } }),
+  ]);
+
+  // ── Staff records ─────────────────────────────────────────────────────────
+  await prisma.staff.createMany({
+    data: [
+      { tenantId: tid, branchId: b1.id, name: 'Amit Sharma',   role: 'Manager',   phone: '9876511001', salary: 22000, joinedAt: d(365) },
+      { tenantId: tid, branchId: b1.id, name: 'Priya Patel',   role: 'Cashier',   phone: '9876511002', salary: 14000, joinedAt: d(320) },
+      { tenantId: tid, branchId: b1.id, name: 'Ravi Kumar',    role: 'Store Boy', phone: '9876511003', salary: 10000, joinedAt: d(280) },
+      { tenantId: tid, branchId: b2.id, name: 'Sunita Yadav',  role: 'Manager',   phone: '9876512001', salary: 18000, joinedAt: d(340) },
+      { tenantId: tid, branchId: b2.id, name: 'Vikas Singh',   role: 'Cashier',   phone: '9876512002', salary: 13000, joinedAt: d(300) },
+      { tenantId: tid, branchId: b2.id, name: 'Deepa Gupta',   role: 'Store Boy', phone: '9876512003', salary: 10000, joinedAt: d(260) },
+      { tenantId: tid, branchId: b3.id, name: 'Mohan Lal',     role: 'Manager',   phone: '9876513001', salary: 18000, joinedAt: d(300) },
+      { tenantId: tid, branchId: b3.id, name: 'Kavita Sharma', role: 'Cashier',   phone: '9876513002', salary: 13000, joinedAt: d(270) },
+      { tenantId: tid, branchId: b3.id, name: 'Suresh Patel',  role: 'Store Boy', phone: '9876513003', salary: 9000,  joinedAt: d(220) },
+      { tenantId: tid, branchId: b4.id, name: 'Neha Jain',     role: 'Manager',   phone: '9876514001', salary: 17000, joinedAt: d(250) },
+      { tenantId: tid, branchId: b4.id, name: 'Rohit Tiwari',  role: 'Cashier',   phone: '9876514002', salary: 12000, joinedAt: d(220) },
+      { tenantId: tid, branchId: b4.id, name: 'Anjali Singh',  role: 'Store Boy', phone: '9876514003', salary: 9000,  joinedAt: d(180) },
+    ],
+  });
+
+  // ── Customers (30 shared across all branches) ─────────────────────────────
+  const customers = await Promise.all([
+    { name: 'Vikram Mishra',    phone: '9811101001', email: 'vikram.m@gmail.com'  },
+    { name: 'Meena Gupta',      phone: '9811102002', email: 'meena.g@gmail.com'   },
+    { name: 'Suresh Patidar',   phone: '9811103003'                               },
+    { name: 'Anita Singh',      phone: '9811104004', email: 'anita.s@gmail.com'   },
+    { name: 'Rahul Verma',      phone: '9811105005'                               },
+    { name: 'Pooja Sharma',     phone: '9811106006', email: 'pooja.sh@gmail.com'  },
+    { name: 'Dinesh Tiwari',    phone: '9811107007'                               },
+    { name: 'Rekha Patel',      phone: '9811108008', email: 'rekha.p@gmail.com'   },
+    { name: 'Ajay Yadav',       phone: '9811109009'                               },
+    { name: 'Sunita Joshi',     phone: '9811110010', email: 'sunita.j@gmail.com'  },
+    { name: 'Raju Sharma',      phone: '9811111011'                               },
+    { name: 'Kamla Bai',        phone: '9811112012'                               },
+    { name: 'Manoj Soni',       phone: '9811113013', email: 'manoj.s@gmail.com'   },
+    { name: 'Geeta Devi',       phone: '9811114014'                               },
+    { name: 'Prakash Verma',    phone: '9811115015'                               },
+    { name: 'Sarita Patel',     phone: '9811116016', email: 'sarita.p@gmail.com'  },
+    { name: 'Hemant Sharma',    phone: '9811117017'                               },
+    { name: 'Uma Devi',         phone: '9811118018'                               },
+    { name: 'Vipin Gupta',      phone: '9811119019', email: 'vipin.g@gmail.com'   },
+    { name: 'Lalita Singh',     phone: '9811120020'                               },
+    { name: 'Mukesh Kumar',     phone: '9811121021'                               },
+    { name: 'Sangeeta Bai',     phone: '9811122022'                               },
+    { name: 'Vivek Patel',      phone: '9811123023', email: 'vivek.p@gmail.com'   },
+    { name: 'Preeti Yadav',     phone: '9811124024'                               },
+    { name: 'Ashok Mishra',     phone: '9811125025', email: 'ashok.m@gmail.com'   },
+    { name: 'Vandana Sharma',   phone: '9811126026'                               },
+    { name: 'Narendra Soni',    phone: '9811127027'                               },
+    { name: 'Poonam Gupta',     phone: '9811128028', email: 'poonam.g@gmail.com'  },
+    { name: 'Rajesh Patidar',   phone: '9811129029'                               },
+    { name: 'Shobha Verma',     phone: '9811130030'                               },
+  ].map(c => prisma.customer.create({ data: { tenantId: tid, ...c } })));
+
+  // ── POS Transactions (52 weeks × 4 branches = ~572 sales over 1 year) ────
+  // Batched 50 at a time for speed
+  const payMethods = ['CASH', 'UPI', 'CASH', 'UPI', 'CARD'];
+  let txCounter = 0;
+  const branches = [b1, b2, b3, b4];
+  const txPerWeek = [4, 3, 2, 2]; // HQ gets more footfall
+  let pending = [];
+
+  for (let week = 0; week < 52; week++) {
+    for (let bi = 0; bi < 4; bi++) {
+      for (let i = 0; i < txPerWeek[bi]; i++) {
+        const dayOffset = 365 - week * 7 - i;
+        const txDate = new Date(Date.now() - dayOffset * 86400000);
+        txCounter++;
+        const customer = customers[(week * 4 + i + bi * 7) % customers.length];
+        const receiptNo = `SC-${String(txCounter).padStart(5, '0')}`;
+        const numItems = 2 + (txCounter % 3);
+        const txItems = [];
+        let subtotal = 0, taxTotal = 0, txTotal = 0;
+
+        for (let j = 0; j < numItems; j++) {
+          const prod = prods[(txCounter * 3 + j * 7 + bi * 11 + week * 2) % prods.length];
+          const qty = 1 + (j % 2);
+          const gstRate = prod.taxRateId === gst5.id ? 5 : (prod.taxRateId === gst12.id ? 12 : 0);
+          const lineSub = qty * prod.sellingPrice;
+          const lineTax = gstRate > 0 ? Math.round(lineSub * gstRate / (100 + gstRate) * 100) / 100 : 0;
+          subtotal += lineSub;
+          taxTotal += lineTax;
+          txTotal  += lineSub;
+          txItems.push({
+            productId: prod.id, name: prod.name, hsnCode: prod.hsnCode || null,
+            quantity: qty, unitPrice: prod.sellingPrice, discount: 0,
+            gstRate, taxAmount: lineTax,
+            cgst: Math.round(lineTax / 2 * 100) / 100,
+            sgst: Math.round(lineTax / 2 * 100) / 100,
+            igst: 0, total: lineSub,
+          });
+        }
+
+        pending.push(
+          prisma.transaction.create({
+            data: {
+              tenantId: tid, branchId: branches[bi].id, customerId: customer.id,
+              receiptNumber: receiptNo,
+              subtotal: Math.round(subtotal * 100) / 100,
+              taxAmount: Math.round(taxTotal * 100) / 100,
+              discountAmount: 0,
+              total: Math.round(txTotal * 100) / 100,
+              amountPaid: Math.round(txTotal * 100) / 100,
+              change: 0,
+              paymentMethod: payMethods[(txCounter + bi) % payMethods.length],
+              createdAt: txDate,
+              items: { create: txItems },
+            },
+          })
+        );
+
+        if (pending.length >= 50) { await Promise.all(pending); pending = []; }
+      }
+    }
+  }
+  if (pending.length) await Promise.all(pending);
+
+  // Update customer totalSpent + visitCount from actual transactions
+  const spendAgg = await prisma.transaction.groupBy({
+    by: ['customerId'],
+    where: { tenantId: tid },
+    _sum: { total: true },
+    _count: { _all: true },
+  });
+  await Promise.all(
+    spendAgg.filter(r => r.customerId).map(r =>
+      prisma.customer.update({
+        where: { id: r.customerId },
+        data: { totalSpent: r._sum.total || 0, visitCount: r._count._all, lastVisitAt: new Date() },
+      })
+    )
+  );
+
+  // ── B2B Invoices (monthly for the last 12 months, HQ branch) ─────────────
+  const b2bCust = await prisma.customer.create({ data: { tenantId: tid, name: 'Indore Caterers Pvt Ltd', phone: '9800001001', email: 'purchase@indorecaterers.com', gstin: '23AABCI9876B1Z4' } });
+  for (let month = 0; month < 12; month++) {
+    const issueDate = d(30 * (11 - month) + 15);
+    const dueDate   = new Date(issueDate.getTime() + 30 * 86400000);
+    const baseAmt   = 45000 + month * 2000;
+    const taxAmt    = Math.round(baseAmt * 0.05);
+    const totalAmt  = baseAmt + taxAmt;
+    const paid      = month <= 9;
+    await prisma.invoice.create({ data: {
+      tenantId: tid, branchId: b1.id, customerId: b2bCust.id,
+      invoiceNumber: `INV-SC-${String(month + 1).padStart(3, '0')}`,
+      status: paid ? 'PAID' : (month === 10 ? 'SENT' : 'DRAFT'),
+      subtotal: baseAmt, taxAmount: taxAmt, discountAmount: 0,
+      total: totalAmt, amountPaid: paid ? totalAmt : 0, balanceDue: paid ? 0 : totalAmt,
+      issueDate, dueDate,
+      items: { create: [
+        { description: 'Bulk Rice 100kg',           quantity: 20, unitPrice: 235,   taxRate: 5, taxAmount: Math.round(20*235*5/105*100)/100,  total: 20*235   },
+        { description: 'Bulk Sunflower Oil 5L×20',  quantity: 20, unitPrice: 739,   taxRate: 5, taxAmount: Math.round(20*739*5/105*100)/100,  total: 20*739   },
+        { description: 'Mixed Groceries Assorted',  quantity: 1,  unitPrice: baseAmt - 20*235 - 20*739, taxRate: 0, taxAmount: 0, total: baseAmt - 20*235 - 20*739 },
+      ]},
+    }});
+  }
+
+  // ── Expenses (12 months × 4 branches: rent, utilities, salaries) ─────────
+  const branchExpConfig = [
+    { branch: b1, rent: 35000, elec: 5500, salaries: 46000, label: 'Main Market'    },
+    { branch: b2, rent: 22000, elec: 3200, salaries: 41000, label: 'Station Road'   },
+    { branch: b3, rent: 18000, elec: 2800, salaries: 40000, label: 'Vijay Nagar'    },
+    { branch: b4, rent: 16000, elec: 2500, salaries: 38000, label: 'Palasia Square' },
+  ];
+  const expenseRows = [];
+  for (let month = 0; month < 12; month++) {
+    for (const { branch, rent, elec, salaries, label } of branchExpConfig) {
+      expenseRows.push(
+        { tenantId: tid, branchId: branch.id, category: 'RENT',      description: `Monthly rent — ${label}`,       amount: rent,     date: d(30 * (11 - month) + 5),  method: 'BANK_TRANSFER' },
+        { tenantId: tid, branchId: branch.id, category: 'UTILITIES',  description: `Electricity — ${label}`,        amount: elec,     date: d(30 * (11 - month) + 10), method: 'UPI'           },
+        { tenantId: tid, branchId: branch.id, category: 'SALARIES',   description: `Staff salaries — ${label}`,     amount: salaries, date: d(30 * (11 - month) + 1),  method: 'BANK_TRANSFER' },
+      );
+    }
+  }
+  // Additional one-off expenses
+  expenseRows.push(
+    { tenantId: tid, branchId: b1.id, category: 'MARKETING',   description: 'WhatsApp campaign — Diwali offers', amount: 8000, date: d(45),  method: 'UPI'           },
+    { tenantId: tid, branchId: b1.id, category: 'MARKETING',   description: 'Pamphlets & in-store banners',      amount: 3500, date: d(90),  method: 'CASH'          },
+    { tenantId: tid, branchId: b1.id, category: 'MAINTENANCE', description: 'AC service & repairs',              amount: 4200, date: d(130), method: 'CASH'          },
+    { tenantId: tid, branchId: b2.id, category: 'MAINTENANCE', description: 'Display shelf repair',              amount: 1800, date: d(60),  method: 'CASH'          },
+    { tenantId: tid, branchId: b3.id, category: 'SUPPLIES',    description: 'Carry bags & packaging material',   amount: 2200, date: d(20),  method: 'CASH'          },
+    { tenantId: tid,                  category: 'OTHER',        description: 'Syllabrix software subscription',   amount: 2999, date: d(15),  method: 'CARD'          },
+  );
+  // Batch createMany in chunks of 50 to avoid query size limits
+  for (let i = 0; i < expenseRows.length; i += 50) {
+    await prisma.expense.createMany({ data: expenseRows.slice(i, i + 50) });
+  }
+
+  // ── Stock transfers between branches ──────────────────────────────────────
+  const trf = (n) => `TRF-2505-${String(n).padStart(5, '0')}`;
+  await Promise.all([
+    // 1. HQ → Palasia: sugar + rice restocking (RECEIVED)
+    prisma.stockTransfer.create({ data: {
+      tenantId: tid, transferNumber: trf(1), fromBranchId: b1.id, toBranchId: b4.id,
+      status: 'RECEIVED', requestedById: owner.id, approvedById: owner.id,
+      notes: 'Palasia running low on staples',
+      items: { create: [
+        { productId: prods[12].id, quantity: 50, unitCost: 42  }, // Sugar
+        { productId: prods[1].id,  quantity: 20, unitCost: 190 }, // Regular Rice
+      ]},
+    }}),
+    // 2. Station Road → Vijay Nagar: oil for Diwali rush (RECEIVED)
+    prisma.stockTransfer.create({ data: {
+      tenantId: tid, transferNumber: trf(2), fromBranchId: b2.id, toBranchId: b3.id,
+      status: 'RECEIVED', requestedById: mgr3.id, approvedById: owner.id,
+      notes: 'Vijay Nagar needs oil — festival season',
+      items: { create: [
+        { productId: prods[7].id, quantity: 30, unitCost: 130 }, // Sunflower Oil
+      ]},
+    }}),
+    // 3. HQ → Vijay Nagar: EMERGENCY ghee (IN_TRANSIT)
+    prisma.stockTransfer.create({ data: {
+      tenantId: tid, transferNumber: trf(3), fromBranchId: b1.id, toBranchId: b3.id,
+      status: 'IN_TRANSIT', isEmergency: true, requestedById: mgr3.id, approvedById: owner.id,
+      notes: 'URGENT — Vijay Nagar out of ghee',
+      items: { create: [
+        { productId: prods[10].id, quantity: 15, unitCost: 300 }, // Ghee
+      ]},
+    }}),
+    // 4. Station Road → Palasia: biscuits for festival (APPROVED)
+    prisma.stockTransfer.create({ data: {
+      tenantId: tid, transferNumber: trf(4), fromBranchId: b2.id, toBranchId: b4.id,
+      status: 'APPROVED', requestedById: mgr4.id, approvedById: mgr2.id,
+      notes: 'Festival season biscuit restocking',
+      items: { create: [
+        { productId: prods[18].id, quantity: 50, unitCost: 40 }, // Parle G
+        { productId: prods[19].id, quantity: 30, unitCost: 48 }, // Britannia
+      ]},
+    }}),
+    // 5. HQ → Station Road: pending request (REQUESTED)
+    prisma.stockTransfer.create({ data: {
+      tenantId: tid, transferNumber: trf(5), fromBranchId: b1.id, toBranchId: b2.id,
+      status: 'REQUESTED', requestedById: mgr2.id,
+      notes: 'Station Road running low on multiple items',
+      items: { create: [
+        { productId: prods[0].id,  quantity: 25, unitCost: 280 }, // Basmati Rice
+        { productId: prods[6].id,  quantity: 20, unitCost: 90  }, // Urad Dal
+        { productId: prods[13].id, quantity: 30, unitCost: 90  }, // Tea
+      ]},
+    }}),
+  ]);
+
+  console.log(`  ✓ Created: Sharma Grocery Chain (KIRANA) — raj@sharmachain.test`);
+  console.log(`    └─ 4 branches: Main Market (HQ), Station Road, Vijay Nagar, Palasia Square`);
+  console.log(`    └─ ${prods.length} products, 30 customers, 12 staff, 4 branch managers`);
+  console.log(`    └─ ${txCounter} POS transactions (1 year), 12 B2B invoices, ${expenseRows.length} expenses, 5 stock transfers`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════
 async function main() {
@@ -622,6 +1011,7 @@ async function main() {
   await seedMall();
   await seedFreelancer();
   await seedWorkshop();
+  await seedSharmaChain();
 
   console.log('\n' + '─'.repeat(65));
   console.log('\n✅ Seed complete! All accounts use password: Test@1234\n');
@@ -638,6 +1028,7 @@ async function main() {
     ['Mall',        'City Square Mall',          'owner@citysquaremall.test'],
     ['Freelancer',  'Arjun Design Studio',       'owner@arjundesign.test'],
     ['Workshop',    'AutoFix Workshop',          'owner@autofixworkshop.test'],
+    ['Chain-Kirana','Sharma Grocery Chain',      'raj@sharmachain.test'],
   ];
 
   const col = (s, n) => s.padEnd(n);
@@ -647,6 +1038,11 @@ async function main() {
     console.log(col(type, 14) + col(biz, 28) + email);
   }
   console.log('\n🔑 Password for all: Test@1234\n');
+  console.log('📍 Sharma Chain branch managers:');
+  console.log('   Main Market  (HQ) — amit@sharmachain.test');
+  console.log('   Station Road      — sunita@sharmachain.test');
+  console.log('   Vijay Nagar       — mohan@sharmachain.test');
+  console.log('   Palasia Square    — neha@sharmachain.test\n');
 }
 
 main()

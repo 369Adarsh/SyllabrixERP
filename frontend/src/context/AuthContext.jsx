@@ -24,12 +24,20 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (formData) => {
     const { data } = await authApi.register(formData);
-    setAuth(data.data);
+    if (!data.data?.requiresVerification) {
+      setAuth(data.data);
+    }
     return data;
   };
 
   const login = async (formData) => {
     const { data } = await authApi.login(formData);
+    setAuth(data.data);
+    return data;
+  };
+
+  const staffLogin = async (formData) => {
+    const { data } = await authApi.staffLogin(formData);
     setAuth(data.data);
     return data;
   };
@@ -56,7 +64,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => { refreshMe(); }, [refreshMe]);
 
   return (
-    <AuthContext.Provider value={{ user, tenant, loading, register, login, logout, refreshMe }}>
+    <AuthContext.Provider value={{ user, tenant, loading, register, login, staffLogin, logout, refreshMe }}>
       {children}
     </AuthContext.Provider>
   );

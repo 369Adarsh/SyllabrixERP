@@ -2,17 +2,17 @@ const prisma = require('../../config/prisma');
 
 // Business Adaptation Engine — defines which nav modules are active per business type.
 // Keys map to the `module` field on Sidebar nav items.
-// Always-visible modules (module: null): staff, expenses, assets, whatsapp, campaigns
+// Always-visible modules (module: null): staff, expenses, assets
+// Module-gated add-ons: whatsapp, campaigns, automation, ai, b2b (enabled per tenant)
 const BUSINESS_MODULES = {
   // ── Existing ─────────────────────────────────────────────────────────────
   RETAIL:            ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
   KIRANA:            ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
-  COACHING:          ['fees', 'invoicing', 'customers', 'reports'],
+  COACHING:          ['fees', 'customers', 'progress', 'reports'],
   SALON:             ['appointments', 'pos', 'inventory', 'invoicing', 'customers', 'reports'],
   CLINIC:            ['appointments', 'invoicing', 'customers', 'reports'],
   RESTAURANT:        ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
-  GYM:               ['fees', 'appointments', 'invoicing', 'customers', 'reports'],
-  MALL:              ['lease', 'invoicing', 'reports'],
+  MALL:              ['lease', 'invoicing', 'customers', 'reports'],
   FREELANCER:        ['invoicing', 'customers', 'reports'],
   WORKSHOP:          ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
   OTHER:             ['pos', 'inventory', 'invoicing', 'customers', 'reports'],
@@ -34,10 +34,10 @@ const BUSINESS_MODULES = {
   FLORIST:           ['pos', 'inventory', 'appointments', 'invoicing', 'customers', 'reports'],
 
   // ── Food & Beverage ───────────────────────────────────────────────────────
-  DHABA:             ['pos', 'inventory', 'reports'],
+  DHABA:             ['pos', 'inventory', 'customers', 'reports'],
   CATERING:          ['appointments', 'inventory', 'invoicing', 'customers', 'reports'],
-  CLOUD_KITCHEN:     ['pos', 'inventory', 'reports'],
-  JUICE_BAR:         ['pos', 'inventory', 'reports'],
+  CLOUD_KITCHEN:     ['pos', 'inventory', 'customers', 'reports'],
+  JUICE_BAR:         ['pos', 'inventory', 'customers', 'reports'],
   CANTEEN_MESS:      ['pos', 'fees', 'inventory', 'customers', 'reports'],
 
   // ── Events & Functions ────────────────────────────────────────────────────
@@ -53,19 +53,27 @@ const BUSINESS_MODULES = {
   HOSPITAL:          ['appointments', 'inventory', 'invoicing', 'customers', 'reports'],
   VET_CLINIC:        ['pos', 'inventory', 'appointments', 'invoicing', 'customers', 'reports'],
 
+  // ── Fitness & Sports (SYL-BC-FIT) ─────────────────────────────────────────
+  GYM:               ['fees', 'appointments', 'membershipplans', 'staff', 'attendance', 'pos', 'inventory', 'customers', 'reports', 'training'],
+  SPA:               ['appointments', 'pos', 'inventory', 'customers', 'reports'],
+  YOGA_STUDIO:       ['fees', 'appointments', 'membershipplans', 'staff', 'attendance', 'customers', 'reports'],
+  MARTIAL_ARTS:      ['fees', 'appointments', 'membershipplans', 'staff', 'attendance', 'customers', 'reports'],
+  SPORTS_ACADEMY:    ['fees', 'appointments', 'membershipplans', 'staff', 'attendance', 'customers', 'reports'],
+  SWIMMING_ACADEMY:  ['fees', 'appointments', 'membershipplans', 'staff', 'attendance', 'customers', 'reports'],
+  CROSSFIT_STUDIO:   ['fees', 'appointments', 'membershipplans', 'staff', 'attendance', 'pos', 'inventory', 'customers', 'reports', 'training'],
+
   // ── Beauty & Personal Care ────────────────────────────────────────────────
   BEAUTY_PARLOUR:    ['appointments', 'pos', 'inventory', 'invoicing', 'customers', 'reports'],
-  SPA:               ['appointments', 'fees', 'invoicing', 'customers', 'reports'],
   LAUNDRY:           ['pos', 'appointments', 'invoicing', 'customers', 'reports'],
   TAILORING:         ['appointments', 'invoicing', 'customers', 'reports'],
   BARBERSHOP:        ['appointments', 'pos', 'inventory', 'invoicing', 'customers', 'reports'],
 
   // ── Education ─────────────────────────────────────────────────────────────
-  HOME_TUITION:      ['fees', 'invoicing', 'customers', 'reports'],
-  MUSIC_SCHOOL:      ['fees', 'appointments', 'inventory', 'invoicing', 'customers', 'reports'],
-  DANCE_ACADEMY:     ['fees', 'appointments', 'invoicing', 'customers', 'reports'],
-  DRIVING_SCHOOL:    ['fees', 'appointments', 'invoicing', 'customers', 'reports'],
-  COMPUTER_TRAINING: ['fees', 'appointments', 'invoicing', 'customers', 'reports'],
+  HOME_TUITION:      ['fees', 'customers', 'progress', 'reports'],
+  MUSIC_SCHOOL:      ['fees', 'appointments', 'customers', 'progress', 'reports'],
+  DANCE_ACADEMY:     ['fees', 'appointments', 'customers', 'progress', 'reports'],
+  DRIVING_SCHOOL:    ['fees', 'appointments', 'customers', 'progress', 'reports'],
+  COMPUTER_TRAINING: ['fees', 'appointments', 'customers', 'progress', 'reports'],
 
   // ── Professional Services ──────────────────────────────────────────────────
   CA_FIRM:           ['fees', 'invoicing', 'customers', 'reports'],
@@ -105,6 +113,7 @@ const updateProfile = async (tenantId, data) => {
   const allowed = [
     'name', 'phone', 'address', 'city', 'state', 'pincode',
     'gstin', 'pan', 'logoUrl', 'currency', 'locale', 'timezone',
+    'receiptConfig',
   ];
   const update = Object.fromEntries(
     Object.entries(data).filter(([k]) => allowed.includes(k))

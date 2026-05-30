@@ -1,8 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const list = (tenantId) =>
-  prisma.staff.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } });
+const list = (tenantId, { branchId } = {}) =>
+  prisma.staff.findMany({
+    where: { tenantId, ...(branchId && { branchId }) },
+    orderBy: { createdAt: 'desc' },
+  });
 
 const get = async (tenantId, id) => {
   const s = await prisma.staff.findFirst({ where: { id, tenantId } });

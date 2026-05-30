@@ -1,0 +1,562 @@
+/**
+ * Syllabrix Platform Catalog — shared static data
+ * Single source of truth for Module Registry and Role Templates on the frontend.
+ * Feature keys match seed-module-features.js exactly (camelCase of DB featureKey).
+ */
+
+// ── Module Registry ───────────────────────────────────────────────────────────
+
+export const MODULE_REGISTRY = {
+  invoicing: { code: 'SYL-MOD-INV', label: 'Invoicing', category: 'Finance', features: {
+    createInvoice:   'Create Invoice',
+    pdfDownload:     'PDF Download',
+    paymentRecord:   'Payment Recording',
+    emailSend:       'Email Invoice',
+    whatsappSend:    'WhatsApp Invoice',
+    quotations:      'Quotations',
+    creditNotes:     'Credit Notes',
+    recurring:       'Recurring Invoices',
+    overdueAlerts:   'Overdue Alerts',
+    partialPayment:  'Partial Payments',
+    bulkSend:        'Bulk Invoice Send',
+  }},
+  pos: { code: 'SYL-MOD-POS', label: 'Point of Sale', category: 'Commerce', features: {
+    productSearch:       'Product Search',
+    cashPayment:         'Cash Payment',
+    receiptPrint:        'Receipt Print',
+    categoryFilter:      'Category Filter',
+    upiPayment:          'UPI Payment',
+    upiQR:               'UPI QR Code',
+    cardPayment:         'Card / Bank Payment',
+    barcodeScanner:      'Barcode Scanner',
+    billDiscount:        'Bill Discount',
+    customerCapture:     'Customer Capture',
+    salesHistory:        "Today's Sales History",
+    gstBreakdown:        'GST Breakdown on Bill',
+    holdBill:            'Hold / Park Bill',
+    quickCash:           'Quick Cash Buttons',
+    billNote:            'Bill Note',
+    itemDiscount:        'Per-Item Discount',
+    customItem:          'Custom / Ad-hoc Item',
+    splitPayment:        'Split Payment',
+    managerPinDiscount:  'Manager PIN for Discount',
+    multiCashier:        'Multi-Cashier Sessions',
+    tableAssignment:     'Table / Seat Assignment',
+  }},
+  inventory: { code: 'SYL-MOD-STK', label: 'Inventory', category: 'Commerce', features: {
+    productList:    'Product List',
+    stockAdjust:    'Stock Adjustment',
+    categories:     'Product Categories',
+    lowStockAlerts: 'Low Stock Alerts',
+    purchaseOrders: 'Purchase Orders',
+    barcodeLabels:  'Barcode Label Print',
+    branchStock:    'Branch-wise Stock',
+    stockTransfer:  'Stock Transfer',
+    batchExpiry:    'Batch & Expiry Tracking',
+    importExport:   'Bulk Import / Export',
+  }},
+  customers: { code: 'SYL-MOD-CUS', label: 'Customers', category: 'Commerce', features: {
+    customerList:    'Customer List',
+    customerProfile: 'Customer Profile',
+    loyaltyPoints:   'Loyalty Points',
+    customerCredit:  'Customer Credit',
+    tags:            'Customer Tags',
+    birthdayAlerts:  'Birthday Reminders',
+    importExport:    'Import / Export',
+    lifetimeValue:   'Customer Analytics',
+  }},
+  expenses: { code: 'SYL-MOD-EXP', label: 'Expenses', category: 'Finance', features: {
+    expenseLog:        'Expense Log',
+    categories:        'Expense Categories',
+    receiptUpload:     'Receipt Upload',
+    recurringExpenses: 'Recurring Expenses',
+    expenseReports:    'Expense Reports',
+    budgetTracking:    'Budget Tracking',
+  }},
+  vendors: { code: 'SYL-MOD-VND', label: 'Vendors & Bills', category: 'Finance', features: {
+    vendorList:      'Vendor List',
+    purchaseBills:   'Purchase Bills',
+    purchaseOrders:  'Purchase Orders',
+    grn:             'Goods Receipt Notes',
+    paymentTracking: 'Payment Tracking',
+    vendorLedger:    'Vendor Ledger',
+  }},
+  accounts: { code: 'SYL-MOD-ACC', label: 'Accounts', category: 'Finance', features: {
+    bankAccounts:   'Bank Accounts',
+    transactionLog: 'Transaction Log',
+    reconciliation: 'Bank Reconciliation',
+    profitLoss:     'Profit & Loss',
+    balanceSheet:   'Balance Sheet',
+    cashFlow:       'Cash Flow Projections',
+  }},
+  reports: { code: 'SYL-MOD-REP', label: 'Reports', category: 'Finance', features: {
+    salesSummary:      'Sales Summary',
+    gstReport:         'GST Report',
+    expenseReport:     'Expense Report',
+    productSales:      'Product-wise Sales',
+    profitLoss:        'Profit & Loss',
+    revenueTrends:     'Revenue Trends',
+    exportExcel:       'Export to Excel',
+    scheduledReports:  'Scheduled Reports',
+  }},
+  staff: { code: 'SYL-MOD-STF', label: 'Staff', category: 'People', features: {
+    staffList:        'Staff List',
+    departments:      'Departments',
+    rolesPermissions: 'Roles & Permissions',
+    certifications:   'Certifications & Skills',
+    hrDocuments:      'HR Documents',
+  }},
+  attendance: { code: 'SYL-MOD-ATT', label: 'Attendance', category: 'People', features: {
+    manualLog:       'Manual Attendance',
+    monthlySummary:  'Monthly Summary',
+    biometric:       'Biometric Integration',
+    shiftManagement: 'Shift Management',
+    overtime:        'Overtime Calculation',
+  }},
+  payroll: { code: 'SYL-MOD-PAY', label: 'Payroll', category: 'People', features: {
+    salaryProcessing: 'Salary Processing',
+    payslips:         'Payslips',
+    deductions:       'PF / ESI / PT Deductions',
+    allowances:       'Allowances',
+    bankTransferList: 'Bank Transfer List',
+    form16:           'Form 16 / IT Summary',
+  }},
+  appointments: { code: 'SYL-MOD-APT', label: 'Appointments', category: 'Service', features: {
+    appointmentList: 'Appointment List',
+    calendarView:    'Calendar View',
+    staffAssignment: 'Staff Assignment',
+    reminders:       'Appointment Reminders',
+    statusTracking:  'Status Tracking',
+    recurring:       'Recurring Appointments',
+    waitlist:        'Waitlist Management',
+  }},
+  fees: { code: 'SYL-MOD-FEE', label: 'Fees', category: 'Service', features: {
+    feeCollection:     'Fee Collection',
+    feeStructure:      'Fee Structure',
+    pendingAlerts:     'Pending Fee Alerts',
+    bulkCollection:    'Bulk Fee Collection',
+    scholarshipWaiver: 'Scholarship / Waiver',
+  }},
+  progress: { code: 'SYL-MOD-STU', label: 'Students', category: 'Service', features: {
+    studentProfiles: 'Student Profiles',
+    batchManagement: 'Batch / Class Management',
+    homework:        'Homework Tracking',
+    progressReports: 'Progress Reports',
+    examManagement:  'Exam Management',
+  }},
+  assets: { code: 'SYL-MOD-AST', label: 'Assets', category: 'Finance', features: {
+    assetRegister:  'Asset Register',
+    depreciation:   'Depreciation (SLM)',
+    maintenanceLog: 'Maintenance Logs',
+    wdvDepreciation:'WDV Depreciation',
+  }},
+  lease: { code: 'SYL-MOD-LSE', label: 'Lease', category: 'Service', features: {
+    leaseUnits:      'Lease Units',
+    tenantProfiles:  'Tenant Profiles',
+    rentCollection:  'Rent Collection',
+    overdueAlerts:   'Overdue Rent Alerts',
+    leaseRenewal:    'Lease Renewal Alerts',
+    occupancyReport: 'Occupancy Report',
+  }},
+  membershipplans: { code: 'SYL-MOD-MBR', label: 'Memberships', category: 'Service', features: {
+    planManagement:    'Membership Plans',
+    memberEnrolment:   'Member Enrolment',
+    expiryAlerts:      'Expiry Alerts',
+    freezeMembership:  'Freeze Membership',
+    referralTracking:  'Referral Tracking',
+  }},
+  whatsapp: { code: 'SYL-MOD-WA', label: 'WhatsApp', category: 'Comms', features: {
+    manualMessages:    'Manual WhatsApp Messages',
+    messageTemplates:  'Message Templates',
+    deliveryStatus:    'Delivery Status',
+    automatedMessages: 'Automated Messages',
+    twoWayChat:        'Two-Way Chat',
+  }},
+  campaigns: { code: 'SYL-MOD-CMP', label: 'Campaigns', category: 'Comms', features: {
+    createCampaign:    'Create Campaign',
+    segmentedSend:     'Segment-based Send',
+    scheduledSend:     'Scheduled Send',
+    campaignAnalytics: 'Campaign Analytics',
+    dripCampaigns:     'Drip Campaigns',
+  }},
+  b2b: { code: 'SYL-MOD-B2B', label: 'B2B Marketplace', category: 'Commerce', features: {
+    supplierProfile:  'Supplier Profile',
+    productCatalog:   'Product Catalog',
+    connections:      'Buyer Connections',
+    priceNegotiation: 'Price Negotiation',
+    ratings:          'Ratings & Reviews',
+  }},
+  ai: { code: 'SYL-MOD-AIC', label: 'AI Copilot', category: 'Platform', features: {
+    businessInsights: 'Business Insights',
+    askAI:            'Ask AI',
+    anomalyDetection: 'Anomaly Detection',
+    forecasting:      'Revenue Forecasting',
+    customReports:    'AI Custom Reports',
+  }},
+  automation: { code: 'SYL-MOD-AUT', label: 'Automation', category: 'Platform', features: {
+    postSaleWhatsapp: 'Post-sale WhatsApp',
+    dailyDigest:      'Daily Digest Email',
+    lowStockAlert:    'Low Stock Automation',
+    birthdayWishes:   'Birthday Wishes',
+    paymentReminders: 'Payment Reminders',
+    customWorkflows:  'Custom Workflow Builder',
+  }},
+  training: { code: 'SYL-MOD-TRN', label: 'Training Plans', category: 'Service', features: {
+    exerciseLibrary: 'Exercise Library',
+    workoutTemplates:'Workout Templates',
+    trainingPlans:   'Member Training Plans',
+    sessionLogs:     'Session Logs',
+    bodyStats:       'Body Stats',
+    trainerNotes:    'Trainer Notes',
+  }},
+};
+
+export const MODULE_CATEGORY_COLORS = {
+  Finance:  '#34D399',
+  Commerce: '#60A5FA',
+  People:   '#A78BFA',
+  Service:  '#FBBF24',
+  Comms:    '#F472B6',
+  Platform: '#27DCFF',
+};
+
+// ── Permission presets ────────────────────────────────────────────────────────
+
+export const P = {
+  full: { C: true,  R: true,  U: true,  D: true  },
+  cru:  { C: true,  R: true,  U: true,  D: false },
+  cr:   { C: true,  R: true,  U: false, D: false },
+  r:    { C: false, R: true,  U: false, D: false },
+  none: { C: false, R: false, U: false, D: false },
+};
+
+// ── Standard role templates ───────────────────────────────────────────────────
+// Permissions can be:
+//   - A P preset directly (e.g. pos: P.cru) — applies to ALL features in that module
+//   - A nested object (e.g. payroll: { payslips: P.r, payrollRun: P.none }) — feature-level
+
+export const DEFAULT_ROLES = [
+  {
+    templateKey: 'OWNER', name: 'Owner', description: 'Full unrestricted access to everything. Cannot be edited.',
+    color: '#7C3AED', isSystem: true, isOwner: true, appliesTo: 'all', permissions: {},
+  },
+  {
+    templateKey: 'ADMIN', name: 'Admin', description: 'Full access to all modules. Cannot manage the Owner account.',
+    color: '#2563EB', isSystem: true, isOwner: false, appliesTo: 'all',
+    permissions: {
+      invoicing:      P.cru,
+      pos:            P.cru,
+      inventory:      P.full,
+      customers:      P.cru,
+      expenses:       P.cru,
+      vendors:        P.cru,
+      accounts:       P.cru,
+      reports:        P.r,
+      staff:          P.cru,
+      attendance:     P.cru,
+      payroll:        P.cru,
+      appointments:   P.cru,
+      fees:           P.cru,
+      progress:       P.cru,
+      assets:         P.cru,
+      lease:          P.cru,
+      membershipplans:P.cru,
+      whatsapp:       P.cr,
+      campaigns:      P.cru,
+      b2b:            P.cru,
+      ai:             P.cr,
+      automation:     P.cru,
+      training:       P.full,
+    },
+  },
+  {
+    templateKey: 'MANAGER', name: 'Manager', description: 'Day-to-day operations. No payroll, no bank accounts, no role management.',
+    color: '#0891B2', isSystem: true, isOwner: false, appliesTo: 'all',
+    permissions: {
+      invoicing:      P.cru,
+      pos:            P.cru,
+      inventory:      P.cru,
+      customers:      P.cru,
+      expenses:       P.cru,
+      vendors:        P.r,
+      accounts:       P.r,
+      reports:        P.r,
+      staff:          P.r,
+      attendance:     P.cru,
+      appointments:   P.cru,
+      fees:           P.cru,
+      progress:       P.cru,
+      assets:         P.r,
+      lease:          { leaseUnits: P.r, tenantProfiles: P.r, rentCollection: P.cru, overdueAlerts: P.r, leaseRenewal: P.r, occupancyReport: P.r },
+      membershipplans:P.cru,
+      whatsapp:       P.cr,
+      campaigns:      P.cru,
+      b2b:            P.r,
+      ai:             P.cr,
+      automation:     P.r,
+      training:       P.cru,
+    },
+  },
+  {
+    templateKey: 'ACCOUNTANT', name: 'Accountant', description: 'Invoices, expenses, accounts and financial reports only.',
+    color: '#D97706', isSystem: true, isOwner: false, appliesTo: 'all',
+    permissions: {
+      invoicing:      P.cru,
+      pos:            { receiptPrint: P.r, salesHistory: P.r, gstBreakdown: P.r },
+      inventory:      P.r,
+      customers:      P.r,
+      expenses:       P.full,
+      vendors:        P.full,
+      accounts:       P.cru,
+      reports:        P.r,
+      payroll:        { salaryProcessing: P.r, payslips: P.r, deductions: P.r, allowances: P.r },
+      fees:           P.cru,
+      assets:         P.cru,
+      membershipplans:P.r,
+      ai:             P.cr,
+    },
+  },
+  {
+    templateKey: 'CASHIER', name: 'Cashier', description: 'POS sales and basic invoicing only.',
+    color: '#059669', isSystem: true, isOwner: false, appliesTo: 'all',
+    permissions: {
+      invoicing:  { createInvoice: P.cr, pdfDownload: P.r, paymentRecord: P.cr, quotations: P.cr },
+      pos:        P.cr,
+      inventory:  P.r,
+      customers:  P.cr,
+      ai:         P.cr,
+    },
+  },
+  {
+    templateKey: 'STAFF', name: 'Staff', description: 'Minimal read access for general floor workers.',
+    color: '#6B7280', isSystem: true, isOwner: false, appliesTo: 'all',
+    permissions: {
+      invoicing:  { createInvoice: P.r, pdfDownload: P.r },
+      pos:        P.cr,
+      inventory:  P.r,
+      customers:  P.r,
+    },
+  },
+];
+
+// ── Business-specific role templates ─────────────────────────────────────────
+
+const educationTypes = ['COACHING', 'HOME_TUITION', 'MUSIC_SCHOOL', 'DANCE_ACADEMY', 'DRIVING_SCHOOL', 'COMPUTER_TRAINING'];
+const gymTypes       = ['GYM', 'CROSSFIT_STUDIO'];
+const fitnessTypes   = ['YOGA_STUDIO', 'MARTIAL_ARTS', 'SPORTS_ACADEMY', 'SWIMMING_ACADEMY'];
+
+export const EXTRA_ROLES = [
+  // ── SYL-BC-FIT — GYM + CROSSFIT_STUDIO ──────────────────────────────────────
+  {
+    templateKey: 'TRAINER', name: 'Trainer', description: 'Manages member sessions and workout plans.',
+    color: '#F59E0B', isSystem: false, appliesTo: gymTypes,
+    permissions: {
+      appointments:    P.cru,
+      customers:       P.r,
+      membershipplans: P.r,
+      attendance:      P.cr,
+      training:        P.cru,
+    },
+  },
+  {
+    templateKey: 'FRONT_DESK', name: 'Front Desk', description: 'Handles member check-in, fee collection and POS.',
+    color: '#10B981', isSystem: false, appliesTo: gymTypes,
+    permissions: {
+      pos:             P.cr,
+      fees:            { feeCollection: P.cr, feeStructure: P.r, pendingAlerts: P.r },
+      customers:       P.cru,
+      appointments:    P.cru,
+      attendance:      P.cr,
+      membershipplans: P.r,
+      training:        { trainingPlans: P.r, exerciseLibrary: P.r },
+    },
+  },
+  // ── SYL-BC-FIT — YOGA / MARTIAL_ARTS / SPORTS / SWIMMING ─────────────────────
+  {
+    templateKey: 'INSTRUCTOR', name: 'Instructor', description: 'Teaches classes and manages member progress.',
+    color: '#F59E0B', isSystem: false, appliesTo: fitnessTypes,
+    permissions: {
+      appointments:    P.cru,
+      customers:       P.r,
+      membershipplans: P.r,
+      attendance:      P.cr,
+    },
+  },
+  {
+    templateKey: 'FRONT_DESK', name: 'Front Desk', description: 'Handles member check-in and fee collection.',
+    color: '#10B981', isSystem: false, appliesTo: fitnessTypes,
+    permissions: {
+      fees:            { feeCollection: P.cr, feeStructure: P.r, pendingAlerts: P.r },
+      customers:       P.cru,
+      appointments:    P.cru,
+      attendance:      P.cr,
+      membershipplans: P.r,
+    },
+  },
+  // ── SYL-BC-FIT — SPA ─────────────────────────────────────────────────────────
+  {
+    templateKey: 'THERAPIST', name: 'Therapist', description: 'Manages personal appointments and service POS.',
+    color: '#8B5CF6', isSystem: false, appliesTo: ['SPA'],
+    permissions: {
+      appointments: P.cru,
+      pos:          { productSearch: P.r, cashPayment: P.cr, receiptPrint: P.cr, upiPayment: P.cr },
+      customers:    P.r,
+    },
+  },
+  {
+    templateKey: 'RECEPTIONIST', name: 'Receptionist', description: 'Front desk: books appointments and processes payments.',
+    color: '#EC4899', isSystem: false, appliesTo: ['SPA'],
+    permissions: {
+      appointments: P.cru,
+      pos:          P.cr,
+      customers:    P.cru,
+      attendance:   P.cr,
+    },
+  },
+  // ── CLINIC ────────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'DOCTOR', name: 'Doctor', description: 'Views and manages patient appointments and medical records.',
+    color: '#3B82F6', isSystem: false, appliesTo: ['CLINIC'],
+    permissions: {
+      appointments: P.cru,
+      customers:    P.r,
+    },
+  },
+  {
+    templateKey: 'RECEPTIONIST', name: 'Receptionist', description: 'Books appointments and manages patient billing.',
+    color: '#8B5CF6', isSystem: false, appliesTo: ['CLINIC'],
+    permissions: {
+      appointments: P.cru,
+      invoicing:    { createInvoice: P.cr, pdfDownload: P.r, paymentRecord: P.cr },
+      customers:    P.cru,
+    },
+  },
+  {
+    templateKey: 'LAB_TECHNICIAN', name: 'Lab Technician', description: 'Handles diagnostic records and test result uploads.',
+    color: '#06B6D4', isSystem: false, appliesTo: ['CLINIC'],
+    permissions: {
+      customers: P.r,
+    },
+  },
+  // ── Education ─────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'TEACHER', name: 'Teacher', description: 'Manages student progress, homework and teaching logs.',
+    color: '#7C3AED', isSystem: false, appliesTo: educationTypes,
+    permissions: {
+      progress:  { studentProfiles: P.r, batchManagement: P.r, homework: P.cru, progressReports: P.cru },
+      customers: P.r,
+    },
+  },
+  {
+    templateKey: 'COORDINATOR', name: 'Coordinator', description: 'Manages fee collection and student enrolment.',
+    color: '#F97316', isSystem: false, appliesTo: educationTypes,
+    permissions: {
+      fees:      P.cru,
+      progress:  { studentProfiles: P.cru, batchManagement: P.cru, homework: P.r, progressReports: P.r },
+      customers: P.cru,
+      invoicing: { createInvoice: P.cr, pdfDownload: P.r, paymentRecord: P.cr },
+    },
+  },
+  // ── SALON ─────────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'STYLIST', name: 'Stylist', description: 'Manages personal appointments and service-based POS.',
+    color: '#EC4899', isSystem: false, appliesTo: ['SALON'],
+    permissions: {
+      appointments: P.cru,
+      pos:          { productSearch: P.r, cashPayment: P.cr, receiptPrint: P.cr, upiPayment: P.cr },
+      customers:    P.r,
+    },
+  },
+  // ── RESTAURANT ────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'WAITER', name: 'Waiter', description: 'Creates POS orders and processes table payments.',
+    color: '#F59E0B', isSystem: false, appliesTo: ['RESTAURANT'],
+    permissions: {
+      pos:       P.cr,
+      inventory: P.r,
+    },
+  },
+  {
+    templateKey: 'CHEF', name: 'Chef', description: 'Views kitchen orders and manages inventory consumption.',
+    color: '#EF4444', isSystem: false, appliesTo: ['RESTAURANT'],
+    permissions: {
+      pos:       { productSearch: P.r, salesHistory: P.r },
+      inventory: P.r,
+    },
+  },
+  // ── MALL ──────────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'SECURITY', name: 'Security', description: 'Views lease unit information and attendance logs.',
+    color: '#6B7280', isSystem: false, appliesTo: ['MALL'],
+    permissions: {
+      lease:      { leaseUnits: P.r, tenantProfiles: P.r },
+      attendance: P.r,
+    },
+  },
+  // ── BEAUTY_PARLOUR ────────────────────────────────────────────────────────────
+  {
+    templateKey: 'BEAUTICIAN', name: 'Beautician', description: 'Manages personal appointments and service POS.',
+    color: '#EC4899', isSystem: false, appliesTo: ['BEAUTY_PARLOUR'],
+    permissions: {
+      appointments: P.cru,
+      pos:          { productSearch: P.r, cashPayment: P.cr, receiptPrint: P.cr, upiPayment: P.cr },
+      customers:    P.r,
+    },
+  },
+  // ── BARBERSHOP ────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'BARBER', name: 'Barber', description: 'Manages walk-in appointments and POS.',
+    color: '#0891B2', isSystem: false, appliesTo: ['BARBERSHOP'],
+    permissions: {
+      appointments: P.cru,
+      pos:          { productSearch: P.r, cashPayment: P.cr, receiptPrint: P.cr, upiPayment: P.cr },
+      customers:    P.r,
+    },
+  },
+  // ── DENTAL ────────────────────────────────────────────────────────────────────
+  {
+    templateKey: 'DENTIST', name: 'Dentist', description: 'Manages patient appointments and dental records.',
+    color: '#3B82F6', isSystem: false, appliesTo: ['DENTAL'],
+    permissions: {
+      appointments: P.cru,
+      customers:    P.r,
+    },
+  },
+];
+
+export const ALL_ROLES = [...DEFAULT_ROLES, ...EXTRA_ROLES];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+export function getPerm(role, moduleKey, featureKey) {
+  if (role.isOwner) return P.full;
+  const modPerms = role.permissions?.[moduleKey];
+  if (!modPerms) return P.none;
+  // Module-level flat permission (the object IS a P preset — has C/R/U/D boolean keys directly)
+  if ('C' in modPerms || 'R' in modPerms) return modPerms;
+  // Feature-level: look up by feature key
+  return modPerms[featureKey] ?? P.none;
+}
+
+export function getModuleAccess(role, moduleKey) {
+  if (role.isOwner) return true;
+  const mp = role.permissions?.[moduleKey];
+  if (!mp) return false;
+  // Module-level flat permission
+  if ('C' in mp || 'R' in mp) return mp.R || mp.C || mp.U || mp.D;
+  // Feature-level permissions object
+  return Object.values(mp).some((p) => p?.R || p?.C || p?.U || p?.D);
+}
+
+export function getCoverage(role, moduleKeys) {
+  let accessible = 0, total = 0;
+  for (const mk of moduleKeys) {
+    for (const fk of Object.keys(MODULE_REGISTRY[mk]?.features || {})) {
+      total++;
+      if (getPerm(role, mk, fk).R) accessible++;
+    }
+  }
+  return { accessible, total, pct: total > 0 ? Math.round((accessible / total) * 100) : 0 };
+}
+
+export const CRUD_COLORS = { C: '#34D399', R: '#60A5FA', U: '#FBBF24', D: '#F87171' };

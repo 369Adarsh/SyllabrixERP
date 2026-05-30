@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getCampaigns, createCampaign, sendCampaign, deleteCampaign, previewCampaignSegment } from '../../api';
-import { Megaphone, Plus, Send, Trash2, X, Users, CheckCircle, AlertTriangle, Clock, RefreshCw, Eye } from 'lucide-react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { P } from '../../styles/page';
+import { getCampaigns, createCampaign, deleteCampaign, previewCampaignSegment, getCampaignRecipients, markCampaignSent } from '../../api';
+import { Megaphone, Plus, Send, Trash2, X, Users, CheckCircle, AlertTriangle, Clock, RefreshCw } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import BroadcastLauncher from '../../components/BroadcastLauncher';
 import toast from 'react-hot-toast';
 
 const SEGMENTS = [
@@ -138,10 +141,11 @@ function CreateCampaignModal({ onClose, onSaved }) {
 }
 
 export default function CampaignManager() {
+  const { isMobile } = useBreakpoint();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [sending, setSending] = useState(null);
+  const [launching, setLaunching] = useState(null); // { campaign, recipients }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -155,16 +159,26 @@ export default function CampaignManager() {
   useEffect(() => { load(); }, [load]);
 
   const handleSend = async (campaign) => {
-    if (!window.confirm(`Send "${campaign.name}" to ${SEGMENTS.find((s) => s.value === campaign.segment)?.label}? This will send WhatsApp messages immediately.`)) return;
-    setSending(campaign.id);
     try {
-      const r = await sendCampaign(campaign.id);
-      const result = r.data.data;
-      toast.success(`Campaign sent! ${result.sent} messages delivered, ${result.failed} failed.`);
-      load();
+      toast.loading('Loading recipients…', { id: 'rc' });
+      const r = await getCampaignRecipients(campaign.id);
+      toast.dismiss('rc');
+      const { recipients } = r.data.data;
+      if (!recipients.length) { toast.error('No recipients with phone numbers in this segment'); return; }
+      setLaunching({ campaign, recipients });
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to send');
-    } finally { setSending(null); }
+      toast.dismiss('rc');
+      toast.error(err.response?.data?.message || 'Failed to load recipients');
+    }
+  };
+
+  const handleBroadcastComplete = async ({ sent, skipped }) => {
+    if (launching?.campaign) {
+      try { await markCampaignSent(launching.campaign.id, { sent, failed: skipped }); } catch { /* non-critical */ }
+      load();
+    }
+    setLaunching(null);
+    toast.success(`Broadcast complete — ${sent} sent, ${skipped} skipped`);
   };
 
   const handleDelete = async (campaign) => {
@@ -181,16 +195,12 @@ export default function CampaignManager() {
   const sentCampaigns = campaigns.filter((c) => c.status === 'SENT').length;
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 900 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>
-            Campaign Manager
-          </h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>
-            Send targeted WhatsApp messages to customer segments
-          </p>
+          <h1 style={P.h1(isMobile)}>Campaign Manager</h1>
+          <p style={P.sub}>Send targeted WhatsApp messages to customer segments</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} style={{ marginRight: 6 }} />New Campaign</Button>
       </div>
@@ -228,7 +238,6 @@ export default function CampaignManager() {
             const meta = STATUS_META[campaign.status] || STATUS_META.DRAFT;
             const StatusIcon = meta.icon;
             const seg = SEGMENTS.find((s) => s.value === campaign.segment);
-            const isSending = sending === campaign.id;
             return (
               <div key={campaign.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 22px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -255,10 +264,11 @@ export default function CampaignManager() {
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, marginLeft: 16, flexShrink: 0 }}>
-                    {campaign.status === 'DRAFT' && (
-                      <Button onClick={() => handleSend(campaign)} loading={isSending} style={{ fontSize: 13, padding: '8px 16px' }}>
-                        <Send size={13} style={{ marginRight: 5 }} />Send now
-                      </Button>
+                    {(campaign.status === 'DRAFT' || campaign.status === 'SENT') && (
+                      <button onClick={() => handleSend(campaign)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#25D366', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                        <Send size={13} />{campaign.status === 'SENT' ? 'Send Again' : 'Launch Broadcast'}
+                      </button>
                     )}
                     <button onClick={() => handleDelete(campaign)} style={{ background: 'none', border: '1px solid #FCA5A5', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#DC2626' }}>
                       <Trash2 size={14} />
@@ -286,6 +296,15 @@ export default function CampaignManager() {
         <CreateCampaignModal
           onClose={() => setShowCreate(false)}
           onSaved={() => { setShowCreate(false); load(); }}
+        />
+      )}
+
+      {launching && (
+        <BroadcastLauncher
+          title={launching.campaign.name}
+          recipients={launching.recipients}
+          onClose={() => setLaunching(null)}
+          onComplete={handleBroadcastComplete}
         />
       )}
     </div>

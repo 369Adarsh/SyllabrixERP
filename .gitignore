@@ -9,6 +9,8 @@ backend/.env.quality
 backend/.env.production
 backend/dist/
 backend/*.log
+backend/*.err
+backend/uploads/
 
 # Frontend — all real env files
 frontend/node_modules/

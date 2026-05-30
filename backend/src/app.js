@@ -1,9 +1,11 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const errorHandler = require('./middleware/errorHandler');
 const config = require('./config/env');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./modules/auth/auth.routes');
 const tenantRoutes = require('./modules/tenant/tenant.routes');
@@ -30,23 +32,121 @@ const creditNotesRoutes = require('./modules/creditnotes/creditnotes.routes');
 const quotationsRoutes = require('./modules/quotations/quotations.routes');
 const payrollRoutes = require('./modules/payroll/payroll.routes');
 const recurringInvoicesRoutes = require('./modules/recurringinvoices/recurringinvoices.routes');
+const automationRoutes = require('./modules/automation/automation.routes');
+const progressRoutes = require('./modules/progress/progress.routes');
+const roleRequestsRoutes = require('./modules/rolerequests/rolerequests.routes');
+const superadminRoutes = require('./modules/superadmin/superadmin.routes');
+const activityRoutes   = require('./modules/activity/activity.routes');
+const supportRoutes = require('./modules/support/support.routes');
+const complianceRoutes = require('./modules/compliance/compliance.routes');
+const announcementsRoutes = require('./modules/announcements/announcements.routes');
+const businessBuilderRoutes = require('./modules/businessbuilder/businessbuilder.routes');
+const b2bRoutes = require('./modules/b2b/b2b.routes');
+const membershipPlansRoutes = require('./modules/membership-plans/membership-plans.routes');
+const returnsRoutes = require('./modules/returns/returns.routes');
+const trainingRoutes = require('./modules/training/training.routes');
+const rolesRoutes = require('./modules/roles/roles.routes');
+const branchesRoutes = require('./modules/branches/branches.routes');
+const stockTransferRoutes = require('./modules/branches/stockTransfer.routes');
+const featuresRoutes = require('./modules/features/features.routes');
+const helpRoutes = require('./modules/help/help.routes');
 
 const { razorpayWebhook } = require('./modules/invoicing/invoicing.controller');
+const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/whatsapp.controller');
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: config.clientUrl, credentials: true }));
+// ─── HTTPS redirect in production ─────────────────────────────────────────────
+if (config.nodeEnv === 'production') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+  app.set('trust proxy', 1); // Trust Railway/Render/Vercel reverse proxy
+}
+
+// ─── Security headers (Helmet) ─────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'"],
+      styleSrc:   ["'self'", "'unsafe-inline'"], // Allow inline styles for email templates
+      imgSrc:     ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'"],
+      fontSrc:    ["'self'", 'https:'],
+      objectSrc:  ["'none'"],
+      frameSrc:   ["'none'"],
+      upgradeInsecureRequests: config.nodeEnv === 'production' ? [] : null,
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow uploads to be loaded cross-origin
+  hsts: config.nodeEnv === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+    : false,
+}));
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = config.clientUrl
+  ? config.clientUrl.split(',').map(u => u.trim()).filter(Boolean)
+  : [];
+
+if (config.nodeEnv === 'production' && allowedOrigins.length === 0) {
+  throw new Error('[FATAL] CLIENT_URL must be set in production');
+}
+if (config.nodeEnv !== 'production' && allowedOrigins.length === 0) {
+  allowedOrigins.push('http://localhost:5173');
+}
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Requests with no Origin header (e.g. curl, Postman) are blocked when credentials are involved
+    if (!origin) return cb(null, false);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+  maxAge: 86400, // Cache preflight 24h
+}));
+
+// ─── Request logging ───────────────────────────────────────────────────────────
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-// Razorpay webhook — raw body required for HMAC signature verification
+// ─── Static public assets (logo, etc.) ────────────────────────────────────────
+app.use('/public', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, '..', 'public')));
+
+// ─── Uploaded files (logos) ────────────────────────────────────────────────────
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  // Prevent browsers from executing uploaded files as scripts
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Disposition', 'inline');
+  next();
+}, express.static(path.join(__dirname, '..', 'uploads')));
+
+// ─── Webhook routes — raw body required before express.json() ─────────────────
+// Razorpay: HMAC-SHA256 over raw body
 app.post('/api/v1/webhooks/razorpay', express.raw({ type: 'application/json' }), razorpayWebhook);
+// WhatsApp: Meta X-Hub-Signature-256 over raw body
+app.get('/api/v1/whatsapp/webhook', waVerify);
+app.post('/api/v1/whatsapp/webhook', express.raw({ type: 'application/json' }), waWebhook);
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// ─── Body parsing ──────────────────────────────────────────────────────────────
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// ─── Health check (no rate limit) ─────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'Syllabrix API' }));
 
+// ─── Global API rate limiter ───────────────────────────────────────────────────
+app.use('/api/', apiLimiter);
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tenant', tenantRoutes);
 app.use('/api/v1/users', userRoutes);
@@ -72,6 +172,40 @@ app.use('/api/v1/credit-notes', creditNotesRoutes);
 app.use('/api/v1/quotations', quotationsRoutes);
 app.use('/api/v1/payroll', payrollRoutes);
 app.use('/api/v1/recurring-invoices', recurringInvoicesRoutes);
+app.use('/api/v1/automation', automationRoutes);
+app.use('/api/v1/progress', progressRoutes);
+app.use('/api/v1/role-requests', roleRequestsRoutes);
+app.use('/api/v1/b2b', b2bRoutes);
+app.use('/api/v1/membership-plans', membershipPlansRoutes);
+app.use('/api/v1/returns', returnsRoutes);
+app.use('/api/v1/training', trainingRoutes);
+app.use('/api/v1/roles', rolesRoutes);
+app.use('/api/v1/branches', branchesRoutes);
+app.use('/api/v1/stock-transfers', stockTransferRoutes);
+app.use('/api/v1/features', featuresRoutes);
+app.use('/api/v1/help', helpRoutes);
+
+// ── Syllabrix Platform Layer ───────────────────────────────────────────────────
+app.use('/api/platform', superadminRoutes);
+app.use('/api/platform/activity', activityRoutes);
+app.use('/api/platform/support', supportRoutes);
+app.use('/api/v1/support', supportRoutes);
+app.use('/api/platform/compliance', complianceRoutes);
+app.use('/api/v1/compliance', complianceRoutes);
+app.use('/api/platform/announcements', announcementsRoutes);
+app.use('/api/v1/announcements', announcementsRoutes);
+app.use('/api/platform/builder', businessBuilderRoutes);
+
+// Public maintenance check — no auth required, consumed by tenant app
+app.get('/api/v1/maintenance/active', async (req, res) => {
+  try {
+    const prisma = require('./config/prisma');
+    const window = await prisma.maintenanceWindow.findFirst({ where: { isActive: true }, orderBy: { startAt: 'desc' } });
+    res.json({ success: true, data: window || null });
+  } catch {
+    res.json({ success: true, data: null });
+  }
+});
 
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 app.use(errorHandler);

@@ -1,11 +1,13 @@
+const crypto = require('crypto');
 const svc = require('./whatsapp.service');
 const config = require('../../config/env');
+const prisma = require('../../config/prisma');
 const { ok } = require('../../utils/response');
 
-// GET /whatsapp/webhook  — Meta webhook verification
+// GET /whatsapp/webhook  — Meta webhook verification challenge
 const verify = (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
+  const mode      = req.query['hub.mode'];
+  const token     = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
   if (mode === 'subscribe' && token === config.whatsappWebhookSecret) {
     return res.status(200).send(challenge);
@@ -13,15 +15,61 @@ const verify = (req, res) => {
   res.status(403).json({ error: 'Forbidden' });
 };
 
-// POST /whatsapp/webhook  — incoming messages
+// Resolve which tenant owns this incoming WhatsApp phone number ID
+// For single-tenant WhatsApp deployment: matches against env config
+// TODO: For multi-tenant, store phone_number_id per tenant in DB
+const resolveTenantId = async (phoneNumberId) => {
+  if (!phoneNumberId) return null;
+  if (config.whatsappPhoneId && phoneNumberId === config.whatsappPhoneId) {
+    const tenant = await prisma.tenant.findFirst({
+      where: { isActive: true },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    return tenant?.id || null;
+  }
+  return null;
+};
+
+// POST /whatsapp/webhook  — incoming messages from Meta
+// Mounted in app.js with express.raw() so req.body is a Buffer for HMAC verification
 const webhook = async (req, res) => {
+  // Always respond 200 immediately — Meta requires acknowledgment within 20 seconds
   res.status(200).send('EVENT_RECEIVED');
+
   try {
-    const body = req.body;
+    const secret = config.whatsappWebhookSecret;
+
+    if (secret) {
+      const signature = req.headers['x-hub-signature-256'];
+      if (!signature) {
+        console.warn('[SECURITY] WhatsApp webhook: missing X-Hub-Signature-256 header — ignoring');
+        return;
+      }
+
+      const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
+      const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+      const sigBuf      = Buffer.from(signature);
+      const expectedBuf = Buffer.from(expected);
+      const valid = sigBuf.length === expectedBuf.length &&
+        crypto.timingSafeEqual(sigBuf, expectedBuf);
+
+      if (!valid) {
+        console.warn('[SECURITY] WhatsApp webhook: invalid signature — ignoring');
+        return;
+      }
+    }
+
+    const body = Buffer.isBuffer(req.body)
+      ? JSON.parse(req.body.toString('utf8'))
+      : req.body;
+
     if (body.object !== 'whatsapp_business_account') return;
+
     for (const entry of body.entry || []) {
-      // Use tenantId from waba account mapping — for now map to first tenant with matching WABA
-      const tenantId = req.tenantId || null;
+      const phoneNumberId = entry.changes?.[0]?.value?.metadata?.phone_number_id;
+      const tenantId = await resolveTenantId(phoneNumberId);
       if (!tenantId) continue;
       await svc.handleInbound(tenantId, entry);
     }
@@ -94,4 +142,8 @@ const thread = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-module.exports = { verify, webhook, send, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder, bulkFeeReminders, conversations, thread };
+module.exports = {
+  verify, webhook,
+  send, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
+  bulkFeeReminders, conversations, thread,
+};

@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import KpiBar from '../../components/ui/KpiBar';
+import { P } from '../../styles/page';
+import { useBranch } from '../../context/BranchContext';
 import { getQuotations, createQuotation, updateQuotationStatus, convertQuotationToInvoice, getCustomers, getTaxRates } from '../../api';
 import { Plus, FileText, X, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import Card from '../../components/ui/Card';
@@ -13,6 +17,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-dig
 const STATUS_COLOR = { DRAFT: 'secondary', SENT: 'info', ACCEPTED: 'success', REJECTED: 'error', EXPIRED: 'secondary', CONVERTED: 'success' };
 
 function CreateQuotationModal({ onClose, onCreated }) {
+  const { branchId } = useBranch();
   const [customers, setCustomers] = useState([]);
   const [taxRates, setTaxRates] = useState([]);
   const [form, setForm] = useState({
@@ -47,6 +52,7 @@ function CreateQuotationModal({ onClose, onCreated }) {
     try {
       await createQuotation({
         ...form,
+        ...(branchId && { branchId }),
         items: items.map(it => ({ ...it, quantity: Number(it.quantity), unitPrice: Number(it.unitPrice), taxRate: Number(it.taxRate) })),
       });
       toast.success('Quotation created');
@@ -185,6 +191,8 @@ function QuotationRow({ q, onRefresh }) {
 }
 
 export default function Quotations() {
+  const { isMobile } = useBreakpoint();
+  const { branchId } = useBranch();
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -193,11 +201,14 @@ export default function Quotations() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getQuotations(filter !== 'ALL' ? { status: filter } : {});
+      const params = {};
+      if (filter !== 'ALL') params.status = filter;
+      if (branchId) params.branchId = branchId;
+      const res = await getQuotations(params);
       setQuotations(res.data.data || []);
     } catch { toast.error('Failed to load quotations'); }
     finally { setLoading(false); }
-  }, [filter]);
+  }, [filter, branchId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -207,28 +218,21 @@ export default function Quotations() {
   const conversionRate = quotations.length ? Math.round((accepted.length + converted.length) / quotations.length * 100) : 0;
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1100, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Quotations & Estimates</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>Create quotes, get acceptance, convert to invoices</p>
+          <h1 style={P.h1(isMobile)}>Quotations & Estimates</h1>
+          <p style={P.sub}>Create quotes, get acceptance, convert to invoices</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} style={{ marginRight: 6 }} />New Quotation</Button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        {[
-          { label: 'Total Pipeline', value: fmt(totalValue), color: 'var(--navy)' },
-          { label: 'Accepted', value: accepted.length, color: 'var(--emerald)' },
-          { label: 'Converted', value: converted.length, color: 'var(--cyan)' },
-          { label: 'Conversion Rate', value: `${conversionRate}%`, color: conversionRate >= 50 ? 'var(--emerald)' : '#F59E0B' },
-        ].map(({ label, value, color }) => (
-          <Card key={label}>
-            <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{value}</div>
-          </Card>
-        ))}
-      </div>
+      <KpiBar stats={[
+        { label: 'Total Pipeline',   value: fmt(totalValue),        color: 'var(--navy)'                              },
+        { label: 'Accepted',         value: accepted.length,        color: 'var(--emerald)'                           },
+        { label: 'Converted',        value: converted.length,       color: 'var(--cyan)'                              },
+        { label: 'Conversion Rate',  value: `${conversionRate}%`,   color: conversionRate >= 50 ? 'var(--emerald)' : '#F59E0B' },
+      ]} />
 
       <Card style={{ padding: 0 }}>
         <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8 }}>
@@ -239,24 +243,26 @@ export default function Quotations() {
         {loading ? (
           <p style={{ color: '#9CA3AF', textAlign: 'center', padding: 48 }}>Loading…</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#F9FAFB' }}>
+          <div style={P.tableScroll}>
+          <table style={P.table}>
+            <thead style={P.thead}>
+              <tr>
                 {['Quote #', 'Customer', 'Date', 'Valid Until', 'Amount', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                  <th key={h} style={P.th()}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {quotations.map(q => <QuotationRow key={q.id} q={q} onRefresh={load} />)}
               {quotations.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 48, color: '#9CA3AF' }}>
+                <tr><td colSpan={7} style={P.empty}>
                   <FileText size={36} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
                   No quotations found
                 </td></tr>
               )}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
 
@@ -264,3 +270,4 @@ export default function Quotations() {
     </div>
   );
 }
+

@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import KpiBar from '../../components/ui/KpiBar';
+import { P } from '../../styles/page';
 import { getLeaseUnits, createLeaseUnit, getLeases, createLease, terminateLease, getRentDue, sendWARentReminder } from '../../api';
 import { Plus, Building2, X, Users, IndianRupee, CheckCircle, AlertTriangle, MessageCircle } from 'lucide-react';
 import Button from '../../components/ui/Button';
@@ -152,6 +155,7 @@ function CreateLeaseModal({ units, onClose, onCreated }) {
 }
 
 export default function Lease() {
+  const { isMobile } = useBreakpoint();
   const [tab, setTab] = useState('leases'); // 'leases' | 'units' | 'rentdue'
   const [units, setUnits] = useState([]);
   const [leases, setLeases] = useState([]);
@@ -194,11 +198,11 @@ export default function Lease() {
   const monthlyRentTotal = activeLeases.reduce((s, l) => s + (l.rentAmount || 0), 0);
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1100, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Lease Management</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>{units.length} units, {leases.length} lease records</p>
+          <h1 style={P.h1(isMobile)}>Lease Management</h1>
+          <p style={P.sub}>{units.length} units, {leases.length} lease records</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Button variant="ghost" onClick={() => setModal('unit')}><Plus size={15} style={{ marginRight: 5 }} />Add Unit</Button>
@@ -206,25 +210,12 @@ export default function Lease() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        {[
-          { label: 'Total Units', value: units.length, color: 'var(--navy)', icon: Building2 },
-          { label: 'Occupied', value: occupied, color: '#D97706', icon: Users },
-          { label: 'Vacant', value: vacant, color: '#16A34A', icon: CheckCircle },
-          { label: 'Monthly Rent', value: fmt(monthlyRentTotal), color: 'var(--cyan)', icon: IndianRupee },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} style={{ background: '#fff', borderRadius: 12, padding: '18px 20px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 42, height: 42, background: color + '18', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon size={18} color={color} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--navy)', letterSpacing: '-0.02em' }}>{value}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <KpiBar stats={[
+        { label: 'Total Units',   value: units.length,           color: 'var(--navy)', icon: Building2  },
+        { label: 'Occupied',      value: occupied,               color: '#D97706',     icon: Users       },
+        { label: 'Vacant',        value: vacant,                 color: '#16A34A',     icon: CheckCircle },
+        { label: 'Monthly Rent',  value: fmt(monthlyRentTotal),  color: 'var(--cyan)', icon: IndianRupee },
+      ]} />
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#F3F4F6', borderRadius: 10, padding: 4, width: 'fit-content' }}>
@@ -241,44 +232,45 @@ export default function Lease() {
       {/* Leases Tab */}
       {tab === 'leases' && (
         <>
-          <div style={{ marginBottom: 16 }}>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ padding: '9px 14px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+          <div style={{ ...P.bar, marginBottom: 16 }}>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...P.input, width: 'auto' }}>
               <option value="">All status</option>
               {Object.keys(STATUS_STYLES).map(s => <option key={s} value={s}>{STATUS_STYLES[s].label}</option>)}
             </select>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#F9FAFB', borderBottom: '1px solid var(--border)' }}>
+          <div style={P.tableWrap}>
+            <div style={P.tableScroll}>
+            <table style={P.table}>
+              <thead style={P.thead}>
+                <tr>
                   {['Unit', 'Tenant / Business', 'Phone', 'Monthly Rent', 'Start', 'End', 'Status', ''].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                    <th key={h} style={P.th()}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>Loading...</td></tr>
+                  <tr><td colSpan={8} style={P.empty}>Loading...</td></tr>
                 ) : leases.length === 0 ? (
-                  <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>
+                  <tr><td colSpan={8} style={P.empty}>
                     <Building2 size={32} style={{ display: 'block', margin: '0 auto 8px', opacity: 0.3 }} />
                     No leases yet
                   </td></tr>
-                ) : leases.map(l => (
-                  <tr key={l.id} style={{ borderBottom: '1px solid var(--border)' }}
+                ) : leases.map((l, i) => (
+                  <tr key={l.id} style={{ ...P.tr(i, leases.length), cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
                     onMouseLeave={e => e.currentTarget.style.background = ''}>
-                    <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 700, color: 'var(--navy)' }}>{l.unit?.unitNumber || '—'}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 14 }}>
+                    <td style={{ ...P.td(), fontWeight: 700, color: 'var(--navy)' }}>{l.unit?.unitNumber || '—'}</td>
+                    <td style={P.td()}>
                       <div style={{ fontWeight: 500 }}>{l.tenantName}</div>
                       {l.businessName && <div style={{ fontSize: 12, color: '#6B7280' }}>{l.businessName}</div>}
                     </td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{l.tenantPhone || '—'}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 700 }}>{fmt(l.rentAmount)}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(l.startDate)}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(l.endDate)}</td>
-                    <td style={{ padding: '14px 16px' }}><Badge status={l.status} /></td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ ...P.td(), color: '#6B7280' }}>{l.tenantPhone || '—'}</td>
+                    <td style={{ ...P.td(), fontWeight: 700 }}>{fmt(l.rentAmount)}</td>
+                    <td style={{ ...P.td(), color: '#6B7280' }}>{fmtDate(l.startDate)}</td>
+                    <td style={{ ...P.td(), color: '#6B7280' }}>{fmtDate(l.endDate)}</td>
+                    <td style={P.td()}><Badge status={l.status} /></td>
+                    <td style={P.td()}>
                       {l.status === 'ACTIVE' && (
                         <button onClick={() => handleTerminate(l)} style={{ fontSize: 13, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Terminate</button>
                       )}
@@ -287,6 +279,7 @@ export default function Lease() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
@@ -331,30 +324,31 @@ export default function Lease() {
 
       {/* Rent Due Tab */}
       {tab === 'rentdue' && (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#F9FAFB', borderBottom: '1px solid var(--border)' }}>
+        <div style={P.tableWrap}>
+          <div style={P.tableScroll}>
+          <table style={P.table}>
+            <thead style={P.thead}>
+              <tr>
                 {['Unit', 'Tenant', 'Business', 'Monthly Rent', 'Lease Since', ''].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  <th key={h} style={P.th()}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>Loading...</td></tr>
+                <tr><td colSpan={6} style={P.empty}>Loading...</td></tr>
               ) : rentDue.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: 48, textAlign: 'center', color: '#9CA3AF' }}>No active leases</td></tr>
-              ) : rentDue.map(l => (
-                <tr key={l.id} style={{ borderBottom: '1px solid var(--border)' }}
+                <tr><td colSpan={6} style={P.empty}>No active leases</td></tr>
+              ) : rentDue.map((l, i) => (
+                <tr key={l.id} style={{ ...P.tr(i, rentDue.length), cursor: 'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
                   onMouseLeave={e => e.currentTarget.style.background = ''}>
-                  <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 700, color: 'var(--navy)' }}>{l.unit?.unitNumber}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 500 }}>{l.tenantName || l.contactName}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{l.businessName || '—'}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 700, color: 'var(--cyan)' }}>{fmt(l.rentAmount || l.monthlyRent)}</td>
-                  <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{fmtDate(l.startDate)}</td>
-                  <td style={{ padding: '14px 16px' }}>
+                  <td style={{ ...P.td(), fontWeight: 700, color: 'var(--navy)' }}>{l.unit?.unitNumber}</td>
+                  <td style={{ ...P.td(), fontWeight: 500 }}>{l.tenantName || l.contactName}</td>
+                  <td style={{ ...P.td(), color: '#6B7280' }}>{l.businessName || '—'}</td>
+                  <td style={{ ...P.td(), fontWeight: 700, color: 'var(--cyan)' }}>{fmt(l.rentAmount || l.monthlyRent)}</td>
+                  <td style={{ ...P.td(), color: '#6B7280' }}>{fmtDate(l.startDate)}</td>
+                  <td style={P.td()}>
                     {l.phone && (
                       <button
                         onClick={async () => { try { await sendWARentReminder(l.id); toast.success('Rent reminder sent via WhatsApp'); } catch { toast.error('Failed to send'); } }}
@@ -369,6 +363,7 @@ export default function Lease() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -377,3 +372,4 @@ export default function Lease() {
     </div>
   );
 }
+

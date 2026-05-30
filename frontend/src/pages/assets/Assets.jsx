@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { useBranch } from '../../context/BranchContext';
+import KpiBar from '../../components/ui/KpiBar';
+import { P } from '../../styles/page';
 import {
   getAssetSummary, getAssetCategories, createAssetCategory,
   getAssets, getAsset, createAsset, updateAsset, disposeAsset, deleteAsset,
@@ -8,6 +12,7 @@ import toast from 'react-hot-toast';
 import {
   Plus, Pencil, Trash2, X, Search, Filter, Wrench, BarChart2,
   Package2, AlertTriangle, CheckCircle, TrendingDown, Eye, ChevronDown, ChevronRight,
+  Archive,
 } from 'lucide-react';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -25,10 +30,6 @@ const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractio
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const pct = (a, b) => b > 0 ? ((a / b) * 100).toFixed(1) : 0;
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-const CARD = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' };
-const INPUT_S = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #E5E7EB', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box' };
-const BTN = (v = 'primary') => ({ padding: '9px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', background: v === 'primary' ? 'var(--navy)' : v === 'danger' ? '#FEE2E2' : '#F3F4F6', color: v === 'primary' ? '#fff' : v === 'danger' ? '#DC2626' : '#374151' });
 
 function Badge({ status }) {
   const s = STATUSES[status] || STATUSES.ACTIVE;
@@ -51,6 +52,7 @@ function Modal({ title, onClose, wide, children }) {
 
 // ── Asset Form ────────────────────────────────────────────────────────────────
 function AssetForm({ asset, categories, onClose, onSave }) {
+  const { branchId } = useBranch();
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({
     name: asset?.name || '', assetCode: asset?.assetCode || '', categoryId: asset?.categoryId || '',
@@ -70,7 +72,7 @@ function AssetForm({ asset, categories, onClose, onSave }) {
     setSaving(true);
     try {
       if (asset) { await updateAsset(asset.id, form); toast.success('Asset updated'); }
-      else { await createAsset(form); toast.success('Asset added to register'); }
+      else { await createAsset({ ...form, ...(branchId && { branchId }) }); toast.success('Asset added to register'); }
       onSave();
     } catch (e) { toast.error(e.response?.data?.message || 'Failed to save'); }
     finally { setSaving(false); }
@@ -86,34 +88,34 @@ function AssetForm({ asset, categories, onClose, onSave }) {
   return (
     <Modal title={asset ? 'Edit Asset' : 'Add Asset'} onClose={onClose} wide>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-        <div style={{ gridColumn: '1/-1' }}>{F('Asset Name *', <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Dell Laptop - Core i7" style={INPUT_S} />)}</div>
-        {F('Asset Code', <input value={form.assetCode} onChange={e => set('assetCode', e.target.value)} placeholder="COMP-001" style={INPUT_S} />)}
+        <div style={{ gridColumn: '1/-1' }}>{F('Asset Name *', <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Dell Laptop - Core i7" style={P.input} />)}</div>
+        {F('Asset Code', <input value={form.assetCode} onChange={e => set('assetCode', e.target.value)} placeholder="COMP-001" style={P.input} />)}
         {F('Category', (
-          <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)} style={INPUT_S}>
+          <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)} style={P.input}>
             <option value="">— No Category —</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         ))}
-        {F('Purchase Date *', <input type="date" value={form.purchaseDate} onChange={e => set('purchaseDate', e.target.value)} style={INPUT_S} />)}
-        {F('Purchase Price (₹) *', <input type="number" value={form.purchasePrice} onChange={e => set('purchasePrice', e.target.value)} placeholder="0" style={INPUT_S} />)}
-        {F('Salvage Value (₹)', <input type="number" value={form.salvageValue} onChange={e => set('salvageValue', e.target.value)} placeholder="0" style={INPUT_S} />)}
-        {F('Useful Life (Years)', <input type="number" value={form.usefulLifeYears} onChange={e => set('usefulLifeYears', e.target.value)} min="1" max="50" style={INPUT_S} />)}
+        {F('Purchase Date *', <input type="date" value={form.purchaseDate} onChange={e => set('purchaseDate', e.target.value)} style={P.input} />)}
+        {F('Purchase Price (₹) *', <input type="number" value={form.purchasePrice} onChange={e => set('purchasePrice', e.target.value)} placeholder="0" style={P.input} />)}
+        {F('Salvage Value (₹)', <input type="number" value={form.salvageValue} onChange={e => set('salvageValue', e.target.value)} placeholder="0" style={P.input} />)}
+        {F('Useful Life (Years)', <input type="number" value={form.usefulLifeYears} onChange={e => set('usefulLifeYears', e.target.value)} min="1" max="50" style={P.input} />)}
         {F('Depreciation Method', (
-          <select value={form.depreciationMethod} onChange={e => set('depreciationMethod', e.target.value)} style={INPUT_S}>
+          <select value={form.depreciationMethod} onChange={e => set('depreciationMethod', e.target.value)} style={P.input}>
             <option value="SLM">SLM — Straight Line Method</option>
             <option value="WDV">WDV — Written Down Value (IT Act)</option>
           </select>
         ))}
-        {F('Serial Number', <input value={form.serialNumber} onChange={e => set('serialNumber', e.target.value)} placeholder="SN-XXXXX" style={INPUT_S} />)}
-        {F('Vendor / Supplier', <input value={form.vendor} onChange={e => set('vendor', e.target.value)} placeholder="Dell India" style={INPUT_S} />)}
-        {F('Location', <input value={form.location} onChange={e => set('location', e.target.value)} placeholder="Head Office — Floor 2" style={INPUT_S} />)}
-        {F('Assigned To', <input value={form.assignedTo} onChange={e => set('assignedTo', e.target.value)} placeholder="Rahul Sharma" style={INPUT_S} />)}
-        {F('Warranty Expiry', <input type="date" value={form.warrantyExpiry} onChange={e => set('warrantyExpiry', e.target.value)} style={INPUT_S} />)}
-        <div style={{ gridColumn: '1/-1' }}>{F('Description / Notes', <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...INPUT_S, resize: 'vertical' }} />)}</div>
+        {F('Serial Number', <input value={form.serialNumber} onChange={e => set('serialNumber', e.target.value)} placeholder="SN-XXXXX" style={P.input} />)}
+        {F('Vendor / Supplier', <input value={form.vendor} onChange={e => set('vendor', e.target.value)} placeholder="Dell India" style={P.input} />)}
+        {F('Location', <input value={form.location} onChange={e => set('location', e.target.value)} placeholder="Head Office — Floor 2" style={P.input} />)}
+        {F('Assigned To', <input value={form.assignedTo} onChange={e => set('assignedTo', e.target.value)} placeholder="Rahul Sharma" style={P.input} />)}
+        {F('Warranty Expiry', <input type="date" value={form.warrantyExpiry} onChange={e => set('warrantyExpiry', e.target.value)} style={P.input} />)}
+        <div style={{ gridColumn: '1/-1' }}>{F('Description / Notes', <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...P.input, resize: 'vertical' }} />)}</div>
       </div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-        <button onClick={onClose} style={BTN('secondary')}>Cancel</button>
-        <button onClick={handleSave} disabled={saving} style={BTN()}>{saving ? 'Saving…' : asset ? 'Update Asset' : 'Add Asset'}</button>
+        <button onClick={onClose} style={P.btn('secondary')}>Cancel</button>
+        <button onClick={handleSave} disabled={saving} style={P.btn()}>{saving ? 'Saving…' : asset ? 'Update Asset' : 'Add Asset'}</button>
       </div>
     </Modal>
   );
@@ -142,35 +144,35 @@ function MaintenanceModal({ assetId, assetName, onClose, onSave }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Type</label>
-          <select value={form.type} onChange={e => set('type', e.target.value)} style={INPUT_S}>
+          <select value={form.type} onChange={e => set('type', e.target.value)} style={P.input}>
             {MAINT_TYPES.map(t => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
           </select>
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Description *</label>
-          <textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="What was done?" rows={2} style={{ ...INPUT_S, resize: 'vertical' }} />
+          <textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="What was done?" rows={2} style={{ ...P.input, resize: 'vertical' }} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Cost (₹)</label>
-            <input type="number" value={form.cost} onChange={e => set('cost', e.target.value)} placeholder="0" style={INPUT_S} />
+            <input type="number" value={form.cost} onChange={e => set('cost', e.target.value)} placeholder="0" style={P.input} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Date</label>
-            <input type="date" value={form.performedAt} onChange={e => set('performedAt', e.target.value)} style={INPUT_S} />
+            <input type="date" value={form.performedAt} onChange={e => set('performedAt', e.target.value)} style={P.input} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Performed By</label>
-            <input value={form.performedBy} onChange={e => set('performedBy', e.target.value)} placeholder="Technician name" style={INPUT_S} />
+            <input value={form.performedBy} onChange={e => set('performedBy', e.target.value)} placeholder="Technician name" style={P.input} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Next Due Date</label>
-            <input type="date" value={form.nextDueDate} onChange={e => set('nextDueDate', e.target.value)} style={INPUT_S} />
+            <input type="date" value={form.nextDueDate} onChange={e => set('nextDueDate', e.target.value)} style={P.input} />
           </div>
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Update Asset Status (optional)</label>
-          <select value={form.setStatus} onChange={e => set('setStatus', e.target.value)} style={INPUT_S}>
+          <select value={form.setStatus} onChange={e => set('setStatus', e.target.value)} style={P.input}>
             <option value="">— Keep current status —</option>
             <option value="ACTIVE">Mark as Active</option>
             <option value="UNDER_MAINTENANCE">Mark as Under Maintenance</option>
@@ -178,12 +180,12 @@ function MaintenanceModal({ assetId, assetName, onClose, onSave }) {
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Notes</label>
-          <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...INPUT_S, resize: 'vertical' }} />
+          <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...P.input, resize: 'vertical' }} />
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-        <button onClick={onClose} style={BTN('secondary')}>Cancel</button>
-        <button onClick={handleSave} disabled={saving} style={BTN()}>{saving ? 'Saving…' : 'Log Maintenance'}</button>
+        <button onClick={onClose} style={P.btn('secondary')}>Cancel</button>
+        <button onClick={handleSave} disabled={saving} style={P.btn()}>{saving ? 'Saving…' : 'Log Maintenance'}</button>
       </div>
     </Modal>
   );
@@ -211,16 +213,16 @@ function DisposeModal({ asset, onClose, onSave }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Sale/Disposal Price (₹)</label>
-          <input type="number" value={form.disposalPrice} onChange={e => setForm(f => ({ ...f, disposalPrice: e.target.value }))} placeholder="0 if scrapped" style={INPUT_S} />
+          <input type="number" value={form.disposalPrice} onChange={e => setForm(f => ({ ...f, disposalPrice: e.target.value }))} placeholder="0 if scrapped" style={P.input} />
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Reason for Disposal</label>
-          <textarea value={form.disposalReason} onChange={e => setForm(f => ({ ...f, disposalReason: e.target.value }))} rows={2} placeholder="End of life, sold, damaged beyond repair…" style={{ ...INPUT_S, resize: 'vertical' }} />
+          <textarea value={form.disposalReason} onChange={e => setForm(f => ({ ...f, disposalReason: e.target.value }))} rows={2} placeholder="End of life, sold, damaged beyond repair…" style={{ ...P.input, resize: 'vertical' }} />
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-        <button onClick={onClose} style={BTN('secondary')}>Cancel</button>
-        <button onClick={handleDispose} disabled={saving} style={{ ...BTN('danger'), background: '#DC2626', color: '#fff' }}>{saving ? 'Processing…' : 'Confirm Disposal'}</button>
+        <button onClick={onClose} style={P.btn('secondary')}>Cancel</button>
+        <button onClick={handleDispose} disabled={saving} style={{ ...P.btn('danger'), background: '#DC2626', color: '#fff' }}>{saving ? 'Processing…' : 'Confirm Disposal'}</button>
       </div>
     </Modal>
   );
@@ -261,9 +263,9 @@ function AssetDetail({ assetId, onClose, onEdit, onMaintenance, onDispose }) {
             {warrantyOk && <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: '#EFF6FF', color: '#3B82F6' }}>Warranty Valid</span>}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button onClick={() => onEdit(asset)} style={{ ...BTN('secondary'), padding: '6px 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}><Pencil size={12} /> Edit</button>
-            <button onClick={() => onMaintenance(asset)} style={{ ...BTN('secondary'), padding: '6px 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}><Wrench size={12} /> Maintenance</button>
-            {asset.status !== 'DISPOSED' && <button onClick={() => onDispose(asset)} style={{ ...BTN('danger'), padding: '6px 14px', fontSize: 13 }}>Dispose</button>}
+            <button onClick={() => onEdit(asset)} style={{ ...P.btn('secondary'), padding: '6px 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}><Pencil size={12} /> Edit</button>
+            <button onClick={() => onMaintenance(asset)} style={{ ...P.btn('secondary'), padding: '6px 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}><Wrench size={12} /> Maintenance</button>
+            {asset.status !== 'DISPOSED' && <button onClick={() => onDispose(asset)} style={{ ...P.btn('danger'), padding: '6px 14px', fontSize: 13 }}>Dispose</button>}
           </div>
         </div>
 
@@ -375,6 +377,8 @@ function AssetDetail({ assetId, onClose, onEdit, onMaintenance, onDispose }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Assets() {
+  const { isMobile } = useBreakpoint();
+  const { branchId } = useBranch();
   const [assets, setAssets] = useState([]);
   const [summary, setSummary] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -394,20 +398,21 @@ export default function Assets() {
       if (statusFilter) params.status = statusFilter;
       if (catFilter) params.categoryId = catFilter;
       if (search) params.search = search;
+      if (branchId) params.branchId = branchId;
       const [aRes, sRes, cRes] = await Promise.all([getAssets(params), getAssetSummary(), getAssetCategories()]);
       setAssets(aRes.data.data || []);
       setSummary(sRes.data.data || null);
       setCategories(cRes.data.data || []);
     } catch { toast.error('Failed to load assets'); }
     finally { setLoading(false); }
-  }, [search, statusFilter, catFilter]);
+  }, [search, statusFilter, catFilter, branchId]);
 
   useEffect(() => { load(); }, [load]);
 
   // Seed default categories if none exist
   const seedCategories = async () => {
     for (const cat of DEFAULT_CATEGORIES) {
-      try { await createAssetCategory(cat); } catch {}
+      try { await createAssetCategory(cat); } catch { /* skip duplicates */ }
     }
     load();
     toast.success('Default categories created');
@@ -421,62 +426,54 @@ export default function Assets() {
 
   const closeAndRefresh = () => { setModal(null); setSelected(null); load(); if (detailId) setDetailId(null); };
 
-  const kpis = [
+  const lostRetiredCount = summary ? ((summary.lost ?? 0) + (summary.retired ?? 0)) : '—';
+  const financialKpis = [
     { label: 'Total Assets', value: summary?.total ?? '—', icon: Package2, color: '#6366F1' },
     { label: 'Purchase Value', value: fmt(summary?.totalPurchaseValue), icon: BarChart2, color: 'var(--cyan)' },
-    { label: 'Current Value', value: fmt(summary?.totalCurrentValue), icon: TrendingDown, color: '#16A34A' },
+    { label: 'Current Book Value', value: fmt(summary?.totalCurrentValue), icon: TrendingDown, color: '#16A34A' },
     { label: 'Total Depreciation', value: fmt(summary?.totalDepreciation), icon: TrendingDown, color: '#D97706' },
+  ];
+  const statusKpis = [
     { label: 'Active', value: summary?.active ?? '—', icon: CheckCircle, color: '#16A34A' },
     { label: 'Under Maintenance', value: summary?.underMaintenance ?? '—', icon: Wrench, color: '#D97706' },
-    { label: 'Maintenance Due (30d)', value: summary?.maintenanceDueSoon ?? '—', icon: AlertTriangle, color: '#DC2626' },
+    { label: 'Due for Service (30d)', value: summary?.maintenanceDueSoon ?? '—', icon: AlertTriangle, color: '#DC2626' },
     { label: 'Disposed', value: summary?.disposed ?? '—', icon: X, color: '#9CA3AF' },
+    { label: 'Lost / Retired', value: lostRetiredCount, icon: Archive, color: '#7C3AED' },
   ];
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1200, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 26, color: 'var(--navy)', margin: 0 }}>Asset Management</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 4 }}>Fixed asset register with depreciation tracking (SLM / WDV)</p>
+          <h1 style={P.h1(isMobile)}>Asset Management</h1>
+          <p style={P.sub}>Fixed asset register with depreciation tracking (SLM / WDV)</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {categories.length === 0 && (
-            <button onClick={seedCategories} style={{ ...BTN('secondary'), fontSize: 13 }}>+ Default Categories</button>
+            <button onClick={seedCategories} style={{ ...P.btn('secondary'), fontSize: 13 }}>+ Default Categories</button>
           )}
-          <button onClick={() => setModal('add')} style={{ ...BTN(), display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={() => setModal('add')} style={P.btn()}>
             <Plus size={16} /> Add Asset
           </button>
         </div>
       </div>
 
-      {/* KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} style={{ ...CARD, display: 'flex', gap: 14, alignItems: 'center' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icon size={18} color={color} />
-            </div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--navy)' }}>{value}</div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <KpiBar stats={financialKpis.map(({ label, value, icon, color }) => ({ label, value, icon, color }))} style={{ marginBottom: 8 }} />
+      <KpiBar stats={statusKpis.map(({ label, value, icon, color }) => ({ label, value, icon, color }))} />
 
       {/* Filters */}
-      <div style={{ ...CARD, marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ ...P.bar, marginBottom: 16 }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" style={{ ...INPUT_S, paddingLeft: 32 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" style={{ ...P.searchInput }} />
         </div>
         <Filter size={14} color="#9CA3AF" />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...INPUT_S, width: 'auto' }}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...P.input, width: 'auto' }}>
           <option value="">All Status</option>
           {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ ...INPUT_S, width: 'auto' }}>
+        <select value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ ...P.input, width: 'auto' }}>
           <option value="">All Categories</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -489,52 +486,52 @@ export default function Assets() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60, color: '#9CA3AF' }}>Loading assets…</div>
       ) : assets.length === 0 ? (
-        <div style={{ ...CARD, textAlign: 'center', padding: 60 }}>
+        <div style={{ ...P.card, textAlign: 'center', padding: 60 }}>
           <Package2 size={44} color="#E5E7EB" style={{ marginBottom: 12 }} />
           <p style={{ color: '#9CA3AF', fontSize: 14, marginBottom: 16 }}>No assets in the register yet.</p>
-          <button onClick={() => setModal('add')} style={BTN()}>Add First Asset</button>
+          <button onClick={() => setModal('add')} style={P.btn()}>Add First Asset</button>
         </div>
       ) : (
-        <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ background: '#F9FAFB', borderBottom: '1.5px solid #F3F4F6' }}>
+        <div style={P.tableWrap}>
+          <table style={P.table}>
+            <thead style={P.thead}>
+              <tr>
                 {['Asset', 'Category', 'Purchase', 'Book Value', 'Depreciated', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  <th key={h} style={P.th()}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {assets.map(a => {
+              {assets.map((a, i) => {
                 const depPct = pct(a.totalDepreciation, a.purchasePrice);
                 return (
-                  <tr key={a.id} style={{ borderBottom: '1px solid #F9FAFB', cursor: 'pointer' }}
+                  <tr key={a.id} style={{ ...P.tr(i, assets.length), cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.background = '#FAFAFA'}
                     onMouseLeave={e => e.currentTarget.style.background = ''}>
-                    <td style={{ padding: '13px 16px' }}>
+                    <td style={P.td()}>
                       <div style={{ fontWeight: 700, color: '#1E293B', fontSize: 14 }}>{a.name}</div>
                       <div style={{ fontSize: 12, color: '#9CA3AF' }}>
                         {a.assetCode && <span style={{ marginRight: 8 }}>{a.assetCode}</span>}
                         {a.assignedTo && <span>→ {a.assignedTo}</span>}
                       </div>
                     </td>
-                    <td style={{ padding: '13px 16px', color: '#6B7280', fontSize: 13 }}>{a.category?.name || '—'}</td>
-                    <td style={{ padding: '13px 16px' }}>
+                    <td style={{ ...P.td(), color: '#6B7280', fontSize: 13 }}>{a.category?.name || '—'}</td>
+                    <td style={P.td()}>
                       <div style={{ fontWeight: 600 }}>{fmt(a.purchasePrice)}</div>
                       <div style={{ fontSize: 12, color: '#9CA3AF' }}>{fmtDate(a.purchaseDate)}</div>
                     </td>
-                    <td style={{ padding: '13px 16px' }}>
+                    <td style={P.td()}>
                       <div style={{ fontWeight: 700, color: a.currentValue < a.purchasePrice * 0.2 ? '#DC2626' : '#16A34A' }}>{fmt(a.currentValue)}</div>
                       <div style={{ fontSize: 12, color: '#9CA3AF' }}>{a.depreciationMethod}</div>
                     </td>
-                    <td style={{ padding: '13px 16px', width: 130 }}>
+                    <td style={{ ...P.td(), width: 130 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>{depPct}%</div>
                       <div style={{ height: 5, background: '#F3F4F6', borderRadius: 3 }}>
                         <div style={{ height: '100%', width: `${Math.min(100, depPct)}%`, background: depPct > 80 ? '#DC2626' : depPct > 50 ? '#D97706' : '#16A34A', borderRadius: 3 }} />
                       </div>
                     </td>
-                    <td style={{ padding: '13px 16px' }}><Badge status={a.status} /></td>
-                    <td style={{ padding: '13px 16px' }}>
+                    <td style={P.td()}><Badge status={a.status} /></td>
+                    <td style={P.td()}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => setDetailId(a.id)} title="View Details" style={{ background: '#F3F4F6', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', color: '#6B7280' }}><Eye size={13} /></button>
                         <button onClick={() => { setSelected(a); setModal('edit'); }} title="Edit" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}><Pencil size={13} /></button>

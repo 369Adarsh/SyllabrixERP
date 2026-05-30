@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+import KpiBar from '../../components/ui/KpiBar';
+import { P } from '../../styles/page';
 import { getPayrollRuns, getPayrollRun, processPayroll, markPayrollPaid } from '../../api';
 import { Users, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import Card from '../../components/ui/Card';
@@ -77,14 +80,14 @@ function RunRow({ run, onRefresh }) {
                     <tr key={e.id} style={{ borderTop: '1px solid #E5E7EB' }}>
                       <td style={{ padding: '6px 8px 6px 0', fontWeight: 600 }}>{e.staff?.name || '—'}</td>
                       <td style={{ textAlign: 'right', padding: '6px 8px' }}>{e.presentDays}/{e.workingDays}</td>
-                      <td style={{ textAlign: 'right', padding: '6px 8px' }}>{fmt(e.basic)}</td>
+                      <td style={{ textAlign: 'right', padding: '6px 8px' }}>{fmt(e.basicSalary)}</td>
                       <td style={{ textAlign: 'right', padding: '6px 8px' }}>{fmt(e.hra)}</td>
                       <td style={{ textAlign: 'right', padding: '6px 8px' }}>{fmt(e.allowances)}</td>
-                      <td style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 600 }}>{fmt(e.grossPay)}</td>
+                      <td style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 600 }}>{fmt(e.grossSalary)}</td>
                       <td style={{ textAlign: 'right', padding: '6px 8px', color: '#6B7280' }}>{fmt(e.pfEmployee)}</td>
                       <td style={{ textAlign: 'right', padding: '6px 8px', color: '#6B7280' }}>{fmt(e.esiEmployee)}</td>
                       <td style={{ textAlign: 'right', padding: '6px 8px', color: '#6B7280' }}>{fmt(e.professionalTax)}</td>
-                      <td style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 800, color: 'var(--navy)' }}>{fmt(e.netPay)}</td>
+                      <td style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 800, color: 'var(--navy)' }}>{fmt(e.netSalary)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -151,6 +154,7 @@ function ProcessModal({ onClose, onDone }) {
 }
 
 export default function Payroll() {
+  const { isMobile } = useBreakpoint();
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProcess, setShowProcess] = useState(false);
@@ -168,32 +172,24 @@ export default function Payroll() {
 
   const totalPaid = runs.filter(r => r.status === 'PAID').reduce((s, r) => s + Number(r.totalNet || 0), 0);
   const totalPending = runs.filter(r => r.status !== 'PAID').reduce((s, r) => s + Number(r.totalNet || 0), 0);
-  const totalPF = runs.reduce((s, r) => s + Number(r.totalPF || 0), 0);
-  const totalESI = runs.reduce((s, r) => s + Number(r.totalESI || 0), 0);
+  const totalDeductions = runs.reduce((s, r) => s + Number(r.totalDeductions || 0), 0);
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ ...P.wrap(isMobile), maxWidth: 1100, margin: '0 auto' }}>
+      <div style={P.head}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Payroll</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>PF, ESI, PT calculations with pro-rata attendance</p>
+          <h1 style={P.h1(isMobile)}>Payroll</h1>
+          <p style={P.sub}>PF, ESI, PT calculations with pro-rata attendance</p>
         </div>
         <Button onClick={() => setShowProcess(true)}><Users size={16} style={{ marginRight: 6 }} />Process Payroll</Button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        {[
-          { label: 'Total Paid (All Time)', value: fmt(totalPaid), color: 'var(--emerald)' },
-          { label: 'Pending Payment', value: fmt(totalPending), color: '#F59E0B' },
-          { label: 'Total PF Contribution', value: fmt(totalPF), color: 'var(--navy)' },
-          { label: 'Total ESI Contribution', value: fmt(totalESI), color: 'var(--cyan)' },
-        ].map(({ label, value, color }) => (
-          <Card key={label}>
-            <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{value}</div>
-          </Card>
-        ))}
-      </div>
+      <KpiBar stats={[
+        { label: 'Total Paid (All Time)', value: fmt(totalPaid),                  color: 'var(--emerald)' },
+        { label: 'Pending Payment',       value: fmt(totalPending),               color: '#F59E0B'        },
+        { label: 'Total Deductions',      value: fmt(totalDeductions),            color: 'var(--navy)'    },
+        { label: 'Net Payroll',           value: fmt(totalPaid + totalPending),   color: 'var(--cyan)'    },
+      ]} />
 
       <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#1E40AF', marginBottom: 20 }}>
         <strong>Statutory Deductions (India):</strong> PF — 12% of basic (capped at ₹15,000 basic wage) · ESI — 0.75% employee + 3.25% employer (if gross ≤ ₹21,000) · PT — ₹200/month (if gross &gt; ₹15,000)
@@ -204,24 +200,26 @@ export default function Payroll() {
         {loading ? (
           <p style={{ color: '#9CA3AF', textAlign: 'center', padding: 48 }}>Loading…</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#F9FAFB' }}>
+          <div style={P.tableScroll}>
+          <table style={P.table}>
+            <thead style={P.thead}>
+              <tr>
                 {['Period', 'Employees', 'Net Pay', 'PF (EE)', 'ESI (EE)', 'PT', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                  <th key={h} style={P.th()}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {runs.map(r => <RunRow key={r.id} run={r} onRefresh={load} />)}
               {runs.length === 0 && (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 48, color: '#9CA3AF' }}>
+                <tr><td colSpan={8} style={P.empty}>
                   <Users size={36} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
                   No payroll runs yet. Process your first payroll.
                 </td></tr>
               )}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
 
@@ -229,3 +227,4 @@ export default function Payroll() {
     </div>
   );
 }
+

@@ -12,11 +12,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auth endpoints that should never trigger a token refresh
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/staff-login', '/auth/register', '/auth/refresh'];
+
 // Auto-refresh token on 401
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
+    const isAuthEndpoint = AUTH_ENDPOINTS.some((path) => original.url?.includes(path));
+
+    // Don't try to refresh on auth endpoints — just let the error bubble up
+    if (isAuthEndpoint) return Promise.reject(err);
+
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
       const refreshToken = localStorage.getItem('refreshToken');

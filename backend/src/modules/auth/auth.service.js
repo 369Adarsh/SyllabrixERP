@@ -3,13 +3,59 @@ const crypto = require('crypto');
 const prisma = require('../../config/prisma');
 const { signToken, signRefreshToken, verifyRefreshToken } = require('../../utils/jwt');
 const { BUSINESS_MODULES } = require('../tenant/tenant.service');
+const { seedStandardCategories } = require('../inventory/inventory.service');
+const { seedForTenant } = require('../roles/roles.service');
+const { nextSyllabrixId, nextNSyllabrixIds } = require('../../utils/syllabrixId');
+const { sendVerificationEmail } = require('../../utils/email');
+
+// Generates next sequential Syllabrix ID from the global pool (SYL00001 … SYL99999)
+const generateSyllabrixId = nextSyllabrixId;
+
+const getModulesForBusinessType = async (businessType) => {
+  try {
+    const config = await prisma.businessTypeConfig.findFirst({
+      where: { enumKey: businessType, isActive: true },
+      include: { modules: { orderBy: { sortOrder: 'asc' } } },
+    });
+    if (config?.modules?.length) {
+      return config.modules
+        .filter(m => m.tier === 'CORE' || m.tier === 'OPTIONAL')
+        .map(m => m.moduleKey);
+    }
+  } catch {}
+  return BUSINESS_MODULES[businessType] || BUSINESS_MODULES.OTHER;
+};
+
+const getPublicBusinessTypes = async () => {
+  const categories = await prisma.businessCategory.findMany({
+    where: { isActive: true },
+    include: {
+      businessTypes: {
+        where: { isActive: true, enumKey: { not: null } },
+        select: { name: true, enumKey: true },
+        orderBy: { name: 'asc' },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+  return categories.filter(c => c.businessTypes.length > 0);
+};
 
 const register = async ({ name, email, password, phone, businessName, businessType }) => {
-  const existing = await prisma.tenant.findUnique({ where: { email } });
-  if (existing) throw Object.assign(new Error('Email already registered'), { statusCode: 409 });
+  const [byEmail, byPhone] = await Promise.all([
+    prisma.tenant.findUnique({ where: { email } }),
+    prisma.tenant.findFirst({ where: { phone } }),
+  ]);
+  if (byEmail) throw Object.assign(new Error('Email already registered'), { statusCode: 409 });
+  if (byPhone) throw Object.assign(new Error('A business with this phone number already exists'), { statusCode: 409 });
 
-  const hashed = await bcrypt.hash(password, 12);
-  const modules = BUSINESS_MODULES[businessType] || BUSINESS_MODULES.OTHER;
+  const emailVerifyToken = crypto.randomBytes(32).toString('hex');
+
+  const [hashed, [tenantSyllabrixId, userSyllabrixId]] = await Promise.all([
+    bcrypt.hash(password, 14),
+    nextNSyllabrixIds(2),
+  ]);
+  const modules = await getModulesForBusinessType(businessType);
 
   const tenant = await prisma.tenant.create({
     data: {
@@ -18,26 +64,30 @@ const register = async ({ name, email, password, phone, businessName, businessTy
       email,
       phone,
       modules,
+      syllabrixId: tenantSyllabrixId,
       users: {
         create: {
           name,
           email,
           password: hashed,
           role: 'OWNER',
-          isEmailVerified: true,
+          isEmailVerified: false,
+          emailVerifyToken,
+          syllabrixId: userSyllabrixId,
         },
       },
     },
     include: { users: true },
   });
 
-  const user = tenant.users[0];
-  const accessToken = signToken({ userId: user.id, tenantId: tenant.id, role: user.role });
-  const refreshToken = signRefreshToken({ userId: user.id });
+  // Seed standard categories + default roles (non-blocking)
+  seedStandardCategories(tenant.id).catch(() => {});
+  seedForTenant(tenant.id, businessType).catch(() => {});
 
-  await prisma.user.update({ where: { id: user.id }, data: { refreshToken } });
+  // Send verification email (non-blocking — never fail the registration)
+  sendVerificationEmail(email, businessName, emailVerifyToken).catch(err => console.error('[EMAIL] Verification send failed:', err.message));
 
-  return { accessToken, refreshToken, user: sanitize(user), tenant: sanitizeTenant(tenant) };
+  return { requiresVerification: true, email };
 };
 
 const login = async ({ email, password }) => {
@@ -52,6 +102,8 @@ const login = async ({ email, password }) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
 
+  if (!user.isEmailVerified) throw Object.assign(new Error('Please verify your email address before logging in. Check your inbox for the verification link.'), { statusCode: 403, code: 'EMAIL_NOT_VERIFIED' });
+
   if (!user.isActive) throw Object.assign(new Error('Account deactivated'), { statusCode: 403 });
 
   const accessToken = signToken({ userId: user.id, tenantId: tenant.id, role: user.role });
@@ -62,14 +114,39 @@ const login = async ({ email, password }) => {
     data: { refreshToken, lastLogin: new Date() },
   });
 
-  return { accessToken, refreshToken, user: sanitize(user), tenant: sanitizeTenant(tenant) };
+  const staffProfile = await prisma.staff.findFirst({
+    where: { tenantId: tenant.id, email: user.email, isActive: true },
+    select: { id: true, name: true, role: true, department: true, specialization: true, bio: true, phone: true, branchId: true },
+  }).catch(() => null);
+  return { accessToken, refreshToken, user: { ...sanitize(user), staffProfile }, tenant: sanitizeTenant(tenant) };
 };
 
 const staffLogin = async ({ email, password, tenantId }) => {
-  const user = await prisma.user.findUnique({
-    where: { tenantId_email: { tenantId, email } },
-    include: { tenant: true },
-  });
+  // If tenantId provided, do exact lookup; otherwise find by email across all tenants
+  let user;
+  if (tenantId) {
+    user = await prisma.user.findUnique({
+      where: { tenantId_email: { tenantId, email } },
+      include: { tenant: true },
+    });
+  } else {
+    // Find all accounts with this email (could be at multiple tenants)
+    const users = await prisma.user.findMany({
+      where: { email },
+      include: { tenant: true },
+    });
+    if (users.length === 0) {
+      throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
+    }
+    if (users.length > 1) {
+      // Multiple tenants — return a list so the caller can pick one
+      throw Object.assign(
+        new Error('Multiple businesses found for this email. Please choose one.'),
+        { statusCode: 409, data: { tenants: users.map(u => ({ tenantId: u.tenantId, name: u.tenant?.name })) } }
+      );
+    }
+    user = users[0];
+  }
 
   if (!user) throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
 
@@ -86,7 +163,11 @@ const staffLogin = async ({ email, password, tenantId }) => {
     data: { refreshToken, lastLogin: new Date() },
   });
 
-  return { accessToken, refreshToken, user: sanitize(user), tenant: sanitizeTenant(user.tenant) };
+  const staffProfileSL = await prisma.staff.findFirst({
+    where: { tenantId: user.tenantId, email: user.email, isActive: true },
+    select: { id: true, name: true, role: true, department: true, specialization: true, bio: true, phone: true, branchId: true },
+  }).catch(() => null);
+  return { accessToken, refreshToken, user: { ...sanitize(user), staffProfile: staffProfileSL }, tenant: sanitizeTenant(user.tenant) };
 };
 
 const refresh = async ({ refreshToken }) => {
@@ -106,8 +187,12 @@ const refresh = async ({ refreshToken }) => {
     throw Object.assign(new Error('Refresh token revoked'), { statusCode: 401 });
   }
 
+  // Rotate refresh token on every use — limits damage from stolen tokens
+  const newRefreshToken = signRefreshToken({ userId: user.id });
+  await prisma.user.update({ where: { id: user.id }, data: { refreshToken: newRefreshToken } });
+
   const accessToken = signToken({ userId: user.id, tenantId: user.tenantId, role: user.role });
-  return { accessToken };
+  return { accessToken, refreshToken: newRefreshToken };
 };
 
 const logout = async (userId) => {
@@ -139,22 +224,73 @@ const resetPassword = async ({ token, password }) => {
 
   if (!user) throw Object.assign(new Error('Token invalid or expired'), { statusCode: 400 });
 
-  const hashed = await bcrypt.hash(password, 12);
+  const hashed = await bcrypt.hash(password, 14);
+  // Invalidate password reset token AND all active sessions on password change
   await prisma.user.update({
     where: { id: user.id },
-    data: { password: hashed, passwordResetToken: null, passwordResetExpiry: null },
+    data: {
+      password: hashed,
+      passwordResetToken: null,
+      passwordResetExpiry: null,
+      refreshToken: null,     // Force re-login on all devices
+    },
   });
 };
 
 const me = async (userId) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { tenant: true },
+    include: {
+      tenant: true,
+      assignedRole: { select: { id: true, templateKey: true, name: true } },
+    },
   });
-  return { user: sanitize(user), tenant: sanitizeTenant(user.tenant) };
+  // Backfill syllabrixId for tenants that predate this feature
+  if (user.tenant && !user.tenant.syllabrixId) {
+    const syllabrixId = await generateSyllabrixId();
+    user.tenant = await prisma.tenant.update({ where: { id: user.tenant.id }, data: { syllabrixId } });
+  }
+  // Attach Staff profile for staff/trainer users (linked by email + tenantId)
+  let staffProfile = null;
+  if (user.email && user.tenantId) {
+    staffProfile = await prisma.staff.findFirst({
+      where: { tenantId: user.tenantId, email: user.email, isActive: true },
+      select: { id: true, name: true, role: true, department: true, specialization: true, bio: true, phone: true, branchId: true },
+    });
+  }
+  return { user: { ...sanitize(user), staffProfile }, tenant: sanitizeTenant(user.tenant) };
+};
+
+const verifyEmail = async (token) => {
+  if (!token) throw Object.assign(new Error('Verification token is required'), { statusCode: 400 });
+  const user = await prisma.user.findFirst({ where: { emailVerifyToken: token } });
+  if (!user) throw Object.assign(new Error('This verification link is invalid or has already been used'), { statusCode: 400 });
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { isEmailVerified: true, emailVerifyToken: null },
+  });
+  return { verified: true };
+};
+
+const resendVerification = async ({ email }) => {
+  const tenant = await prisma.tenant.findUnique({
+    where: { email },
+    include: { users: { where: { email } } },
+  });
+  const user = tenant?.users?.[0];
+  if (!user || user.isEmailVerified) return; // silent — don't leak account info
+  const token = crypto.randomBytes(32).toString('hex');
+  await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: token } });
+  await sendVerificationEmail(email, tenant.name, token);
 };
 
 const sanitize = ({ password, refreshToken, passwordResetToken, ...rest }) => rest;
-const sanitizeTenant = ({ ...t }) => t;
+const sanitizeTenant = ({ ...t }) => {
+  // Always merge canonical modules for the business type so existing tenants
+  // automatically get newly-added modules (e.g. 'progress' added to HOME_TUITION).
+  const canonical = BUSINESS_MODULES[t.businessType] || [];
+  t.modules = [...new Set([...canonical, ...(Array.isArray(t.modules) ? t.modules : [])])];
+  return t;
+};
 
-module.exports = { register, login, staffLogin, refresh, logout, forgotPassword, resetPassword, me };
+module.exports = { register, login, staffLogin, refresh, logout, forgotPassword, resetPassword, me, getPublicBusinessTypes, verifyEmail, resendVerification };

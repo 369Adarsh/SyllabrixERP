@@ -1,21 +1,27 @@
 const prisma = require('../../config/prisma');
+const config = require('../../config/env');
 const { generateInvoiceNumber } = require('../../utils/generateNumber');
 const { calculateLineItem, formatInvoiceTotals } = require('../../utils/gst');
 
-const list = (tenantId, { status, customerId, from, to } = {}) => {
+const list = async (tenantId, { status, customerId, from, to, page, limit = 50, branchId } = {}) => {
   const where = { tenantId };
   if (status) where.status = status;
   if (customerId) where.customerId = customerId;
+  if (branchId) where.branchId = branchId;
   if (from || to) {
     where.issueDate = {};
     if (from) where.issueDate.gte = new Date(from);
     if (to) where.issueDate.lte = new Date(to);
   }
-  return prisma.invoice.findMany({
-    where,
-    include: { customer: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  if (!page) {
+    return prisma.invoice.findMany({ where, include: { customer: true }, orderBy: { createdAt: 'desc' } });
+  }
+  const p = Number(page), l = Number(limit);
+  const [invoices, total] = await Promise.all([
+    prisma.invoice.findMany({ where, include: { customer: true }, orderBy: { createdAt: 'desc' }, skip: (p - 1) * l, take: l }),
+    prisma.invoice.count({ where }),
+  ]);
+  return { invoices, total, page: p, limit: l, totalPages: Math.ceil(total / l) };
 };
 
 const get = (tenantId, id) =>
@@ -25,8 +31,8 @@ const get = (tenantId, id) =>
   });
 
 const create = async (tenantId, data) => {
-  const invoiceNumber = await generateInvoiceNumber(tenantId);
-  const { customerId, items: rawItems, dueDate, notes, terms, isInterState = false, discountAmount = 0 } = data;
+  const invoiceNumber = await generateInvoiceNumber();
+  const { customerId, branchId, items: rawItems, dueDate, notes, terms, isInterState = false, discountAmount = 0 } = data;
 
   const items = rawItems.map((i) => {
     const calc = calculateLineItem(i.quantity, i.unitPrice, i.discount || 0, i.taxRate || 0, isInterState);
@@ -47,6 +53,15 @@ const create = async (tenantId, data) => {
     subtotal: i._subtotal, discountAmount: 0, taxAmount: i.taxAmount, total: i.total,
   })));
 
+  // Indian GST compliance: header discount reduces the taxable base, not applied post-tax
+  const headerDisc = Number(discountAmount) || 0;
+  const preTaxBase = totals.total - totals.taxAmount; // sum of per-line taxable amounts
+  const adjustedTaxableBase = Math.max(0, preTaxBase - headerDisc);
+  const adjustedTaxAmount = preTaxBase > 0
+    ? Math.round(adjustedTaxableBase * (totals.taxAmount / preTaxBase) * 100) / 100
+    : 0;
+  const finalTotal = Math.round((adjustedTaxableBase + adjustedTaxAmount) * 100) / 100;
+
   const gstDetails = {
     isInterState,
     items: items.map((i) => ({
@@ -55,17 +70,20 @@ const create = async (tenantId, data) => {
       taxableAmount: i._subtotal - (i._subtotal * (i.discount / 100)),
       taxAmount: i.taxAmount,
     })),
+    headerDiscount: headerDisc,
+    adjustedTaxableBase,
+    adjustedTax: adjustedTaxAmount,
   };
 
   return prisma.invoice.create({
     data: {
       tenantId, customerId, invoiceNumber, dueDate: dueDate ? new Date(dueDate) : null,
-      notes, terms, gstDetails,
+      notes, terms, gstDetails, ...(branchId && { branchId }),
       subtotal: totals.subtotal,
-      discountAmount,
-      taxAmount: totals.taxAmount,
-      total: totals.total - discountAmount,
-      balanceDue: totals.total - discountAmount,
+      discountAmount: headerDisc,
+      taxAmount: adjustedTaxAmount,
+      total: finalTotal,
+      balanceDue: finalTotal,
       items: { create: items.map(({ _subtotal, ...i }) => i) },
     },
     include: { customer: true, items: true },
@@ -79,10 +97,13 @@ const updateStatus = async (tenantId, id, status) => {
 const recordPayment = async (tenantId, invoiceId, { amount, method, reference, notes }) => {
   const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId, tenantId } });
   if (!invoice) throw Object.assign(new Error('Invoice not found'), { statusCode: 404 });
+  if (invoice.status === 'CANCELLED') throw Object.assign(new Error('Cannot record payment on a cancelled invoice'), { statusCode: 400 });
+  if (invoice.status === 'DRAFT') throw Object.assign(new Error('Send the invoice before recording payment'), { statusCode: 400 });
 
-  const newPaid = invoice.amountPaid + amount;
+  const newPaid = invoice.amountPaid + Number(amount);
   const newBalance = invoice.total - newPaid;
-  const status = newBalance <= 0 ? 'PAID' : 'SENT';
+  // Preserve OVERDUE status on partial payment; only PAID clears it
+  const status = newBalance <= 0 ? 'PAID' : (invoice.status === 'OVERDUE' ? 'OVERDUE' : 'SENT');
 
   const ops = [
     prisma.payment.create({ data: { invoiceId, amount, method, reference, notes } }),
@@ -108,9 +129,9 @@ const remove = (tenantId, id) =>
   prisma.invoice.update({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
 
 const createPaymentLink = async (tenantId, invoiceId) => {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keyId || !keySecret) throw Object.assign(new Error('Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to your .env file.'), { statusCode: 503 });
+  const keyId = config.razorpayKeyId;
+  const keySecret = config.razorpayKeySecret;
+  if (!keyId || !keySecret) throw Object.assign(new Error('Razorpay keys not configured. Add them via Nerve Center → API Keys.'), { statusCode: 503 });
 
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId, tenantId },
@@ -188,7 +209,7 @@ const handlePaymentLinkPaid = async (payload) => {
 
   const newPaid = Math.min(invoice.total, invoice.amountPaid + amountPaid);
   const newBalance = Math.max(0, invoice.total - newPaid);
-  const status = newBalance <= 0 ? 'PAID' : 'PARTIAL';
+  const status = newBalance <= 0 ? 'PAID' : 'SENT';
 
   await prisma.$transaction([
     prisma.payment.create({
