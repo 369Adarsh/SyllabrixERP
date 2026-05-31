@@ -83,7 +83,9 @@ export default function AppLayout() {
         >
           {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <img src="/logo-wordmark.svg" alt="Syllabrix" style={{ height: 20, objectFit: 'contain' }} />
+        <div style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center' }}>
+          <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
+        </div>
       </div>
 
       {/* Sidebar backdrop (mobile only) */}
@@ -159,7 +161,7 @@ export default function AppLayout() {
             zIndex: 10,
             opacity: 0.28,
           }}>
-            <img src="/logo-wordmark-dark.svg" alt="Syllabrix" style={{ height: 22, objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Syllabrix" style={{ height: 22, objectFit: 'contain' }} />
           </div>
 
           <ReportIssue open={reportOpen} onClose={() => setReportOpen(false)} />
