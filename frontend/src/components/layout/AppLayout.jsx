@@ -93,7 +93,7 @@ export default function AppLayout() {
         {currentModule && (
           <button
             onClick={() => setHelpOpen(o => !o)}
-            style={{ background: 'none', border: 'none', color: '#fff', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            style={{ background: 'none', border: 'none', color: '#fff', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}
             aria-label="How to use"
             title={`How to use ${currentModule.moduleName}`}
           >
