@@ -7,6 +7,10 @@ const { seedStandardCategories } = require('../inventory/inventory.service');
 const { seedForTenant } = require('../roles/roles.service');
 const { nextSyllabrixId, nextNSyllabrixIds } = require('../../utils/syllabrixId');
 const { sendVerificationEmail } = require('../../utils/email');
+const config = require('../../config/env');
+
+// On quality/staging, skip email verification so testers can log in immediately
+const IS_STAGING = config.nodeEnv === 'quality';
 
 // Generates next sequential Syllabrix ID from the global pool (SYL00001 … SYL99999)
 const generateSyllabrixId = nextSyllabrixId;
@@ -49,7 +53,7 @@ const register = async ({ name, email, password, phone, businessName, businessTy
   if (byEmail) throw Object.assign(new Error('Email already registered'), { statusCode: 409 });
   if (byPhone) throw Object.assign(new Error('A business with this phone number already exists'), { statusCode: 409 });
 
-  const emailVerifyToken = crypto.randomBytes(32).toString('hex');
+  const emailVerifyToken = IS_STAGING ? null : crypto.randomBytes(32).toString('hex');
 
   const [hashed, [tenantSyllabrixId, userSyllabrixId]] = await Promise.all([
     bcrypt.hash(password, 10),
@@ -71,7 +75,7 @@ const register = async ({ name, email, password, phone, businessName, businessTy
           email,
           password: hashed,
           role: 'OWNER',
-          isEmailVerified: false,
+          isEmailVerified: IS_STAGING,
           emailVerifyToken,
           syllabrixId: userSyllabrixId,
         },
@@ -84,10 +88,12 @@ const register = async ({ name, email, password, phone, businessName, businessTy
   seedStandardCategories(tenant.id).catch(() => {});
   seedForTenant(tenant.id, businessType).catch(() => {});
 
-  // Send verification email (non-blocking — never fail the registration)
-  sendVerificationEmail(email, businessName, emailVerifyToken).catch(err => console.error('[EMAIL] Verification send failed:', err.message));
+  if (!IS_STAGING) {
+    // Send verification email (non-blocking — never fail the registration)
+    sendVerificationEmail(email, businessName, emailVerifyToken).catch(err => console.error('[EMAIL] Verification send failed:', err.message));
+  }
 
-  return { requiresVerification: true, email };
+  return { requiresVerification: !IS_STAGING, email };
 };
 
 const login = async ({ email, password }) => {
@@ -107,7 +113,14 @@ const login = async ({ email, password }) => {
     bcrypt.hash(password, 10).then(h => prisma.user.update({ where: { id: user.id }, data: { password: h } })).catch(() => {});
   }
 
-  if (!user.isEmailVerified) throw Object.assign(new Error('Please verify your email address before logging in. Check your inbox for the verification link.'), { statusCode: 403, code: 'EMAIL_NOT_VERIFIED' });
+  if (!user.isEmailVerified) {
+    if (IS_STAGING) {
+      // Auto-verify on staging so testers aren't blocked by email delivery
+      await prisma.user.update({ where: { id: user.id }, data: { isEmailVerified: true, emailVerifyToken: null } });
+    } else {
+      throw Object.assign(new Error('Please verify your email address before logging in. Check your inbox for the verification link.'), { statusCode: 403, code: 'EMAIL_NOT_VERIFIED' });
+    }
+  }
 
   if (!user.isActive) throw Object.assign(new Error('Account deactivated'), { statusCode: 403 });
 
