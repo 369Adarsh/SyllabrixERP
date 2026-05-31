@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 export default function PaymentRedirect() {
@@ -8,13 +7,21 @@ export default function PaymentRedirect() {
   const pn = params.get('pn') || '';
   const tn = params.get('tn') || 'Membership';
 
-  const upiLink = `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&am=${encodeURIComponent(am)}&cu=INR&tn=${encodeURIComponent(tn)}`;
-  const displayAmt = `₹${Number(am).toLocaleString('en-IN')}`;
+  const upiParams = `pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn)}&am=${encodeURIComponent(am)}&cu=INR&tn=${encodeURIComponent(tn)}`;
 
-  useEffect(() => {
-    const t = setTimeout(() => { window.location.href = upiLink; }, 600);
-    return () => clearTimeout(t);
-  }, [upiLink]);
+  // intent:// forces Android OS to show the "Open with" app chooser dialog
+  // instead of auto-opening WhatsApp or any single default app
+  const intentLink = `intent://pay?${upiParams}#Intent;scheme=upi;action=android.intent.action.VIEW;category=android.intent.category.DEFAULT;end;`;
+
+  // App-specific deep links as fallback buttons
+  const apps = [
+    { name: 'GPay',     emoji: '🟢', link: `tez://upi/pay?${upiParams}` },
+    { name: 'PhonePe',  emoji: '🟣', link: `phonepe://pay?${upiParams}` },
+    { name: 'Paytm',    emoji: '🔵', link: `paytmmp://pay?${upiParams}` },
+    { name: 'BHIM',     emoji: '🟠', link: `upi://pay?${upiParams}` },
+  ];
+
+  const displayAmt = `₹${Number(am).toLocaleString('en-IN')}`;
 
   if (!pa || !am) {
     return (
@@ -34,24 +41,40 @@ export default function PaymentRedirect() {
         <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 24 }}>{tn}</div>
 
         <div style={{ fontSize: 44, fontWeight: 800, color: '#059669', marginBottom: 6 }}>{displayAmt}</div>
-        <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 32 }}>Opening your UPI app…</div>
+        <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 28 }}>Choose how you want to pay</div>
 
+        {/* Primary button — triggers Android app chooser */}
         <a
-          href={upiLink}
+          href={intentLink}
           style={{ display: 'block', padding: '16px', background: '#059669', color: '#fff', borderRadius: 14, fontSize: 16, fontWeight: 700, textDecoration: 'none', marginBottom: 16 }}
         >
-          Tap to Pay Now
+          Pay with Any UPI App
         </a>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 20 }}>
-          {['GPay', 'PhonePe', 'Paytm', 'BHIM'].map((app) => (
-            <span key={app} style={{ fontSize: 11, color: '#6B7280', background: '#F3F4F6', padding: '4px 10px', borderRadius: 20 }}>{app}</span>
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+          <span style={{ fontSize: 11, color: '#9CA3AF' }}>or open directly</span>
+          <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+        </div>
+
+        {/* Individual app buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+          {apps.map((app) => (
+            <a
+              key={app.name}
+              href={app.link}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 8px', border: '1.5px solid #E5E7EB', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#374151', textDecoration: 'none', background: '#F9FAFB' }}
+            >
+              <span style={{ fontSize: 16 }}>{app.emoji}</span>
+              {app.name}
+            </a>
           ))}
         </div>
 
         <div style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
           UPI ID: <strong style={{ fontFamily: 'monospace', color: '#374151' }}>{pa}</strong>
-          <br />If the app doesn't open, copy the UPI ID above and pay manually.
+          <br />If no app opens, copy the UPI ID and pay manually.
         </div>
       </div>
     </div>

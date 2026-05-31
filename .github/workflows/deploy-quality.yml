@@ -1,0 +1,16 @@
+name: Deploy Quality Backend
+
+on:
+  push:
+    branches:
+      - quality
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        run: |
+          curl -s "${{ secrets.RENDER_QUALITY_DEPLOY_HOOK }}" \
+            -X POST \
+            -d ""
