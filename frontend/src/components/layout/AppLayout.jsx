@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import Sidebar from './Sidebar';
 import BranchIdentityBar from './BranchIdentityBar';
@@ -40,6 +40,7 @@ const MODULE_HELP_MAP = {
 export default function AppLayout() {
   const { isMobile } = useBreakpoint();
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -83,7 +84,10 @@ export default function AppLayout() {
         >
           {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <div style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center' }}>
+        <div
+          onClick={() => navigate('/dashboard')}
+          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+        >
           <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
         </div>
       </div>
