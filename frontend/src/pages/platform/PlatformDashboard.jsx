@@ -193,8 +193,8 @@ export default function PlatformDashboard() {
         </>
       )}
 
-      {/* Staging Tools — only useful on quality env */}
-      <div style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid #1E2D3D' }}>
+      {/* Staging Tools — hidden on production */}
+      {import.meta.env.VITE_API_URL?.includes('quality') && <div style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid #1E2D3D' }}>
         <SectionLabel>Staging Tools</SectionLabel>
         <div style={{ background: '#192533', borderRadius: 12, border: '1px solid #1E2D3D', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
           <div>
@@ -226,7 +226,7 @@ export default function PlatformDashboard() {
             {seeding ? 'Seeding…' : 'Run Seed'}
           </button>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
