@@ -160,6 +160,33 @@ router.post('/seed-demo', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
   }
 });
 
+// ── Seed Diagnostic (quality only) ────────────────────────────────────────────
+router.get('/seed-check', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
+  const config = require('../../config/env');
+  if (config.nodeEnv !== 'quality') {
+    return res.status(403).json({ success: false, message: 'Diagnostic only available in quality environment.' });
+  }
+  try {
+    const prisma = require('../../config/prisma');
+    const tenant = await prisma.tenant.findUnique({
+      where: { email: 'owner@ironzone.test' },
+      include: { users: { where: { email: 'owner@ironzone.test' } } },
+    });
+    res.json({
+      success: true,
+      data: {
+        tenantExists: !!tenant,
+        tenantId: tenant?.id,
+        userExists: (tenant?.users?.length || 0) > 0,
+        userIsVerified: tenant?.users?.[0]?.isEmailVerified,
+        userRole: tenant?.users?.[0]?.role,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── Landing Page CMS ──────────────────────────────────────────────────────────
 router.get('/landing-photos',              authorizeSA('SUPER', 'ADMIN'), ctrl.listLandingPhotos);
 router.post('/landing-photos',             authorizeSA('SUPER', 'ADMIN'), landingUpload.single('photo'), ctrl.createLandingPhoto);
