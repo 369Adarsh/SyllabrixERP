@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, HelpCircle } from 'lucide-react';
 import Sidebar from './Sidebar';
 import BranchIdentityBar from './BranchIdentityBar';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
@@ -86,10 +86,20 @@ export default function AppLayout() {
         </button>
         <div
           onClick={() => navigate('/dashboard')}
-          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer', flex: 1 }}
         >
           <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
         </div>
+        {currentModule && (
+          <button
+            onClick={() => setHelpOpen(o => !o)}
+            style={{ background: 'none', border: 'none', color: '#fff', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            aria-label="How to use"
+            title={`How to use ${currentModule.moduleName}`}
+          >
+            <HelpCircle size={22} />
+          </button>
+        )}
       </div>
 
       {/* Sidebar backdrop (mobile only) */}
