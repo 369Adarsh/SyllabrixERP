@@ -144,6 +144,22 @@ router.get('/help/:moduleKey',         authorizeSA('SUPER', 'ADMIN', 'SUPPORT'),
 router.put('/help/:moduleKey/:lang',   authorizeSA('SUPER', 'ADMIN'), helpCtrl.upsert);
 router.delete('/help/:moduleKey/:lang',authorizeSA('SUPER', 'ADMIN'), helpCtrl.remove);
 
+// ── Demo Seed (quality/staging only) ─────────────────────────────────────────
+router.post('/seed-demo', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
+  const config = require('../../config/env');
+  if (config.nodeEnv !== 'quality') {
+    return res.status(403).json({ success: false, message: 'Seed endpoint only available in quality environment.' });
+  }
+  try {
+    const { seedIronZone } = require('../../../prisma/seed-gym-full');
+    await seedIronZone();
+    res.json({ success: true, message: 'Iron Zone Fitness demo data seeded successfully. Login: owner@ironzone.test / Test@1234' });
+  } catch (err) {
+    console.error('[SEED-DEMO]', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── Landing Page CMS ──────────────────────────────────────────────────────────
 router.get('/landing-photos',              authorizeSA('SUPER', 'ADMIN'), ctrl.listLandingPhotos);
 router.post('/landing-photos',             authorizeSA('SUPER', 'ADMIN'), landingUpload.single('photo'), ctrl.createLandingPhoto);
