@@ -50,6 +50,7 @@ const branchesRoutes = require('./modules/branches/branches.routes');
 const stockTransferRoutes = require('./modules/branches/stockTransfer.routes');
 const featuresRoutes = require('./modules/features/features.routes');
 const helpRoutes = require('./modules/help/help.routes');
+const receiptsRoutes = require('./modules/receipts/receipts.routes');
 
 const { razorpayWebhook } = require('./modules/invoicing/invoicing.controller');
 const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/whatsapp.controller');
@@ -184,6 +185,58 @@ app.use('/api/v1/branches', branchesRoutes);
 app.use('/api/v1/stock-transfers', stockTransferRoutes);
 app.use('/api/v1/features', featuresRoutes);
 app.use('/api/v1/help', helpRoutes);
+app.use('/api/v1/receipts', receiptsRoutes);
+
+// ── UPI Payment Redirect (public, no auth) ────────────────────────────────────
+app.get('/pay', (req, res) => {
+  const { pa, am, pn, tn } = req.query;
+  if (!pa || !am) return res.status(400).send('Missing UPI parameters');
+  const upiLink = `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(pn || '')}&am=${encodeURIComponent(am)}&cu=INR&tn=${encodeURIComponent(tn || 'Membership')}`;
+  const displayAmt = `₹${Number(am).toLocaleString('en-IN')}`;
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pay ${displayAmt} — ${pn || 'Gym'}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0FDF4;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{background:#fff;border-radius:20px;padding:32px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+    .icon{font-size:48px;margin-bottom:16px}
+    .gym{font-size:18px;font-weight:700;color:#1B3A6B;margin-bottom:4px}
+    .plan{font-size:13px;color:#6B7280;margin-bottom:20px}
+    .amount{font-size:40px;font-weight:800;color:#059669;margin-bottom:8px}
+    .label{font-size:13px;color:#9CA3AF;margin-bottom:28px}
+    .btn{display:block;width:100%;padding:16px;background:#059669;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;margin-bottom:12px}
+    .upi-apps{display:flex;justify-content:center;gap:8px;margin:16px 0}
+    .app-badge{font-size:11px;color:#6B7280;background:#F3F4F6;padding:4px 10px;border-radius:20px}
+    .note{font-size:11px;color:#9CA3AF;margin-top:16px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">💳</div>
+    <div class="gym">${pn || 'Gym'}</div>
+    <div class="plan">${tn || 'Membership Payment'}</div>
+    <div class="amount">${displayAmt}</div>
+    <div class="label">Pay via UPI</div>
+    <a href="${upiLink}" class="btn">Tap to Pay Now</a>
+    <div class="upi-apps">
+      <span class="app-badge">GPay</span>
+      <span class="app-badge">PhonePe</span>
+      <span class="app-badge">Paytm</span>
+      <span class="app-badge">BHIM</span>
+    </div>
+    <div class="note">UPI ID: <strong>${pa}</strong><br>Open any UPI app and pay to this ID if the button doesn't work.</div>
+  </div>
+  <script>
+    // Auto-trigger on mobile after a short delay
+    setTimeout(() => { window.location.href = "${upiLink}"; }, 800);
+  </script>
+</body>
+</html>`);
+});
 
 // ── Syllabrix Platform Layer ───────────────────────────────────────────────────
 app.use('/api/platform', superadminRoutes);

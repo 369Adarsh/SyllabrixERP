@@ -38,6 +38,7 @@ const ALL_LINKS = [
   { to: '/customers',    icon: Users,           tKey: 'nav.customers',   module: 'customers',   roles: OPS_FIN },
   { to: '/appointments',       icon: Calendar,       tKey: 'nav.appointments',    module: 'appointments', roles: OPS },
   { to: '/membership-plans',  icon: Award,          tKey: 'nav.membershipPlans', module: 'membershipplans', roles: OPS, gymOnly: true },
+  { to: '/receipts',          icon: CreditCard,     label: 'Receipts',           module: 'membershipplans', roles: OPS_FIN, gymOnly: true },
   { to: '/training-plans',    icon: Dumbbell,       label: 'Training Plans',     module: 'training',        roles: [...OPS, 'STAFF'], gymOnly: true },
   { to: '/fees',               icon: GraduationCap,  tKey: 'nav.fees',            module: 'fees',         roles: OPS },
   { to: '/progress',     icon: BookOpen,        tKey: 'nav.progress',    module: 'progress',    roles: OPS, educationOnly: true },
@@ -266,8 +267,8 @@ export default function Sidebar({ isOpen, onClose, isMobile, onOpenReport }) {
           if (to === '/customers' && isEducation) label = 'Students';
           if (to === '/customers' && isGym) label = 'Members';
           if (to === '/appointments' && isGym) label = 'Sessions';
-          if (to === '/membership-plans' && isGym) label = 'Membership Plans';
-          if (to === '/fees' && isGym) label = 'Memberships';
+          if (to === '/membership-plans' && isGym) label = 'Plan Catalog';
+          if (to === '/fees' && isGym) label = 'Fee Collection';
           if (to === '/assets' && isGym) label = 'Equipment';
           if (to === '/staff' && isGym) label = 'Trainers';
           return (

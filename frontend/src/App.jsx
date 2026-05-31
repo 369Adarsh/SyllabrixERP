@@ -50,6 +50,8 @@ import RecurringInvoices from './pages/invoicing/RecurringInvoices';
 import Progress from './pages/progress/Progress';
 import Marketplace from './pages/marketplace/Marketplace';
 import MembershipPlans from './pages/membership-plans/MembershipPlans';
+import Receipts from './pages/receipts/Receipts';
+import PaymentRedirect from './pages/pay/PaymentRedirect';
 import Returns from './pages/returns/Returns';
 import StockNetwork from './pages/inventory/StockNetwork';
 import StockTransfers from './pages/inventory/StockTransfers';
@@ -135,6 +137,7 @@ export default function App() {
           </Route>
 
           {/* ── Tenant App ── */}
+          <Route path="/pay" element={<PaymentRedirect />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -169,6 +172,7 @@ export default function App() {
             <Route path="/recurring-invoices/*" element={<RecurringInvoices />} />
             <Route path="/marketplace/*" element={<Marketplace />} />
             <Route path="/membership-plans/*" element={<MembershipPlans />} />
+            <Route path="/receipts/*" element={<Receipts />} />
             <Route path="/returns/*" element={<Returns />} />
             <Route path="/settings/*" element={<Settings />} />
             <Route path="/stock-network" element={<StockNetwork />} />

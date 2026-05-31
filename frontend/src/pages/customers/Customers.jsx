@@ -7,7 +7,7 @@ import {
   getSubscriptions, createSubscription, updateSubscriptionStatus,
   sendSubscriptionReminder, deleteSubscription, adjustCustomerCredit,
   getSegmentCustomers, getStudents, createStudent, updateStudent, createFee, updateFee, getFees, collectFee,
-  getMembershipPlans,
+  getMembershipPlans, createMemberReceipt,
 } from '../../api';
 import {
   Plus, Users, Search, Edit2, Trash2, X, Phone, Mail, Star,
@@ -70,10 +70,178 @@ const GYM_PLANS = [
   { key: 'couple',    name: 'Couple',            price: 2499,  days: 30  },
 ];
 
+// ── Receipt View ──────────────────────────────────────────────────────────────
+function ReceiptView({ receipt, tenantName, onDone }) {
+  const fmtD = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const receiptNo = `RCP-${Date.now().toString(36).toUpperCase()}`;
+
+  const waLines = [
+    `*${tenantName || 'Gym'} — Membership Receipt*`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `*Member:* ${receipt.memberName}`,
+    `*Plan:* ${receipt.planName} (${receipt.planDuration} days)`,
+    `*Valid:* ${fmtD(receipt.startDate)} → ${fmtD(receipt.expiryDate)}`,
+    ``,
+    receipt.discountAmount > 0 ? `*Original Price:* ₹${receipt.originalPrice.toLocaleString('en-IN')}` : null,
+    receipt.discountAmount > 0 ? `*Discount:* ${receipt.discountLabel}` : null,
+    `*Amount ${receipt.paymentMethod === 'LATER' ? 'Due' : 'Paid'}:* ₹${receipt.finalAmount.toLocaleString('en-IN')}`,
+    `*Payment:* ${receipt.paymentMethod === 'LATER' ? 'Pending — invoice created' : receipt.paymentMethod}`,
+    `*Date:* ${fmtD(receipt.registeredAt)}`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `Thank you for joining ${tenantName || 'us'}! 💪`,
+  ].filter(Boolean).join('\n');
+
+  const rawPhone = (receipt.memberPhone || '').replace(/\D/g, '');
+  const waPhone = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
+  const waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(waLines)}`;
+
+  const handlePrint = () => {
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Receipt</title>
+<style>
+  body{font-family:Arial,sans-serif;max-width:320px;margin:20px auto;padding:20px;color:#111}
+  .gym{font-size:20px;font-weight:700;color:#1B3A6B;text-align:center}
+  .sub{font-size:13px;color:#6B7280;text-align:center;margin:4px 0 16px}
+  hr{border:none;border-top:1px dashed #D1D5DB;margin:12px 0}
+  .row{display:flex;justify-content:space-between;margin-bottom:7px;font-size:13px}
+  .lbl{color:#6B7280}.val{font-weight:600;text-align:right}
+  .total{display:flex;justify-content:space-between;padding-top:10px;border-top:2px solid #1B3A6B;margin-top:4px}
+  .tl{font-size:15px;font-weight:700;color:#1B3A6B}.tv{font-size:18px;font-weight:700;color:#059669}
+  .footer{text-align:center;margin-top:18px;font-size:12px;color:#9CA3AF}
+  .rno{text-align:center;font-size:10px;color:#D1D5DB;margin-top:6px}
+</style></head><body>
+<div class="gym">${tenantName || 'Gym'}</div>
+<div class="sub">Membership Receipt</div>
+<hr>
+<div class="row"><span class="lbl">Member</span><span class="val">${receipt.memberName}</span></div>
+<div class="row"><span class="lbl">Phone</span><span class="val">${receipt.memberPhone}</span></div>
+<hr>
+<div class="row"><span class="lbl">Plan</span><span class="val">${receipt.planName}</span></div>
+<div class="row"><span class="lbl">Duration</span><span class="val">${receipt.planDuration} days</span></div>
+<div class="row"><span class="lbl">Start</span><span class="val">${fmtD(receipt.startDate)}</span></div>
+<div class="row"><span class="lbl">Expires</span><span class="val">${fmtD(receipt.expiryDate)}</span></div>
+<hr>
+${receipt.discountAmount > 0 ? `<div class="row"><span class="lbl">Original</span><span class="val">₹${receipt.originalPrice.toLocaleString('en-IN')}</span></div><div class="row"><span class="lbl">Discount</span><span class="val">${receipt.discountLabel}</span></div>` : ''}
+<div class="total"><span class="tl">${receipt.paymentMethod === 'LATER' ? 'Amount Due' : 'Amount Paid'}</span><span class="tv">₹${receipt.finalAmount.toLocaleString('en-IN')}</span></div>
+<div class="row" style="margin-top:8px"><span class="lbl">Payment</span><span class="val">${receipt.paymentMethod === 'LATER' ? 'Pending' : receipt.paymentMethod}</span></div>
+<div class="row"><span class="lbl">Date</span><span class="val">${fmtD(receipt.registeredAt)}</span></div>
+<div class="footer">Thank you for joining!</div>
+<div class="rno">${receiptNo}</div>
+</body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {/* Success header */}
+      <div style={{ textAlign: 'center', padding: '8px 0 20px' }}>
+        <div style={{ width: 56, height: 56, background: '#DCFCE7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 26 }}>
+          ✓
+        </div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--navy)', margin: '0 0 4px' }}>
+          Member Registered!
+        </h2>
+        <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>{tenantName} · {receiptNo}</p>
+      </div>
+
+      {/* Receipt card */}
+      <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', fontSize: 13 }}>
+        {/* Member */}
+        <div style={{ background: '#F8FAFC', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>{receipt.memberName}</div>
+          <div style={{ color: '#6B7280', marginTop: 2 }}>{receipt.memberPhone}</div>
+        </div>
+
+        {/* Plan + dates */}
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#6B7280' }}>Plan</span>
+            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{receipt.planName} · {receipt.planDuration} days</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#6B7280' }}>Start</span>
+            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{fmtD(receipt.startDate)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#6B7280' }}>Expires</span>
+            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{fmtD(receipt.expiryDate)}</span>
+          </div>
+        </div>
+
+        {/* Payment */}
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {receipt.discountAmount > 0 && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6B7280' }}>Original Price</span>
+                <span style={{ color: '#9CA3AF', textDecoration: 'line-through' }}>₹{receipt.originalPrice.toLocaleString('en-IN')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6B7280' }}>Discount</span>
+                <span style={{ fontWeight: 600, color: '#D97706' }}>{receipt.discountLabel}</span>
+              </div>
+            </>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: receipt.discountAmount > 0 ? 8 : 0, borderTop: receipt.discountAmount > 0 ? '1px dashed var(--border)' : 'none', marginTop: receipt.discountAmount > 0 ? 2 : 0 }}>
+            <span style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 14 }}>
+              {receipt.paymentMethod === 'LATER' ? 'Amount Due' : 'Amount Paid'}
+            </span>
+            <span style={{ fontWeight: 800, fontSize: 16, color: receipt.paymentMethod === 'LATER' ? '#D97706' : '#059669' }}>
+              ₹{receipt.finalAmount.toLocaleString('en-IN')}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#6B7280' }}>Payment</span>
+            <span style={{ fontWeight: 600, color: receipt.paymentMethod === 'LATER' ? '#D97706' : '#059669' }}>
+              {receipt.paymentMethod === 'LATER' ? 'Pending — invoice created' : receipt.paymentMethod}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '11px 0', borderRadius: 10, background: '#25D366', color: '#fff',
+            fontWeight: 700, fontSize: 14, textDecoration: 'none', border: 'none',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Send via WhatsApp
+        </a>
+        <button
+          type="button"
+          onClick={handlePrint}
+          style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1.5px solid var(--border)', background: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', color: 'var(--ink)' }}
+        >
+          Print Receipt
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onDone}
+        style={{ marginTop: 10, width: '100%', padding: '11px 0', borderRadius: 10, background: 'var(--navy)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none' }}
+      >
+        Done
+      </button>
+    </div>
+  );
+}
+
 // ── Customer / Member form modal ──────────────────────────────────────────────
 function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
   const editing = !!customer;
   const label = isGym ? 'Member' : 'Customer';
+  const { tenant } = useAuth();
+  const [receipt, setReceipt] = useState(null);
 
   const [form, setForm] = useState({
     name: customer?.name || '',
@@ -87,6 +255,9 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
   });
   const [loading, setLoading] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [discountValue, setDiscountValue] = useState('');
+  const [discountType, setDiscountType] = useState('flat'); // 'flat' | 'percent'
   const [paymentMethod, setPaymentMethod] = useState('LATER');
   const [gymPlans, setGymPlans] = useState([]);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -120,27 +291,71 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
         if (isGym && selectedPlanId && newId) {
           const plan = gymPlans.find((p) => p.id === selectedPlanId);
           if (plan) {
-            const start = new Date();
+            const discAmt = discountType === 'percent'
+              ? Math.round((parseFloat(discountValue || 0) / 100) * plan.price)
+              : Math.min(parseFloat(discountValue || 0) || 0, plan.price);
+            const finalPrice = Math.max(0, plan.price - discAmt);
+            const start = new Date(subscriptionStartDate);
             const expiry = new Date(start);
             expiry.setDate(expiry.getDate() + plan.duration);
-            await createSubscription(newId, {
+            const subRes = await createSubscription(newId, {
               planName: plan.name,
               startDate: start.toISOString().slice(0, 10),
               expiryDate: expiry.toISOString().slice(0, 10),
-              amount: plan.price,
+              amount: finalPrice,
               autoRenew: true,
-              notes: '',
+              notes: discAmt > 0
+                ? `Discount: ${discountType === 'percent' ? `${discountValue}% off` : `₹${discAmt.toLocaleString('en-IN')} off`} (original ₹${plan.price.toLocaleString('en-IN')})`
+                : '',
               paymentMethod: paymentMethod !== 'LATER' ? paymentMethod : undefined,
+            });
+            const subscriptionId = subRes?.data?.data?.id || subRes?.data?.id || null;
+            await createMemberReceipt({
+              customerId:     newId,
+              subscriptionId,
+              memberName:     form.name,
+              memberPhone:    form.phone,
+              planName:       plan.name,
+              planDuration:   plan.duration,
+              startDate:      start.toISOString().slice(0, 10),
+              expiryDate:     expiry.toISOString().slice(0, 10),
+              originalAmount: plan.price,
+              discountAmount: discAmt,
+              discountNote:   discAmt > 0
+                ? (discountType === 'percent' ? `${discountValue}% off` : `₹${discAmt.toLocaleString('en-IN')} off`)
+                : null,
+              finalAmount:    finalPrice,
+              paymentMethod,
             });
           }
         }
         const chosenPlan = gymPlans.find((p) => p.id === selectedPlanId);
-        const paid = chosenPlan && paymentMethod !== 'LATER';
-        toast.success(
-          chosenPlan
-            ? `${label} registered with ${chosenPlan.name}${paid ? ` · ₹${Number(chosenPlan.price).toLocaleString('en-IN')} collected (${paymentMethod})` : ' · invoice pending'}`
-            : `${label} registered`
-        );
+        if (isGym && chosenPlan) {
+          const discAmt2 = discountType === 'percent'
+            ? Math.round((parseFloat(discountValue || 0) / 100) * chosenPlan.price)
+            : Math.min(parseFloat(discountValue || 0) || 0, chosenPlan.price);
+          const finalAmt = Math.max(0, chosenPlan.price - discAmt2);
+          const expiryForReceipt = new Date(subscriptionStartDate);
+          expiryForReceipt.setDate(expiryForReceipt.getDate() + chosenPlan.duration);
+          setReceipt({
+            memberName: form.name,
+            memberPhone: form.phone,
+            planName: chosenPlan.name,
+            planDuration: chosenPlan.duration,
+            startDate: subscriptionStartDate,
+            expiryDate: expiryForReceipt.toISOString().slice(0, 10),
+            originalPrice: chosenPlan.price,
+            discountAmount: discAmt2,
+            discountLabel: discAmt2 > 0
+              ? (discountType === 'percent' ? `${discountValue}% off` : `₹${discAmt2.toLocaleString('en-IN')} off`)
+              : null,
+            finalAmount: finalAmt,
+            paymentMethod,
+            registeredAt: new Date().toISOString().slice(0, 10),
+          });
+          return;
+        }
+        toast.success(`${label} registered`);
       }
       onSaved();
     } catch (err) {
@@ -151,6 +366,13 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 520, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+
+        {/* Show receipt after successful gym registration */}
+        {receipt && (
+          <ReceiptView receipt={receipt} tenantName={tenant?.name} onDone={onSaved} />
+        )}
+
+        {!receipt && (<>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--navy)', margin: 0 }}>
@@ -199,7 +421,7 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
                       <button
                         key={plan.id}
                         type="button"
-                        onClick={() => setSelectedPlanId(isSelected ? null : plan.id)}
+                        onClick={() => { setSelectedPlanId(isSelected ? null : plan.id); setDiscountValue(''); setDiscountType('flat'); }}
                         style={{
                           border: `2px solid ${isSelected ? accentColor : 'var(--border)'}`,
                           borderRadius: 10,
@@ -221,14 +443,100 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
               )}
               {selectedPlanId && (() => {
                 const p = gymPlans.find((pl) => pl.id === selectedPlanId);
-                return p ? (
+                if (!p) return null;
+                const expiry = new Date(subscriptionStartDate);
+                expiry.setDate(expiry.getDate() + p.duration);
+                const isBackdated = subscriptionStartDate < new Date().toISOString().slice(0, 10);
+                return (
                   <p style={{ fontSize: 12, color: '#059669', marginTop: 8, fontWeight: 500 }}>
-                    {p.name} · starts today · expires in {p.duration} days
+                    {p.name} · starts {isBackdated ? subscriptionStartDate : 'today'} · expires {expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
-                ) : null;
+                );
               })()}
+
+              {/* Subscription start date — allows backdating */}
+              {selectedPlanId && (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
+                    Membership Start Date
+                    <span style={{ fontWeight: 400, color: '#9CA3AF', marginLeft: 6, fontSize: 12 }}>
+                      — change if the member joined earlier
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    max={new Date().toISOString().slice(0, 10)}
+                    value={subscriptionStartDate}
+                    onChange={(e) => setSubscriptionStartDate(e.target.value)}
+                    style={{ padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', background: '#fff', outline: 'none', width: '100%' }}
+                  />
+                  {subscriptionStartDate < new Date().toISOString().slice(0, 10) && (
+                    <p style={{ fontSize: 12, color: '#D97706', margin: 0, fontWeight: 500 }}>
+                      Backdated — subscription counted from {subscriptionStartDate}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Discount — shown when a plan is selected */}
+          {isGym && !editing && selectedPlanId && (() => {
+            const p = gymPlans.find((pl) => pl.id === selectedPlanId);
+            if (!p) return null;
+            const discAmt = discountType === 'percent'
+              ? Math.round((parseFloat(discountValue || 0) / 100) * p.price)
+              : Math.min(parseFloat(discountValue || 0) || 0, p.price);
+            const finalPrice = Math.max(0, p.price - discAmt);
+            return (
+              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '14px 16px' }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#92400E', display: 'block', marginBottom: 10 }}>
+                  Apply Discount <span style={{ fontWeight: 400, color: '#B45309', fontSize: 12 }}>— optional</span>
+                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid #FDE68A', flexShrink: 0 }}>
+                    {[{ key: 'flat', label: '₹ Off' }, { key: 'percent', label: '% Off' }].map(({ key, label: dl }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => { setDiscountType(key); setDiscountValue(''); }}
+                        style={{
+                          padding: '7px 12px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                          background: discountType === key ? '#D97706' : '#FEF3C7',
+                          color: discountType === key ? '#fff' : '#92400E',
+                          transition: 'all 0.12s',
+                        }}
+                      >
+                        {dl}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    max={discountType === 'percent' ? 100 : p.price}
+                    placeholder={discountType === 'percent' ? 'e.g. 10' : 'e.g. 200'}
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #FDE68A', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', background: '#fff', outline: 'none' }}
+                  />
+                </div>
+                {discAmt > 0 && (
+                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, color: '#9CA3AF', textDecoration: 'line-through' }}>
+                      ₹{p.price.toLocaleString('en-IN')}
+                    </span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#059669' }}>
+                      ₹{finalPrice.toLocaleString('en-IN')}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#D97706', background: '#FEF3C7', padding: '2px 10px', borderRadius: 20, fontWeight: 600 }}>
+                      {discountType === 'percent' ? `${discountValue}% off` : `₹${discAmt.toLocaleString('en-IN')} off`}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Payment collection — only shown when a plan is selected */}
           {isGym && !editing && selectedPlanId && (
@@ -270,11 +578,83 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
               </div>
               {paymentMethod !== 'LATER' && (() => {
                 const p = gymPlans.find((pl) => pl.id === selectedPlanId);
-                return p ? (
-                  <div style={{ marginTop: 10, padding: '8px 12px', background: '#DCFCE7', borderRadius: 8, fontSize: 13, color: '#166534', fontWeight: 600 }}>
-                    ✓ Invoice will be marked PAID · ₹{Number(p.price).toLocaleString('en-IN')} via {paymentMethod}
-                  </div>
-                ) : null;
+                if (!p) return null;
+                const discAmt = discountType === 'percent'
+                  ? Math.round((parseFloat(discountValue || 0) / 100) * p.price)
+                  : Math.min(parseFloat(discountValue || 0) || 0, p.price);
+                const finalPrice = Math.max(0, p.price - discAmt);
+                return (
+                  <>
+                    <div style={{ marginTop: 10, padding: '8px 12px', background: '#DCFCE7', borderRadius: 8, fontSize: 13, color: '#166534', fontWeight: 600 }}>
+                      ✓ Invoice will be marked PAID · ₹{finalPrice.toLocaleString('en-IN')} via {paymentMethod}
+                      {discAmt > 0 && (
+                        <span style={{ fontWeight: 400, color: '#4ADE80', marginLeft: 6 }}>
+                          (₹{discAmt.toLocaleString('en-IN')} discount applied)
+                        </span>
+                      )}
+                    </div>
+
+                    {/* UPI WhatsApp payment link */}
+                    {paymentMethod === 'UPI' && (() => {
+                      const upiId = tenant?.receiptConfig?.upiId;
+                      const rawPhone = (form.phone || '').replace(/\D/g, '');
+                      const waPhone = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
+                      const hasPhone = rawPhone.length >= 10;
+
+                      if (!upiId) {
+                        return (
+                          <div style={{ marginTop: 8, padding: '8px 12px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, fontSize: 12, color: '#C2410C' }}>
+                            ⚠ No UPI ID set — go to <strong>Settings → UPI ID</strong> to enable this feature.
+                          </div>
+                        );
+                      }
+
+                      const payUrl = `${window.location.origin}/pay?pa=${encodeURIComponent(upiId)}&am=${finalPrice}&pn=${encodeURIComponent(tenant?.name || 'Gym')}&tn=${encodeURIComponent((p.name + ' Membership').slice(0, 50))}`;
+                      const waMsg = [
+                        `*${tenant?.name || 'Gym'} — Payment Request* 💪`,
+                        `━━━━━━━━━━━━━━━━━━━━`,
+                        `Hi ${form.name || 'there'}!`,
+                        ``,
+                        `*Plan:* ${p.name} (${p.duration} days)`,
+                        `*Amount:* ₹${finalPrice.toLocaleString('en-IN')}`,
+                        discAmt > 0 ? `*Discount applied:* ${discountType === 'percent' ? `${discountValue}% off` : `₹${discAmt.toLocaleString('en-IN')} off`}` : null,
+                        ``,
+                        `👇 Tap the link below to pay via UPI:`,
+                        payUrl,
+                        ``,
+                        `_Opens GPay, PhonePe, Paytm or any UPI app_`,
+                        `━━━━━━━━━━━━━━━━━━━━`,
+                        `*${tenant?.name || 'Gym'}*`,
+                      ].filter(Boolean).join('\n');
+
+                      return (
+                        <div style={{ marginTop: 8, padding: '12px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#065F46', marginBottom: 8 }}>
+                            📲 Send UPI payment request via WhatsApp
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: 11, color: '#6B7280', background: '#fff', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 10px', fontFamily: 'var(--font-mono)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {upiId}
+                            </div>
+                            {hasPhone ? (
+                              <a
+                                href={`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#25D366', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                Send UPI Link
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: 11, color: '#D97706' }}>Enter member phone first</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </>
+                );
               })()}
               {paymentMethod === 'LATER' && (
                 <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
@@ -315,6 +695,7 @@ function CustomerModal({ customer, onClose, onSaved, isGym = false }) {
             </Button>
           </div>
         </form>
+        </>)}
       </div>
     </div>
   );

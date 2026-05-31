@@ -447,8 +447,8 @@ export default function MembershipPlans() {
       {/* Page header */}
       <div style={P.head}>
         <div>
-          <h1 style={P.h1(isMobile)}>Membership Plans</h1>
-          <p style={P.sub}>Design and manage your gym's membership offerings — members pick a plan when registering</p>
+          <h1 style={P.h1(isMobile)}>Plan Catalog</h1>
+          <p style={P.sub}>Define your gym's plan offerings — pricing, duration, and benefits. Members are assigned a plan from here when they register.</p>
         </div>
         <Button onClick={() => setModal('create')}>
           <Plus size={16} style={{ marginRight: 6 }} /> New Plan
@@ -470,10 +470,10 @@ export default function MembershipPlans() {
         <div style={{ textAlign: 'center', padding: '80px 24px', background: '#fff', borderRadius: 16, border: '1px dashed var(--border)' }}>
           <Award size={44} color="#D1D5DB" style={{ marginBottom: 14 }} />
           <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--navy)', marginBottom: 8 }}>
-            No membership plans yet
+            No plans created yet
           </h3>
           <p style={{ color: '#9CA3AF', fontSize: 14, marginBottom: 24, maxWidth: 360, margin: '0 auto 24px' }}>
-            Create your first plan — define pricing, duration, and benefits. Plans appear when registering new members.
+            Create your first plan — set the name, price, duration, and benefits. These plans appear as options when you register a new member under <strong>Members</strong>.
           </p>
           <Button onClick={() => setModal('create')}>
             <Plus size={15} style={{ marginRight: 6 }} /> Create First Plan

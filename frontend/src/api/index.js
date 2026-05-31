@@ -430,3 +430,10 @@ export const setBranchFeature        = (moduleKey, branchId, data) => api.patch(
 
 // Module Help / Knowledge Base
 export const getModuleHelpPublic = (moduleKey, lang = 'en') => api.get(`/help/${moduleKey}`, { params: { lang } });
+
+// Member Receipts
+export const createMemberReceipt = (data) => api.post('/receipts', data);
+export const getMemberReceipts = (params) => api.get('/receipts', { params });
+export const getMemberReceiptsSummary = (params) => api.get('/receipts/summary', { params });
+export const backfillMemberReceipts = () => api.post('/receipts/backfill');
+export const updateReceiptPayment = (id, paymentMethod) => api.patch(`/receipts/${id}/payment`, { paymentMethod });

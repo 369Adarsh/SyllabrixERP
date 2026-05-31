@@ -57,6 +57,7 @@ model Tenant {
   attendanceLogs          AttendanceLog[]
   subscriptions           CustomerSubscription[]
   membershipPlans         MembershipPlan[]
+  memberReceipts          MemberReceipt[]
   campaigns               WhatsAppCampaign[]
   vendorBills             VendorBill[]
   vendorProducts          VendorProduct[]
@@ -170,6 +171,7 @@ model Customer {
   invoices          Invoice[]
   transactions      Transaction[]
   subscriptions     CustomerSubscription[]
+  memberReceipts    MemberReceipt[]
   creditNotes       CreditNote[]
   quotations        Quotation[]
   recurringInvoices RecurringInvoice[]
@@ -1142,24 +1144,56 @@ model MembershipPlan {
 // ─── Customer Subscriptions ───────────────────────────────────────────────────
 
 model CustomerSubscription {
-  id         String             @id @default(uuid())
-  tenantId   String
-  customerId String
-  planName   String
-  startDate  DateTime
-  expiryDate DateTime
-  amount     Float
-  status     SubscriptionStatus @default(ACTIVE)
-  autoRenew  Boolean            @default(true)
-  notes      String?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  id            String             @id @default(uuid())
+  tenantId      String
+  customerId    String
+  planName      String
+  startDate     DateTime
+  expiryDate    DateTime
+  amount        Float
+  status        SubscriptionStatus @default(ACTIVE)
+  autoRenew     Boolean            @default(true)
+  notes         String?
+  paymentMethod String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
   tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, customerId])
   @@index([tenantId, expiryDate])
   @@map("customer_subscriptions")
+}
+
+// ─── Member Receipts ─────────────────────────────────────────────────────────
+
+model MemberReceipt {
+  id              String   @id @default(uuid())
+  receiptNo       String   @unique
+  tenantId        String
+  customerId      String
+  subscriptionId  String?
+  memberName      String
+  memberPhone     String
+  planName        String
+  planDuration    Int
+  startDate       DateTime
+  expiryDate      DateTime
+  originalAmount  Float
+  discountAmount  Float    @default(0)
+  discountNote    String?
+  finalAmount     Float
+  paymentMethod   String
+  generatedById   String
+  generatedByName String
+  createdAt       DateTime @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, paymentMethod])
+  @@map("member_receipts")
 }
 
 enum SubscriptionStatus {
