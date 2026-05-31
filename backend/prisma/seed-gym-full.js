@@ -4,8 +4,8 @@
  *   - 60 members, 4 trainer accounts, equipment, memberships, sessions
  *
  * Run: node prisma/seed-gym-full.js
- * Login: owner@ironzone.test / Test@1234
- * Trainers: trainer1..4@ironzone.test / Test@1234
+ * Login: owner@ironzone.test / IronZone@2026
+ * Trainers: trainer1..4@ironzone.test / IronZone@2026
  */
 
 require('dotenv').config();
@@ -13,7 +13,7 @@ const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const PASS = 'Test@1234';
+const PASS = 'IronZone@2026';
 const hash = (p) => bcrypt.hashSync(p, 10);
 const d = (daysAgo) => new Date(Date.now() - daysAgo * 86400_000);
 const f = (daysAhead) => new Date(Date.now() + daysAhead * 86400_000);
@@ -113,7 +113,7 @@ async function main() {
         where: { id: existingOwner.id },
         data: { password: hash(PASS), isEmailVerified: true, emailVerifyToken: null },
       });
-      console.log('  ✓ Owner password reset to Test@1234');
+      console.log('  ✓ Owner password reset to IronZone@2026');
     } else {
       await prisma.user.create({
         data: {
@@ -127,7 +127,7 @@ async function main() {
       });
       console.log('  ✓ Owner user created');
     }
-    console.log('\n✅ Iron Zone patch complete — Login: owner@ironzone.test / Test@1234\n');
+    console.log('\n✅ Iron Zone patch complete — Login: owner@ironzone.test / IronZone@2026\n');
     return;
   }
 
@@ -658,11 +658,11 @@ async function main() {
   // ── Done ─────────────────────────────────────────────────────────────────────
   console.log('\n✅ Iron Zone Fitness seed complete!\n');
   console.log('   Login credentials:');
-  console.log('   Owner:     owner@ironzone.test     / Test@1234');
-  console.log('   Trainer 1: trainer1@ironzone.test  / Test@1234  (Amit Singh)');
-  console.log('   Trainer 2: trainer2@ironzone.test  / Test@1234  (Priya Nair)');
-  console.log('   Trainer 3: trainer3@ironzone.test  / Test@1234  (Karan Verma)');
-  console.log('   Trainer 4: trainer4@ironzone.test  / Test@1234  (Sneha Patil)\n');
+  console.log('   Owner:     owner@ironzone.test     / IronZone@2026');
+  console.log('   Trainer 1: trainer1@ironzone.test  / IronZone@2026  (Amit Singh)');
+  console.log('   Trainer 2: trainer2@ironzone.test  / IronZone@2026  (Priya Nair)');
+  console.log('   Trainer 3: trainer3@ironzone.test  / IronZone@2026  (Karan Verma)');
+  console.log('   Trainer 4: trainer4@ironzone.test  / IronZone@2026  (Sneha Patil)\n');
   console.log('   Members:   60 registered (40 active, 8 expiring soon, 12 overdue)');
   console.log('   Equipment: 30 items tracked as assets');
   console.log('   Sessions:  Training appointments for ±14 days\n');

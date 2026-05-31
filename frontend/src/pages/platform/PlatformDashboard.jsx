@@ -201,7 +201,7 @@ export default function PlatformDashboard() {
             <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 4 }}>🏋️ Seed Iron Zone Fitness Demo</div>
             <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
               Creates the full gym demo tenant with 60 members, 4 trainers, sessions, assets and expenses.<br />
-              Login: <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>owner@ironzone.test</code> / <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>Test@1234</code>
+              Login: <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>owner@ironzone.test</code> / <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>IronZone@2026</code>
             </div>
           </div>
           <button

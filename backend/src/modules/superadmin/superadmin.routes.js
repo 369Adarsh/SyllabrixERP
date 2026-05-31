@@ -153,7 +153,7 @@ router.post('/seed-demo', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
   try {
     const { seedIronZone } = require('../../../prisma/seed-gym-full');
     await seedIronZone();
-    res.json({ success: true, message: 'Iron Zone Fitness demo data seeded successfully. Login: owner@ironzone.test / Test@1234' });
+    res.json({ success: true, message: 'Iron Zone Fitness demo data seeded successfully. Login: owner@ironzone.test / IronZone@2026' });
   } catch (err) {
     console.error('[SEED-DEMO]', err.message);
     res.status(500).json({ success: false, message: err.message });
