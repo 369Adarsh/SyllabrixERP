@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, HelpCircle } from 'lucide-react';
 import Sidebar from './Sidebar';
 import BranchIdentityBar from './BranchIdentityBar';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
@@ -40,6 +40,7 @@ const MODULE_HELP_MAP = {
 export default function AppLayout() {
   const { isMobile } = useBreakpoint();
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -83,9 +84,22 @@ export default function AppLayout() {
         >
           {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <div style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center' }}>
+        <div
+          onClick={() => navigate('/dashboard')}
+          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+        >
           <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
         </div>
+        {currentModule && (
+          <button
+            onClick={() => setHelpOpen(o => !o)}
+            style={{ background: 'none', border: 'none', color: '#fff', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}
+            aria-label="How to use"
+            title={`How to use ${currentModule.moduleName}`}
+          >
+            <HelpCircle size={22} />
+          </button>
+        )}
       </div>
 
       {/* Sidebar backdrop (mobile only) */}
@@ -166,8 +180,8 @@ export default function AppLayout() {
 
           <ReportIssue open={reportOpen} onClose={() => setReportOpen(false)} />
 
-          {/* Floating "How to use" button — appears on all module pages */}
-          {currentModule && !helpOpen && (
+          {/* Floating "How to use" button — desktop only; mobile uses topbar icon */}
+          {currentModule && !helpOpen && !isMobile && (
             <button
               onClick={() => setHelpOpen(true)}
               title={`How to use ${currentModule.moduleName}`}
