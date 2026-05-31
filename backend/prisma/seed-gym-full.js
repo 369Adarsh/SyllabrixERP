@@ -101,8 +101,33 @@ async function main() {
 
   let tenant = await prisma.tenant.findUnique({ where: { email: 'owner@ironzone.test' } });
   if (tenant) {
-    console.log('  ⚡ Tenant already exists — updating modules');
+    console.log('  ⚡ Tenant already exists — patching modules and owner password');
     await prisma.tenant.update({ where: { id: tenant.id }, data: { modules: GYM_MODULES } });
+
+    // Upsert owner user — handles case where tenant was created without a user
+    const existingOwner = await prisma.user.findFirst({
+      where: { tenantId: tenant.id, email: 'owner@ironzone.test' },
+    });
+    if (existingOwner) {
+      await prisma.user.update({
+        where: { id: existingOwner.id },
+        data: { password: hash(PASS), isEmailVerified: true, emailVerifyToken: null },
+      });
+      console.log('  ✓ Owner password reset to Test@1234');
+    } else {
+      await prisma.user.create({
+        data: {
+          tenantId: tenant.id,
+          name: 'Rahul Sharma',
+          email: 'owner@ironzone.test',
+          password: hash(PASS),
+          role: 'OWNER',
+          isEmailVerified: true,
+        },
+      });
+      console.log('  ✓ Owner user created');
+    }
+    console.log('\n✅ Iron Zone patch complete — Login: owner@ironzone.test / Test@1234\n');
     return;
   }
 
