@@ -45,7 +45,8 @@ const getPublicBusinessTypes = async () => {
   return categories.filter(c => c.businessTypes.length > 0);
 };
 
-const register = async ({ name, email, password, phone, businessName, businessType }) => {
+const register = async ({ name, email: rawEmail, password, phone, businessName, businessType }) => {
+  const email = rawEmail.trim().toLowerCase();
   const [byEmail, byPhone] = await Promise.all([
     prisma.tenant.findUnique({ where: { email } }),
     prisma.tenant.findFirst({ where: { phone } }),
@@ -96,7 +97,8 @@ const register = async ({ name, email, password, phone, businessName, businessTy
   return { requiresVerification: !IS_STAGING, email };
 };
 
-const login = async ({ email, password }) => {
+const login = async ({ email: rawEmail, password }) => {
+  const email = rawEmail.trim().toLowerCase();
   const tenant = await prisma.tenant.findUnique({
     where: { email },
     include: { users: { where: { email } } },
@@ -139,7 +141,8 @@ const login = async ({ email, password }) => {
   return { accessToken, refreshToken, user: { ...sanitize(user), staffProfile }, tenant: sanitizeTenant(tenant) };
 };
 
-const staffLogin = async ({ email, password, tenantId }) => {
+const staffLogin = async ({ email: rawEmail, password, tenantId }) => {
+  const email = rawEmail.trim().toLowerCase();
   // If tenantId provided, do exact lookup; otherwise find by email across all tenants
   let user;
   if (tenantId) {
@@ -217,7 +220,8 @@ const logout = async (userId) => {
   await prisma.user.update({ where: { id: userId }, data: { refreshToken: null } });
 };
 
-const forgotPassword = async ({ email }) => {
+const forgotPassword = async ({ email: rawEmail }) => {
+  const email = rawEmail.trim().toLowerCase();
   const user = await prisma.user.findFirst({ where: { email } });
   if (!user) return; // silent — don't leak whether email exists
 
