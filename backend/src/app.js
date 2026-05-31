@@ -106,6 +106,8 @@ app.use(cors({
     // Requests with no Origin header (e.g. curl, Postman) are blocked when credentials are involved
     if (!origin) return cb(null, false);
     if (allowedOrigins.includes(origin)) return cb(null, true);
+    // On quality/staging, accept any Vercel preview URL so branch deploys don't break
+    if (config.nodeEnv === 'quality' && /^https:\/\/[a-z0-9-]+-369adarshs-projects\.vercel\.app$/.test(origin)) return cb(null, true);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
