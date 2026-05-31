@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getSAPlatformDashboard, getSAComplianceStats, getSAAuditReports, getActivityActiveTenants } from '../../api/platform';
+import { getSAPlatformDashboard, getSAComplianceStats, getSAAuditReports, getActivityActiveTenants, seedDemoData } from '../../api/platform';
+import toast from 'react-hot-toast';
 
 const StatCard = ({ label, value, sub, accent = '#1FB8D6', icon }) => (
   <div style={{
@@ -34,6 +35,7 @@ export default function PlatformDashboard() {
   const [complianceStats, setComplianceStats] = useState(null);
   const [activeToday, setActiveToday] = useState([]);
   const [loading, setLoading]         = useState(true);
+  const [seeding, setSeeding]         = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -190,6 +192,41 @@ export default function PlatformDashboard() {
           </div>
         </>
       )}
+
+      {/* Staging Tools — only useful on quality env */}
+      <div style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid #1E2D3D' }}>
+        <SectionLabel>Staging Tools</SectionLabel>
+        <div style={{ background: '#192533', borderRadius: 12, border: '1px solid #1E2D3D', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 4 }}>🏋️ Seed Iron Zone Fitness Demo</div>
+            <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
+              Creates the full gym demo tenant with 60 members, 4 trainers, sessions, assets and expenses.<br />
+              Login: <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>owner@ironzone.test</code> / <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>Test@1234</code>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              setSeeding(true);
+              try {
+                const r = await seedDemoData();
+                toast.success(r.data?.message || 'Seeded successfully');
+              } catch (err) {
+                toast.error(err.response?.data?.message || 'Seed failed');
+              } finally {
+                setSeeding(false);
+              }
+            }}
+            disabled={seeding}
+            style={{
+              padding: '10px 20px', borderRadius: 8, border: 'none', cursor: seeding ? 'not-allowed' : 'pointer',
+              background: seeding ? '#1E2D3D' : 'linear-gradient(135deg,#1FB8D6,#27DCFF)',
+              color: seeding ? '#64748B' : '#0B131C', fontWeight: 700, fontSize: 13, flexShrink: 0,
+            }}
+          >
+            {seeding ? 'Seeding…' : 'Run Seed'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -643,4 +643,9 @@ async function main() {
   console.log('   Sessions:  Training appointments for ±14 days\n');
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+// Auto-run when called directly; also exportable for API-triggered seeding
+if (require.main === module) {
+  main().catch(console.error).finally(() => prisma.$disconnect());
+}
+
+module.exports = { seedIronZone: main };

@@ -170,3 +170,5 @@ export const createLandingPhoto      = (form)   => api.post('/landing-photos', f
 export const updateLandingPhoto      = (id, d)  => api.patch(`/landing-photos/${id}`, d);
 export const deleteLandingPhoto      = (id)     => api.delete(`/landing-photos/${id}`);
 export const reorderLandingPhotos    = (updates) => api.patch('/landing-photos/reorder', { updates });
+
+export const seedDemoData            = ()       => api.post('/seed-demo');
