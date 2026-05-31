@@ -86,7 +86,7 @@ export default function AppLayout() {
         </button>
         <div
           onClick={() => navigate('/dashboard')}
-          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+          style={{ background: '#fff', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
         >
           <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
         </div>
