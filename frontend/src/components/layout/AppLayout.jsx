@@ -86,7 +86,7 @@ export default function AppLayout() {
         </button>
         <div
           onClick={() => navigate('/dashboard')}
-          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer', flex: 1 }}
+          style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 8, padding: '3px 10px 3px 8px', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
         >
           <img src="/logo.png" alt="Syllabrix" style={{ height: 28, objectFit: 'contain', display: 'block' }} />
         </div>
@@ -180,8 +180,8 @@ export default function AppLayout() {
 
           <ReportIssue open={reportOpen} onClose={() => setReportOpen(false)} />
 
-          {/* Floating "How to use" button — appears on all module pages */}
-          {currentModule && !helpOpen && (
+          {/* Floating "How to use" button — desktop only; mobile uses topbar icon */}
+          {currentModule && !helpOpen && !isMobile && (
             <button
               onClick={() => setHelpOpen(true)}
               title={`How to use ${currentModule.moduleName}`}
