@@ -9,7 +9,8 @@ const SA_SECRET = config.saJwtSecret;
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 
-const login = async ({ email, password }) => {
+const login = async ({ email: rawEmail, password }) => {
+  const email = rawEmail.trim().toLowerCase();
   const admin = await prisma.superAdmin.findUnique({ where: { email } });
   if (!admin || !admin.isActive) throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
 

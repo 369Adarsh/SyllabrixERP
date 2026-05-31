@@ -34,7 +34,7 @@ const create = async (tenantId, data) => {
     resolveId(),
   ]);
   return prisma.user.create({
-    data: { ...data, password: hashed, tenantId, syllabrixId },
+    data: { ...data, email: data.email?.trim().toLowerCase(), password: hashed, tenantId, syllabrixId },
     select: USER_SELECT,
   });
 };

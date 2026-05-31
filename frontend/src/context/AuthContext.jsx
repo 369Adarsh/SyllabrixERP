@@ -23,21 +23,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (formData) => {
-    const { data } = await authApi.register(formData);
+    const { data } = await authApi.register(normalizeEmail(formData));
     if (!data.data?.requiresVerification) {
       setAuth(data.data);
     }
     return data;
   };
 
+  const normalizeEmail = (form) => ({ ...form, email: form.email?.trim().toLowerCase() });
+
   const login = async (formData) => {
-    const { data } = await authApi.login(formData);
+    const { data } = await authApi.login(normalizeEmail(formData));
     setAuth(data.data);
     return data;
   };
 
   const staffLogin = async (formData) => {
-    const { data } = await authApi.staffLogin(formData);
+    const { data } = await authApi.staffLogin(normalizeEmail(formData));
     setAuth(data.data);
     return data;
   };

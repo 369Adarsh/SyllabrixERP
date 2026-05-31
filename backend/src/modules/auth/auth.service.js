@@ -294,7 +294,8 @@ const verifyEmail = async (token) => {
   return { verified: true };
 };
 
-const resendVerification = async ({ email }) => {
+const resendVerification = async ({ email: rawEmail }) => {
+  const email = rawEmail.trim().toLowerCase();
   const tenant = await prisma.tenant.findUnique({
     where: { email },
     include: { users: { where: { email } } },
