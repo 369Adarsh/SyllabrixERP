@@ -3,9 +3,10 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { P } from '../../styles/page';
 import KpiBar from '../../components/ui/KpiBar';
 import { getAppointments, createAppointment, updateAppointmentStatus, getServices, getCustomers, getStaff, sendWAAppointmentReminder } from '../../api';
+import VitalsModal from '../../components/clinic/VitalsModal';
 import {
   Plus, Calendar, Search, X, Clock, CheckCircle, MessageCircle,
-  User, Dumbbell, Users, Filter, ChevronDown,
+  User, Dumbbell, Users, Filter, ChevronDown, Activity,
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -307,7 +308,7 @@ function SessionCard({ a, onChangeStatus, onMarkComplete }) {
 }
 
 // ── Table row (non-gym / fallback) ─────────────────────────────────────────────
-function TableRow({ a, onChangeStatus, onMarkComplete }) {
+function TableRow({ a, onChangeStatus, onMarkComplete, isClinic, onVitals }) {
   return (
     <tr style={{ borderBottom: '1px solid var(--border)' }}
       onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
@@ -329,6 +330,12 @@ function TableRow({ a, onChangeStatus, onMarkComplete }) {
             <button onClick={() => onMarkComplete(a)} style={{ fontSize: 12, color: '#16A34A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Complete</button>
             <button onClick={() => onChangeStatus(a.id, 'NO_SHOW')} style={{ fontSize: 12, color: '#D97706', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>No-show</button>
           </>)}
+          {isClinic && (
+            <button onClick={() => onVitals(a)} title="Record Vitals"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0891B2', padding: 2, display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600 }}>
+              <Activity size={13} /> Vitals
+            </button>
+          )}
           {a.customer?.phone && ['SCHEDULED', 'CONFIRMED'].includes(a.status) && (
             <button
               onClick={async () => { try { await sendWAAppointmentReminder(a.id); toast.success('Reminder sent via WhatsApp'); } catch { toast.error('Failed to send reminder'); } }}
@@ -360,6 +367,7 @@ export default function Appointments() {
   const { isMobile } = useBreakpoint();
   const { tenant } = useAuth();
   const isGym = GYM_TYPES.includes(tenant?.businessType);
+  const isClinic = tenant?.businessType === 'CLINIC';
   const apptLabel = isGym ? 'Session' : 'Appointment';
 
   const [appointments, setAppointments] = useState([]);
@@ -379,6 +387,7 @@ export default function Appointments() {
 
   const [showBook, setShowBook] = useState(false);
   const [waConfirm, setWaConfirm] = useState(null);
+  const [vitalsAppt, setVitalsAppt] = useState(null); // clinic vitals modal
 
   // Load filter options for gym
   useEffect(() => {
@@ -624,7 +633,8 @@ export default function Appointments() {
                     No appointments found
                   </td></tr>
                 ) : appointments.map(a => (
-                  <TableRow key={a.id} a={a} onChangeStatus={changeStatus} onMarkComplete={markComplete} />
+                  <TableRow key={a.id} a={a} onChangeStatus={changeStatus} onMarkComplete={markComplete}
+                    isClinic={isClinic} onVitals={setVitalsAppt} />
                 ))}
               </tbody>
             </table>
@@ -634,6 +644,15 @@ export default function Appointments() {
 
       {/* Modals */}
       {showBook && <BookModal onClose={() => setShowBook(false)} onBooked={() => { setShowBook(false); load(); }} isGym={isGym} />}
+      {vitalsAppt && (
+        <VitalsModal
+          appointmentId={vitalsAppt.id}
+          customerId={vitalsAppt.customerId}
+          patientName={vitalsAppt.customer?.name || 'Patient'}
+          onClose={() => setVitalsAppt(null)}
+          onSaved={() => setVitalsAppt(null)}
+        />
+      )}
 
       {waConfirm && (() => {
         const businessName = tenant?.name || 'us';

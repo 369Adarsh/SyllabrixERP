@@ -93,6 +93,7 @@ model Tenant {
   hasBranches             Boolean                @default(false)
   featureConfigs          TenantFeatureConfig[]
   opdTokens               OpdToken[]
+  vitals                  Vitals[]
 
   @@map("tenants")
 }
@@ -2602,4 +2603,29 @@ enum OpdTokenStatus {
   IN_CONSULTATION
   COMPLETED
   SKIPPED
+}
+
+// ── Vitals Recording (SYL-BC-HLC-CL07) ───────────────────────────────────────
+model Vitals {
+  id              String   @id @default(uuid())
+  tenantId        String
+  customerId      String?  // Customer.id (string ref — no Prisma relation to avoid cross-model changes)
+  appointmentId   String?  @unique // one vitals set per appointment
+  bpSystolic      Int?     // mmHg
+  bpDiastolic     Int?     // mmHg
+  pulse           Int?     // bpm
+  temperature     Float?   // °C
+  weight          Float?   // kg
+  height          Float?   // cm  
+  spo2            Int?     // %
+  bloodGlucose    Float?   // mg/dL (random)
+  respiratoryRate Int?     // breaths/min
+  recordedBy      String?  // staff name (denormalized)
+  notes           String?
+  recordedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("vitals")
 }

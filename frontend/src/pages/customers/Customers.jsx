@@ -7,7 +7,7 @@ import {
   getSubscriptions, createSubscription, updateSubscriptionStatus,
   sendSubscriptionReminder, deleteSubscription, adjustCustomerCredit,
   getSegmentCustomers, getStudents, createStudent, updateStudent, createFee, updateFee, getFees, collectFee,
-  getMembershipPlans, createMemberReceipt,
+  getMembershipPlans, createMemberReceipt, getVitalsByPatient,
 } from '../../api';
 import {
   Plus, Users, Search, Edit2, Trash2, X, Phone, Mail, Star,
@@ -811,6 +811,7 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
   const [creditForm, setCreditForm] = useState({ amount: '', operation: 'add' });
   const [medForm, setMedForm] = useState(null);
   const [medSaving, setMedSaving] = useState(false);
+  const [vitalsHistory, setVitalsHistory] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -834,6 +835,14 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
   }, [customerId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Load vitals history when Medical tab is active
+  useEffect(() => {
+    if (!isClinic || tab !== 'medical' || !customerId) return;
+    getVitalsByPatient(customerId, { limit: 8 })
+      .then(r => setVitalsHistory(r.data.data || []))
+      .catch(() => {});
+  }, [isClinic, tab, customerId]);
 
   const handleReminder = async (sub) => {
     try {
@@ -1344,6 +1353,49 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
                   {medSaving ? 'Saving…' : 'Save Medical Profile'}
                 </button>
               </form>
+
+              {/* Vitals History */}
+              {vitalsHistory.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <Section title={`Vitals History (last ${vitalsHistory.length})`}>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: '#F3F4F6' }}>
+                            {['Date', 'BP', 'Pulse', 'Temp', 'SpO₂', 'Wt'].map(h => (
+                              <th key={h} style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, color: '#6B7280', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vitalsHistory.map((v, i) => (
+                            <tr key={v.id} style={{ borderBottom: '1px solid var(--border)', background: v.abnormal ? '#FEF2F2' : i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
+                              <td style={{ padding: '6px 8px', color: '#6B7280', whiteSpace: 'nowrap' }}>
+                                {new Date(v.recordedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: (v.bpSystolic > 140 || v.bpDiastolic > 90) ? '#DC2626' : 'var(--navy)' }}>
+                                {v.bpSystolic && v.bpDiastolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: (v.pulse < 60 || v.pulse > 100) ? '#DC2626' : '#374151' }}>
+                                {v.pulse ?? '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: (v.temperature < 36 || v.temperature > 37.5) ? '#DC2626' : '#374151' }}>
+                                {v.temperature != null ? `${v.temperature}°C` : '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: v.spo2 < 95 ? '#DC2626' : '#374151' }}>
+                                {v.spo2 != null ? `${v.spo2}%` : '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: '#374151' }}>
+                                {v.weight != null ? `${v.weight}kg` : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Section>
+                </div>
+              )}
 
             ) : null
           )}

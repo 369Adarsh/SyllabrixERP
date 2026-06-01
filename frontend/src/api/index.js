@@ -448,3 +448,9 @@ export const startOpdToken      = (id)       => api.patch(`/opd-queue/${id}/star
 export const completeOpdToken   = (id)       => api.patch(`/opd-queue/${id}/complete`);
 export const skipOpdToken       = (id)       => api.patch(`/opd-queue/${id}/skip`);
 export const requeueOpdToken    = (id)       => api.patch(`/opd-queue/${id}/requeue`);
+
+// ── Vitals (Clinic) ───────────────────────────────────────────────────────────
+export const recordVitals            = (data)          => api.post('/vitals', data);
+export const getVitalsByAppointment  = (appointmentId) => api.get(`/vitals/appointment/${appointmentId}`);
+export const getVitalsByPatient      = (customerId, params) => api.get(`/vitals/patient/${customerId}`, { params });
+export const deleteVitals            = (id)            => api.delete(`/vitals/${id}`);
