@@ -92,6 +92,7 @@ model Tenant {
 
   hasBranches             Boolean                @default(false)
   featureConfigs          TenantFeatureConfig[]
+  opdTokens               OpdToken[]
 
   @@map("tenants")
 }
@@ -2572,4 +2573,33 @@ model PlatformSetting {
   updatedBy String?
 
   @@map("platform_settings")
+}
+
+// ── OPD Queue / Token System (SYL-BC-HLC-CL07) ───────────────────────────────
+model OpdToken {
+  id            String         @id @default(uuid())
+  tenantId      String
+  tokenNumber   Int
+  visitDate     DateTime       @default(now())
+  patientId     String?        // Customer.id — null for unregistered walk-ins
+  patientName   String?        // Denormalized — stored at creation time
+  doctorId      String?        // Staff.id
+  doctorName    String?        // Denormalized
+  status        OpdTokenStatus @default(WAITING)
+  appointmentId String?        @unique
+  calledAt      DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, visitDate])
+  @@map("opd_tokens")
+}
+
+enum OpdTokenStatus {
+  WAITING
+  CALLED
+  IN_CONSULTATION
+  COMPLETED
+  SKIPPED
 }

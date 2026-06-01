@@ -10,7 +10,7 @@ import {
   Calendar, GraduationCap, Building2, BarChart3, Settings, LogOut, Sparkles,
   Truck, Receipt, MessageCircle, Briefcase, UserCheck, Globe, Megaphone,
   CreditCard, FileX, ClipboardList, TrendingUp, BookOpen, Store, Award, RotateCcw,
-  GitBranch, ChevronDown, Network, ArrowLeftRight, Flag, Code2, Dumbbell, Zap,
+  GitBranch, ChevronDown, Network, ArrowLeftRight, Flag, Code2, Dumbbell, Zap, ListOrdered,
 } from 'lucide-react';
 
 const LANGUAGES = [
@@ -37,6 +37,7 @@ const ALL_LINKS = [
   { to: '/invoices',     icon: FileText,        tKey: 'nav.invoices',    module: 'invoicing',   roles: OPS_FIN },
   { to: '/customers',    icon: Users,           tKey: 'nav.customers',   module: 'customers',   roles: OPS_FIN },
   { to: '/appointments',       icon: Calendar,       tKey: 'nav.appointments',    module: 'appointments', roles: OPS },
+  { to: '/opd-queue',         icon: ListOrdered,    label: 'OPD Queue',          module: 'appointments', roles: OPS, clinicOnly: true },
   { to: '/membership-plans',  icon: Award,          tKey: 'nav.membershipPlans', module: 'membershipplans', roles: OPS, gymOnly: true },
   { to: '/receipts',          icon: CreditCard,     label: 'Receipts',           module: 'membershipplans', roles: OPS_FIN, gymOnly: true },
   { to: '/training-plans',    icon: Dumbbell,       label: 'Training Plans',     module: 'training',        roles: [...OPS, 'STAFF'], gymOnly: true },
@@ -68,6 +69,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, onOpenReport }) {
   const currentLang = i18n.language?.slice(0, 2) || 'en';
   const isGym = modules.includes('membershipplans');
   const isEducation = modules.includes('progress');
+  const isClinic = tenant?.businessType === 'CLINIC';
   const role = user?.role || 'STAFF';
 
   // Close branch dropdown on outside click
@@ -100,6 +102,7 @@ export default function Sidebar({ isOpen, onClose, isMobile, onOpenReport }) {
 
   const links = ALL_LINKS.filter((l) => {
     if (l.gymOnly && !isGym) return false;
+    if (l.clinicOnly && !isClinic) return false;
     if (isGym && GYM_HIDDEN.includes(l.to)) return false;
     if (isEducation && EDUCATION_HIDDEN.includes(l.to)) return false;
     if (l.educationOnly && !isEducation) return false;

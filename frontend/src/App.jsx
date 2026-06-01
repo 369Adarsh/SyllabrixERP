@@ -57,6 +57,8 @@ import StockNetwork from './pages/inventory/StockNetwork';
 import StockTransfers from './pages/inventory/StockTransfers';
 import Automation from './pages/automation/Automation';
 import CodeAuditor from './pages/admin/CodeAuditor';
+import OpdQueue from './pages/opd-queue/OpdQueue';
+import OpdQueueBoard from './pages/opd-queue/OpdQueueBoard';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -180,6 +182,8 @@ export default function App() {
             <Route path="/training-plans/*" element={<TrainingPlans />} />
             <Route path="/automation/*" element={<Automation />} />
             <Route path="/code-audit" element={<CodeAuditor />} />
+            <Route path="/opd-queue" element={<OpdQueue />} />
+            <Route path="/opd-queue/board" element={<OpdQueueBoard />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

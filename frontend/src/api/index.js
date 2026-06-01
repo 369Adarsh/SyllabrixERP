@@ -437,3 +437,14 @@ export const getMemberReceipts = (params) => api.get('/receipts', { params });
 export const getMemberReceiptsSummary = (params) => api.get('/receipts/summary', { params });
 export const backfillMemberReceipts = () => api.post('/receipts/backfill');
 export const updateReceiptPayment = (id, paymentMethod) => api.patch(`/receipts/${id}/payment`, { paymentMethod });
+
+
+// ── OPD Queue (Clinic) ────────────────────────────────────────────────────────
+export const getOpdQueue        = ()         => api.get('/opd-queue');
+export const getOpdQueueStats   = ()         => api.get('/opd-queue/stats');
+export const assignOpdToken     = (data)     => api.post('/opd-queue', data);
+export const callOpdToken       = (id)       => api.patch(`/opd-queue/${id}/call`);
+export const startOpdToken      = (id)       => api.patch(`/opd-queue/${id}/start`);
+export const completeOpdToken   = (id)       => api.patch(`/opd-queue/${id}/complete`);
+export const skipOpdToken       = (id)       => api.patch(`/opd-queue/${id}/skip`);
+export const requeueOpdToken    = (id)       => api.patch(`/opd-queue/${id}/requeue`);

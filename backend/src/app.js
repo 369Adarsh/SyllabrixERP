@@ -51,6 +51,7 @@ const stockTransferRoutes = require('./modules/branches/stockTransfer.routes');
 const featuresRoutes = require('./modules/features/features.routes');
 const helpRoutes = require('./modules/help/help.routes');
 const receiptsRoutes = require('./modules/receipts/receipts.routes');
+const opdQueueRoutes = require('./modules/opd-queue/opd-queue.routes');
 
 const { razorpayWebhook } = require('./modules/invoicing/invoicing.controller');
 const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/whatsapp.controller');
@@ -188,6 +189,7 @@ app.use('/api/v1/stock-transfers', stockTransferRoutes);
 app.use('/api/v1/features', featuresRoutes);
 app.use('/api/v1/help', helpRoutes);
 app.use('/api/v1/receipts', receiptsRoutes);
+app.use('/api/v1/opd-queue', opdQueueRoutes);
 
 // ── UPI Payment Redirect (public, no auth) ────────────────────────────────────
 app.get('/pay', (req, res) => {
