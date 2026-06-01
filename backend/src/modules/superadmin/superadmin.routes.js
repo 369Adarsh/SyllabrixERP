@@ -160,6 +160,21 @@ router.post('/seed-demo', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
   }
 });
 
+router.post('/seed-clinic', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
+  const config = require('../../config/env');
+  if (config.nodeEnv !== 'quality') {
+    return res.status(403).json({ success: false, message: 'Seed endpoint only available in quality environment.' });
+  }
+  try {
+    const { seedSharmaClinic } = require('../../../prisma/seed-clinic-gp');
+    await seedSharmaClinic();
+    res.json({ success: true, message: 'Sharma Medical Centre seeded. Login: owner@sharmamedical.test / SharmaClinic@2026' });
+  } catch (err) {
+    console.error('[SEED-CLINIC]', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── Seed Diagnostic (quality only) ────────────────────────────────────────────
 router.get('/seed-check', authorizeSA('SUPER', 'ADMIN'), async (req, res) => {
   const config = require('../../config/env');

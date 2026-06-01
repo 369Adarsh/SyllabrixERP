@@ -321,10 +321,25 @@ async function seedClinic() {
   const sv3 = await prisma.service.create({ data: { tenantId: t.id, name: 'Blood Test (CBC)', duration: 10, price: 400 } });
   const sv4 = await prisma.service.create({ data: { tenantId: t.id, name: 'ECG', duration: 15, price: 600 } });
 
-  // Customers / Patients
-  const c1 = await prisma.customer.create({ data: { tenantId: t.id, name: 'Ramaiah B', phone: '9811401001', email: 'ramaiah@gmail.com', totalSpent: 1100 } });
-  const c2 = await prisma.customer.create({ data: { tenantId: t.id, name: 'Sunita K', phone: '9811402002', totalSpent: 500 } });
-  const c3 = await prisma.customer.create({ data: { tenantId: t.id, name: 'Hari Prasad', phone: '9811403003', totalSpent: 2000 } });
+  // Customers / Patients (with medical profiles)
+  const c1 = await prisma.customer.create({ data: {
+    tenantId: t.id, name: 'Ramaiah B', phone: '9811401001', email: 'ramaiah@gmail.com', totalSpent: 1100,
+    bloodGroup: 'B+', dateOfBirth: new Date(Date.now() - 65 * 365.25 * 86400000), gender: 'M',
+    chronicConditions: ['Hypertension', 'Diabetes Type 2'], allergies: ['Aspirin'],
+    emergencyContactName: 'Lakshmi B', emergencyContactPhone: '9811401999',
+    referredBy: 'Word of mouth',
+  } });
+  const c2 = await prisma.customer.create({ data: {
+    tenantId: t.id, name: 'Sunita K', phone: '9811402002', totalSpent: 500,
+    bloodGroup: 'O+', dateOfBirth: new Date(Date.now() - 32 * 365.25 * 86400000), gender: 'F',
+    chronicConditions: [], allergies: [],
+  } });
+  const c3 = await prisma.customer.create({ data: {
+    tenantId: t.id, name: 'Hari Prasad', phone: '9811403003', totalSpent: 2000,
+    bloodGroup: 'A+', dateOfBirth: new Date(Date.now() - 45 * 365.25 * 86400000), gender: 'M',
+    chronicConditions: ['Asthma'], allergies: ['Dust', 'Pollen'],
+    referredBy: 'Dr. Sharma',
+  } });
 
   // Appointments
   await prisma.appointment.create({ data: { tenantId: t.id, customerId: c1.id, serviceId: sv1.id, title: 'Consultation', status: 'COMPLETED', startTime: d(5), endTime: new Date(d(5).getTime() + 20 * 60000), price: 500 } });

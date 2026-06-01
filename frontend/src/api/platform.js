@@ -172,3 +172,4 @@ export const deleteLandingPhoto      = (id)     => api.delete(`/landing-photos/$
 export const reorderLandingPhotos    = (updates) => api.patch('/landing-photos/reorder', { updates });
 
 export const seedDemoData            = ()       => api.post('/seed-demo');
+export const seedClinicData          = ()       => api.post('/seed-clinic');
