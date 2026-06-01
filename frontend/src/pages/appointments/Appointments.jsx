@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { useNavigate } from 'react-router-dom';
 import { P } from '../../styles/page';
 import KpiBar from '../../components/ui/KpiBar';
 import { getAppointments, createAppointment, updateAppointmentStatus, getServices, getCustomers, getStaff, sendWAAppointmentReminder } from '../../api';
 import VitalsModal from '../../components/clinic/VitalsModal';
 import {
   Plus, Calendar, Search, X, Clock, CheckCircle, MessageCircle,
-  User, Dumbbell, Users, Filter, ChevronDown, Activity,
+  User, Dumbbell, Users, Filter, ChevronDown, Activity, Stethoscope,
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -308,7 +309,7 @@ function SessionCard({ a, onChangeStatus, onMarkComplete }) {
 }
 
 // ── Table row (non-gym / fallback) ─────────────────────────────────────────────
-function TableRow({ a, onChangeStatus, onMarkComplete, isClinic, onVitals }) {
+function TableRow({ a, onChangeStatus, onMarkComplete, isClinic, onVitals, onEMR }) {
   return (
     <tr style={{ borderBottom: '1px solid var(--border)' }}
       onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
@@ -334,6 +335,12 @@ function TableRow({ a, onChangeStatus, onMarkComplete, isClinic, onVitals }) {
             <button onClick={() => onVitals(a)} title="Record Vitals"
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0891B2', padding: 2, display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600 }}>
               <Activity size={13} /> Vitals
+            </button>
+          )}
+          {isClinic && (
+            <button onClick={() => onEMR(a.id)} title="Open Clinical Note"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7C3AED', padding: 2, display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600 }}>
+              <Stethoscope size={13} /> EMR
             </button>
           )}
           {a.customer?.phone && ['SCHEDULED', 'CONFIRMED'].includes(a.status) && (
@@ -365,6 +372,7 @@ function SectionHeader({ title, count, color = 'var(--navy)' }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Appointments() {
   const { isMobile } = useBreakpoint();
+  const navigate = useNavigate();
   const { tenant } = useAuth();
   const isGym = GYM_TYPES.includes(tenant?.businessType);
   const isClinic = tenant?.businessType === 'CLINIC';
@@ -634,7 +642,8 @@ export default function Appointments() {
                   </td></tr>
                 ) : appointments.map(a => (
                   <TableRow key={a.id} a={a} onChangeStatus={changeStatus} onMarkComplete={markComplete}
-                    isClinic={isClinic} onVitals={setVitalsAppt} />
+                    isClinic={isClinic} onVitals={setVitalsAppt}
+                    onEMR={(id) => navigate(`/emr/${id}`)} />
                 ))}
               </tbody>
             </table>

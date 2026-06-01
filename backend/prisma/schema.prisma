@@ -94,6 +94,7 @@ model Tenant {
   featureConfigs          TenantFeatureConfig[]
   opdTokens               OpdToken[]
   vitals                  Vitals[]
+  clinicalNotes           ClinicalNote[]
 
   @@map("tenants")
 }
@@ -2628,4 +2629,30 @@ model Vitals {
 
   @@index([tenantId, customerId])
   @@map("vitals")
+}
+
+// ── EMR / Clinical Notes — SOAP (SYL-BC-HLC-CL07) ────────────────────────────
+model ClinicalNote {
+  id             String    @id @default(uuid())
+  tenantId       String
+  customerId     String?   // Patient Customer.id (string ref)
+  appointmentId  String    @unique // one note per appointment
+  doctorId       String?
+  doctorName     String?   // Denormalized
+  patientName    String?   // Denormalized — for history display
+  serviceName    String?   // Denormalized — for history display
+  soapS          String?   // Subjective: chief complaint, history, duration
+  soapO          String?   // Objective: examination findings
+  soapA          String?   // Assessment: diagnosis
+  soapP          String?   // Plan: treatment, follow-up instructions
+  diagnosisCode  String?   // ICD-10 or free-text code
+  followUpDate   DateTime?
+  followUpNotes  String?
+  isConfidential Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("clinical_notes")
 }

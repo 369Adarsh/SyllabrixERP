@@ -59,6 +59,7 @@ import Automation from './pages/automation/Automation';
 import CodeAuditor from './pages/admin/CodeAuditor';
 import OpdQueue from './pages/opd-queue/OpdQueue';
 import OpdQueueBoard from './pages/opd-queue/OpdQueueBoard';
+import EMRPage from './pages/clinical-notes/EMRPage';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -184,6 +185,7 @@ export default function App() {
             <Route path="/code-audit" element={<CodeAuditor />} />
             <Route path="/opd-queue" element={<OpdQueue />} />
             <Route path="/opd-queue/board" element={<OpdQueueBoard />} />
+            <Route path="/emr/:appointmentId" element={<EMRPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

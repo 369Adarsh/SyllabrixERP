@@ -454,3 +454,9 @@ export const recordVitals            = (data)          => api.post('/vitals', da
 export const getVitalsByAppointment  = (appointmentId) => api.get(`/vitals/appointment/${appointmentId}`);
 export const getVitalsByPatient      = (customerId, params) => api.get(`/vitals/patient/${customerId}`, { params });
 export const deleteVitals            = (id)            => api.delete(`/vitals/${id}`);
+
+// ── Clinical Notes / EMR (Clinic) ─────────────────────────────────────────────
+export const getClinicalNote        = (appointmentId) => api.get(`/clinical-notes/appointment/${appointmentId}`);
+export const getPatientNoteHistory  = (customerId, params) => api.get(`/clinical-notes/patient/${customerId}`, { params });
+export const saveClinicalNote       = (data)          => api.post('/clinical-notes', data);
+export const deleteClinicalNote     = (id)            => api.delete(`/clinical-notes/${id}`);
