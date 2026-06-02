@@ -99,6 +99,7 @@ model Tenant {
   labOrders               LabOrder[]
   labReports              LabReport[]
   labCenters              LabCenter[]
+  clinicBills             ClinicBill[]
 
   @@map("tenants")
 }
@@ -2798,5 +2799,65 @@ enum LabOrderStatus {
   PENDING
   PARTIAL
   COMPLETED
+  CANCELLED
+}
+
+// ── Clinic Billing (SYL-BC-HLC-CL07) ─────────────────────────────────────────
+model ClinicBill {
+  id            String          @id @default(uuid())
+  tenantId      String
+  billNumber    String          @unique
+  patientId     String?
+  patientName   String
+  patientPhone  String?
+  appointmentId String?
+  doctorId      String?
+  doctorName    String?
+  billDate      DateTime        @default(now())
+  status        ClinicBillStatus @default(DRAFT)
+  subtotal      Float           @default(0)
+  discountAmount Float          @default(0)
+  exemptAmount  Float           @default(0)
+  taxableAmount Float           @default(0)
+  gstAmount     Float           @default(0)
+  totalAmount   Float           @default(0)
+  cashAmount    Float           @default(0)
+  upiAmount     Float           @default(0)
+  cardAmount    Float           @default(0)
+  paidAmount    Float           @default(0)
+  dueAmount     Float           @default(0)
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  items         ClinicBillItem[]
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, billDate])
+  @@map("clinic_bills")
+}
+
+model ClinicBillItem {
+  id          String     @id @default(uuid())
+  billId      String
+  category    String     // CONSULTATION, PROCEDURE, MEDICINE, DIAGNOSTIC, OTHER
+  description String
+  quantity    Int        @default(1)
+  unitPrice   Float
+  discount    Float      @default(0)
+  isGstExempt Boolean    @default(true)
+  taxRate     Float      @default(0)
+  taxAmount   Float      @default(0)
+  lineTotal   Float
+  bill        ClinicBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("clinic_bill_items")
+}
+
+enum ClinicBillStatus {
+  DRAFT
+  PENDING
+  PAID
+  PARTIAL
   CANCELLED
 }

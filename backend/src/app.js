@@ -55,7 +55,8 @@ const opdQueueRoutes = require('./modules/opd-queue/opd-queue.routes');
 const vitalsRoutes = require('./modules/vitals/vitals.routes');
 const clinicalNotesRoutes = require('./modules/clinical-notes/clinical-notes.routes');
 const prescriptionsRoutes = require('./modules/prescriptions/prescriptions.routes');
-const labOrdersRoutes     = require('./modules/lab-orders/lab-orders.routes');
+const labOrdersRoutes      = require('./modules/lab-orders/lab-orders.routes');
+const clinicBillingRoutes  = require('./modules/clinic-billing/clinic-billing.routes');
 
 const { razorpayWebhook } = require('./modules/invoicing/invoicing.controller');
 const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/whatsapp.controller');
@@ -197,7 +198,8 @@ app.use('/api/v1/opd-queue', opdQueueRoutes);
 app.use('/api/v1/vitals', vitalsRoutes);
 app.use('/api/v1/clinical-notes', clinicalNotesRoutes);
 app.use('/api/v1/prescriptions', prescriptionsRoutes);
-app.use('/api/v1/lab-orders',    labOrdersRoutes);
+app.use('/api/v1/lab-orders',      labOrdersRoutes);
+app.use('/api/v1/clinic-billing',  clinicBillingRoutes);
 
 // ── UPI Payment Redirect (public, no auth) ────────────────────────────────────
 app.get('/pay', (req, res) => {

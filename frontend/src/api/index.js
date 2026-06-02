@@ -483,3 +483,13 @@ export const deleteLabCenter       = (id)            => api.delete(`/lab-orders/
 export const addLabReport          = (data)          => api.post('/lab-orders/reports', data);
 export const markLabReportViewed   = (id)            => api.patch(`/lab-orders/reports/${id}/viewed`);
 export const deleteLabReport       = (id)            => api.delete(`/lab-orders/reports/${id}`);
+
+// ── Clinic Billing (Clinic) ───────────────────────────────────────────────────
+export const getClinicBills        = (params)        => api.get('/clinic-billing', { params });
+export const getClinicBillById     = (id)            => api.get(`/clinic-billing/${id}`);
+export const createClinicBill      = (data)          => api.post('/clinic-billing', data);
+export const updateClinicBill      = (id, data)      => api.patch(`/clinic-billing/${id}`, data);
+export const deleteClinicBill      = (id)            => api.delete(`/clinic-billing/${id}`);
+export const getClinicProcedures   = ()              => api.get('/clinic-billing/procedures');
+export const getClinicDayEnd       = (date)          => api.get('/clinic-billing/day-end', { params: { date } });
+export const getClinicOutstanding  = ()              => api.get('/clinic-billing/outstanding');

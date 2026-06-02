@@ -64,6 +64,8 @@ import PrescriptionsPage from './pages/prescriptions/PrescriptionsPage';
 import PrescriptionEditor from './pages/prescriptions/PrescriptionEditor';
 import LabOrdersPage from './pages/lab-orders/LabOrdersPage';
 import LabOrderEditor from './pages/lab-orders/LabOrderEditor';
+import ClinicBillingPage from './pages/clinic-billing/ClinicBillingPage';
+import ClinicBillEditor from './pages/clinic-billing/ClinicBillEditor';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -194,6 +196,8 @@ export default function App() {
             <Route path="/prescriptions/:id" element={<PrescriptionEditor />} />
             <Route path="/lab-orders" element={<LabOrdersPage />} />
             <Route path="/lab-orders/:id" element={<LabOrderEditor />} />
+            <Route path="/clinic-billing" element={<ClinicBillingPage />} />
+            <Route path="/clinic-billing/:id" element={<ClinicBillEditor />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
