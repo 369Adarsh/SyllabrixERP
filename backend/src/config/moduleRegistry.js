@@ -168,6 +168,88 @@ const MODULE_REGISTRY = {
       digests:         'Digests',
     },
   },
+
+  // ── SYL-BC-HLC clinic modules ─────────────────────────────────────────────
+  opdqueue: {
+    code: 'SYL-MOD-OPD', label: 'OPD Queue',
+    features: {
+      opdTokens:       'OPD Tokens',
+      queueManagement: 'Queue Management',
+      boardView:       'Live Board View',
+    },
+  },
+  clinicalNotes: {
+    code: 'SYL-MOD-EMR', label: 'Clinical Notes / EMR',
+    features: {
+      soapNotes:      'SOAP Notes',
+      patientHistory: 'Patient Visit History',
+      diagnosisCodes: 'Diagnosis / ICD Codes',
+    },
+  },
+  prescriptions: {
+    code: 'SYL-MOD-RX', label: 'Prescriptions',
+    features: {
+      createRx:    'Write Prescription',
+      rxHistory:   'Prescription History',
+      printRx:     'Print Rx',
+      aiSuggest:   'AI Prescription Suggest',
+      qrVerify:    'QR-Verified Rx',
+    },
+  },
+  labOrders: {
+    code: 'SYL-MOD-LAB', label: 'Lab Orders & Reports',
+    features: {
+      labOrders:    'Lab Orders',
+      labReports:   'Report Upload & View',
+      referralSlip: 'Referral Slip Print',
+      labCenters:   'Lab Center Directory',
+    },
+  },
+  clinicBilling: {
+    code: 'SYL-MOD-CBL', label: 'Clinic Billing',
+    features: {
+      clinicBills:    'Clinic Bills',
+      dayEndSummary:  'Day-End Summary',
+      outstanding:    'Outstanding Dues',
+      pnlReport:      'Clinic P&L',
+    },
+  },
+  clinicMedicines: {
+    code: 'SYL-MOD-MED', label: 'Medicine Inventory',
+    features: {
+      medicineStock: 'Medicine Stock',
+      batches:       'Batch Tracking',
+      dispensing:    'Dispensing',
+      scheduleH:     'Schedule H Register',
+      expiryAlerts:  'Expiry Alerts',
+    },
+  },
+  clinicDoctors: {
+    code: 'SYL-MOD-DOC', label: 'Clinic Doctors',
+    features: {
+      doctorProfiles: 'Doctor Profiles',
+      mciReg:         'MCI Registration',
+      schedules:      'OPD Schedules & Fees',
+    },
+  },
+  clinicPnl: {
+    code: 'SYL-MOD-CPL', label: 'Clinic P&L',
+    features: {
+      pnlStatement:     'P&L Statement',
+      revenueBreakdown: 'Revenue by Category',
+      doctorRevenue:    'Doctor-wise Revenue',
+    },
+  },
+  clinicReports: {
+    code: 'SYL-MOD-CLR', label: 'Clinic Reports',
+    features: {
+      opdSummary:          'Daily OPD Summary',
+      monthlyRevenue:      'Monthly Revenue Trend',
+      patientGrowth:       'Patient Growth',
+      diagnosisFrequency:  'Diagnosis Frequency',
+      doctorPerformance:   'Doctor Performance',
+    },
+  },
 };
 
 module.exports = MODULE_REGISTRY;
