@@ -96,6 +96,9 @@ model Tenant {
   vitals                  Vitals[]
   clinicalNotes           ClinicalNote[]
   prescriptions           Prescription[]
+  labOrders               LabOrder[]
+  labReports              LabReport[]
+  labCenters              LabCenter[]
 
   @@map("tenants")
 }
@@ -2707,5 +2710,93 @@ enum PrescriptionStatus {
   ACTIVE
   DISPENSED
   EXPIRED
+  CANCELLED
+}
+
+// ── Lab Orders & Reports (SYL-BC-HLC-CL07) ───────────────────────────────────
+model LabCenter {
+  id        String     @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  address   String?
+  email     String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  orders    LabOrder[]
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("lab_centers")
+}
+
+model LabOrder {
+  id            String         @id @default(uuid())
+  tenantId      String
+  orderNumber   String         @unique
+  patientId     String?
+  patientName   String
+  patientPhone  String?
+  doctorId      String?
+  doctorName    String
+  appointmentId String?
+  labCenterId   String?
+  labCenterName String?
+  clinicalInfo  String?
+  urgency       String         @default("ROUTINE")
+  status        LabOrderStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         LabOrderItem[]
+  reports       LabReport[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  labCenter     LabCenter?     @relation(fields: [labCenterId], references: [id])
+
+  @@index([tenantId, patientId])
+  @@map("lab_orders")
+}
+
+model LabOrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  testName   String
+  testCode   String?
+  category   String?
+  status     String   @default("PENDING")
+  reportNote String?
+  isAbnormal Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  order      LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("lab_order_items")
+}
+
+model LabReport {
+  id          String    @id @default(uuid())
+  tenantId    String
+  orderId     String?
+  patientId   String?
+  patientName String
+  reportName  String
+  fileUrl     String?
+  fileType    String?
+  notes       String?
+  isAbnormal  Boolean   @default(false)
+  isViewed    Boolean   @default(false)
+  reportedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  order       LabOrder? @relation(fields: [orderId], references: [id])
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@map("lab_reports")
+}
+
+enum LabOrderStatus {
+  PENDING
+  PARTIAL
+  COMPLETED
   CANCELLED
 }

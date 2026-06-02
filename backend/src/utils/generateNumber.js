@@ -53,6 +53,17 @@ const generatePONumber = async () => {
   return `${prefix}-${pad(seq)}`;
 };
 
+const generateLabOrderNumber = async () => {
+  const prefix = `LO-${yymm()}`;
+  const last = await prisma.labOrder.findFirst({
+    where: { orderNumber: { startsWith: prefix } },
+    orderBy: { orderNumber: 'desc' },
+    select: { orderNumber: true },
+  });
+  const seq = last ? (parseInt(last.orderNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
 const generateRxNumber = async () => {
   const prefix = `SYLRX-${yymm()}`;
   const last = await prisma.prescription.findFirst({
@@ -64,4 +75,4 @@ const generateRxNumber = async () => {
   return `${prefix}-${pad(seq)}`;
 };
 
-module.exports = { generateInvoiceNumber, generateReceiptNumber, generateFeeReceiptNumber, generatePONumber, generateRxNumber };
+module.exports = { generateInvoiceNumber, generateReceiptNumber, generateFeeReceiptNumber, generatePONumber, generateRxNumber, generateLabOrderNumber };

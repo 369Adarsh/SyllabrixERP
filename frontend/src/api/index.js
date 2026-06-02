@@ -468,3 +468,18 @@ export const createPrescription     = (data)          => api.post('/prescription
 export const updatePrescription     = (id, data)      => api.patch(`/prescriptions/${id}`, data);
 export const deletePrescription     = (id)            => api.delete(`/prescriptions/${id}`);
 export const searchDrugs            = (q)             => api.get('/prescriptions/drugs/search', { params: { q } });
+
+// ── Lab Orders (Clinic) ───────────────────────────────────────────────────────
+export const getLabOrders          = (params)        => api.get('/lab-orders', { params });
+export const getLabOrderById       = (id)            => api.get(`/lab-orders/${id}`);
+export const createLabOrder        = (data)          => api.post('/lab-orders', data);
+export const updateLabOrder        = (id, data)      => api.patch(`/lab-orders/${id}`, data);
+export const deleteLabOrder        = (id)            => api.delete(`/lab-orders/${id}`);
+export const searchLabTests        = (q)             => api.get('/lab-orders/tests/search', { params: { q } });
+export const getLabTestCatalog     = ()              => api.get('/lab-orders/tests/catalog');
+export const getLabCenters         = ()              => api.get('/lab-orders/centers');
+export const saveLabCenter         = (data)          => api.post('/lab-orders/centers', data);
+export const deleteLabCenter       = (id)            => api.delete(`/lab-orders/centers/${id}`);
+export const addLabReport          = (data)          => api.post('/lab-orders/reports', data);
+export const markLabReportViewed   = (id)            => api.patch(`/lab-orders/reports/${id}/viewed`);
+export const deleteLabReport       = (id)            => api.delete(`/lab-orders/reports/${id}`);

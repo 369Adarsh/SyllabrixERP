@@ -10,7 +10,7 @@ import {
   Calendar, GraduationCap, Building2, BarChart3, Settings, LogOut, Sparkles,
   Truck, Receipt, MessageCircle, Briefcase, UserCheck, Globe, Megaphone,
   CreditCard, FileX, ClipboardList, TrendingUp, BookOpen, Store, Award, RotateCcw,
-  GitBranch, ChevronDown, Network, ArrowLeftRight, Flag, Code2, Dumbbell, Zap, ListOrdered, Pill,
+  GitBranch, ChevronDown, Network, ArrowLeftRight, Flag, Code2, Dumbbell, Zap, ListOrdered, Pill, FlaskConical,
 } from 'lucide-react';
 
 const LANGUAGES = [
@@ -39,6 +39,7 @@ const ALL_LINKS = [
   { to: '/appointments',       icon: Calendar,       tKey: 'nav.appointments',    module: 'appointments', roles: OPS },
   { to: '/opd-queue',         icon: ListOrdered,    label: 'OPD Queue',          module: 'appointments', roles: OPS, clinicOnly: true },
   { to: '/prescriptions',     icon: Pill,           label: 'Prescriptions',      module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/lab-orders',        icon: FlaskConical,   label: 'Lab Orders',         module: 'appointments', roles: OPS, clinicOnly: true },
   { to: '/membership-plans',  icon: Award,          tKey: 'nav.membershipPlans', module: 'membershipplans', roles: OPS, gymOnly: true },
   { to: '/receipts',          icon: CreditCard,     label: 'Receipts',           module: 'membershipplans', roles: OPS_FIN, gymOnly: true },
   { to: '/training-plans',    icon: Dumbbell,       label: 'Training Plans',     module: 'training',        roles: [...OPS, 'STAFF'], gymOnly: true },

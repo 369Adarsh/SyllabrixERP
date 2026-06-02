@@ -62,6 +62,8 @@ import OpdQueueBoard from './pages/opd-queue/OpdQueueBoard';
 import EMRPage from './pages/clinical-notes/EMRPage';
 import PrescriptionsPage from './pages/prescriptions/PrescriptionsPage';
 import PrescriptionEditor from './pages/prescriptions/PrescriptionEditor';
+import LabOrdersPage from './pages/lab-orders/LabOrdersPage';
+import LabOrderEditor from './pages/lab-orders/LabOrderEditor';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -190,6 +192,8 @@ export default function App() {
             <Route path="/emr/:appointmentId" element={<EMRPage />} />
             <Route path="/prescriptions" element={<PrescriptionsPage />} />
             <Route path="/prescriptions/:id" element={<PrescriptionEditor />} />
+            <Route path="/lab-orders" element={<LabOrdersPage />} />
+            <Route path="/lab-orders/:id" element={<LabOrderEditor />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
