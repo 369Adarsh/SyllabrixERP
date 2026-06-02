@@ -7,6 +7,7 @@ router.use(authenticate);
 router.get('/procedures',    ctrl.getProcedures);
 router.get('/day-end',       ctrl.dayEndSummary);
 router.get('/outstanding',   ctrl.getOutstanding);
+router.get('/pnl',           ctrl.getPnL);
 router.get('/',              ctrl.listBills);
 router.get('/:id',           ctrl.getBillById);
 router.post('/',             ctrl.createBill);

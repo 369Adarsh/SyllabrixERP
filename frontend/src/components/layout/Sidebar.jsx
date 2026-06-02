@@ -11,6 +11,7 @@ import {
   Truck, Receipt, MessageCircle, Briefcase, UserCheck, Globe, Megaphone,
   CreditCard, FileX, ClipboardList, TrendingUp, BookOpen, Store, Award, RotateCcw,
   GitBranch, ChevronDown, Network, ArrowLeftRight, Flag, Code2, Dumbbell, Zap, ListOrdered, Pill, FlaskConical, Receipt,
+  Package, Stethoscope, BarChart3, IndianRupee,
 } from 'lucide-react';
 
 const LANGUAGES = [
@@ -41,6 +42,10 @@ const ALL_LINKS = [
   { to: '/prescriptions',     icon: Pill,           label: 'Prescriptions',      module: 'appointments', roles: OPS, clinicOnly: true },
   { to: '/lab-orders',        icon: FlaskConical,   label: 'Lab Orders',         module: 'appointments', roles: OPS, clinicOnly: true },
   { to: '/clinic-billing',    icon: Receipt,        label: 'Clinic Billing',     module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-medicines',  icon: Package,        label: 'Medicine Stock',     module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-doctors',    icon: Stethoscope,    label: 'Doctors',            module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-pnl',        icon: IndianRupee,    label: 'Clinic P&L',         module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-reports',    icon: BarChart3,      label: 'Clinic Reports',     module: 'appointments', roles: OPS, clinicOnly: true },
   { to: '/membership-plans',  icon: Award,          tKey: 'nav.membershipPlans', module: 'membershipplans', roles: OPS, gymOnly: true },
   { to: '/receipts',          icon: CreditCard,     label: 'Receipts',           module: 'membershipplans', roles: OPS_FIN, gymOnly: true },
   { to: '/training-plans',    icon: Dumbbell,       label: 'Training Plans',     module: 'training',        roles: [...OPS, 'STAFF'], gymOnly: true },

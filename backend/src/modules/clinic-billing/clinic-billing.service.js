@@ -226,4 +226,56 @@ const getOutstanding = async (tenantId) => {
 // ── Procedure catalog ─────────────────────────────────────────────────────────
 const getProcedures = () => PROCEDURES;
 
-module.exports = { listBills, getBillById, createBill, updateBill, deleteBill, dayEndSummary, getOutstanding, getProcedures };
+// ── Module 12: Clinic P&L ─────────────────────────────────────────────────────
+const getPnL = async (tenantId, params = {}) => {
+  const { year, month } = params;
+  const now = new Date();
+  const y = parseInt(year) || now.getFullYear();
+  const m = parseInt(month) || now.getMonth() + 1;
+
+  const start = new Date(y, m - 1, 1);
+  const end = new Date(y, m, 1);
+
+  const [bills, expenses] = await Promise.all([
+    prisma.clinicBill.findMany({
+      where: { tenantId, billDate: { gte: start, lt: end }, status: { in: ['PAID', 'PARTIAL'] } },
+      include: { items: { select: { category: true, lineTotal: true } } },
+    }),
+    prisma.expense.findMany({
+      where: { tenantId, date: { gte: start, lt: end } },
+      select: { category: true, amount: true, description: true, date: true },
+    }),
+  ]);
+
+  const revenue = {
+    consultation: 0, procedure: 0, medicine: 0, diagnostic: 0, other: 0, total: 0,
+    byDoctor: {},
+  };
+  bills.forEach((b) => {
+    b.items.forEach((item) => {
+      const cat = item.category.toLowerCase();
+      if (revenue[cat] !== undefined) revenue[cat] += item.lineTotal;
+      else revenue.other += item.lineTotal;
+      revenue.total += item.lineTotal;
+    });
+    if (b.doctorName) {
+      revenue.byDoctor[b.doctorName] = (revenue.byDoctor[b.doctorName] || 0) + b.paidAmount;
+    }
+  });
+
+  const expenseTotal = expenses.reduce((s, e) => s + e.amount, 0);
+  const expenseByCategory = expenses.reduce((acc, e) => {
+    acc[e.category] = (acc[e.category] || 0) + e.amount;
+    return acc;
+  }, {});
+
+  return {
+    period: { year: y, month: m },
+    revenue, expenseTotal, expenseByCategory,
+    grossProfit: revenue.total - expenseTotal,
+    bills: bills.length,
+    expenses: expenses.length,
+  };
+};
+
+module.exports = { listBills, getBillById, createBill, updateBill, deleteBill, dayEndSummary, getOutstanding, getProcedures, getPnL };

@@ -5,6 +5,7 @@ const { authenticate } = require('../../middleware/auth');
 router.use(authenticate);
 
 router.get('/drugs/search',  ctrl.drugSearch);
+router.post('/ai-suggest',   ctrl.aiRxSuggest);
 router.get('/',              ctrl.list);
 router.get('/:id',           ctrl.getById);
 router.post('/',             ctrl.create);

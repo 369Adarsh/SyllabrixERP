@@ -45,4 +45,19 @@ const drugSearch = async (req, res) => {
   } catch (e) { err(res, e); }
 };
 
-module.exports = { list, getById, create, update, remove, drugSearch };
+const aiRxSuggest = async (req, res) => {
+  try {
+    const data = await svc.aiRxSuggest(req.body);
+    ok(res, data);
+  } catch (e) { err(res, e); }
+};
+
+// Public — no tenantId
+const verifyRx = async (req, res) => {
+  try {
+    const data = await svc.verifyByToken(req.params.token);
+    ok(res, data);
+  } catch (e) { err(res, e); }
+};
+
+module.exports = { list, getById, create, update, remove, drugSearch, aiRxSuggest, verifyRx };

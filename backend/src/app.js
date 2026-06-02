@@ -55,8 +55,12 @@ const opdQueueRoutes = require('./modules/opd-queue/opd-queue.routes');
 const vitalsRoutes = require('./modules/vitals/vitals.routes');
 const clinicalNotesRoutes = require('./modules/clinical-notes/clinical-notes.routes');
 const prescriptionsRoutes = require('./modules/prescriptions/prescriptions.routes');
-const labOrdersRoutes      = require('./modules/lab-orders/lab-orders.routes');
-const clinicBillingRoutes  = require('./modules/clinic-billing/clinic-billing.routes');
+const labOrdersRoutes        = require('./modules/lab-orders/lab-orders.routes');
+const clinicBillingRoutes    = require('./modules/clinic-billing/clinic-billing.routes');
+const clinicMedicinesRoutes  = require('./modules/clinic-medicines/clinic-medicines.routes');
+const clinicDoctorsRoutes    = require('./modules/clinic-doctors/clinic-doctors.routes');
+const clinicReportsRoutes    = require('./modules/clinic-reports/clinic-reports.routes');
+const prescCtrl              = require('./modules/prescriptions/prescriptions.controller');
 
 const { razorpayWebhook } = require('./modules/invoicing/invoicing.controller');
 const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/whatsapp.controller');
@@ -200,6 +204,12 @@ app.use('/api/v1/clinical-notes', clinicalNotesRoutes);
 app.use('/api/v1/prescriptions', prescriptionsRoutes);
 app.use('/api/v1/lab-orders',      labOrdersRoutes);
 app.use('/api/v1/clinic-billing',  clinicBillingRoutes);
+app.use('/api/v1/clinic-medicines', clinicMedicinesRoutes);
+app.use('/api/v1/clinic-doctors',   clinicDoctorsRoutes);
+app.use('/api/v1/clinic-reports',   clinicReportsRoutes);
+
+// ── Public prescription verify (no auth) ─────────────────────────────────────
+app.get('/api/v1/public/rx/:token', prescCtrl.verifyRx);
 
 // ── UPI Payment Redirect (public, no auth) ────────────────────────────────────
 app.get('/pay', (req, res) => {

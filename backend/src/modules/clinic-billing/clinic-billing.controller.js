@@ -11,5 +11,6 @@ const deleteBill    = async (req, res) => { try { await svc.deleteBill(req.tenan
 const dayEndSummary = async (req, res) => { try { ok(res, await svc.dayEndSummary(req.tenantId, req.query.date)); } catch (e) { err(res, e); } };
 const getOutstanding= async (req, res) => { try { ok(res, await svc.getOutstanding(req.tenantId)); } catch (e) { err(res, e); } };
 const getProcedures = (req, res) => ok(res, svc.getProcedures());
+const getPnL = async (req, res) => { try { ok(res, await svc.getPnL(req.tenantId, req.query)); } catch (e) { err(res, e); } };
 
-module.exports = { listBills, getBillById, createBill, updateBill, deleteBill, dayEndSummary, getOutstanding, getProcedures };
+module.exports = { listBills, getBillById, createBill, updateBill, deleteBill, dayEndSummary, getOutstanding, getProcedures, getPnL };

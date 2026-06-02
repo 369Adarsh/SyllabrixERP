@@ -66,6 +66,11 @@ import LabOrdersPage from './pages/lab-orders/LabOrdersPage';
 import LabOrderEditor from './pages/lab-orders/LabOrderEditor';
 import ClinicBillingPage from './pages/clinic-billing/ClinicBillingPage';
 import ClinicBillEditor from './pages/clinic-billing/ClinicBillEditor';
+import MedicineInventoryPage from './pages/clinic-medicines/MedicineInventoryPage';
+import ClinicDoctorsPage from './pages/clinic-doctors/ClinicDoctorsPage';
+import ClinicPnLPage from './pages/clinic-pnl/ClinicPnLPage';
+import ClinicReportsPage from './pages/clinic-reports/ClinicReportsPage';
+import VerifyRxPage from './pages/verify-rx/VerifyRxPage';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -198,9 +203,17 @@ export default function App() {
             <Route path="/lab-orders/:id" element={<LabOrderEditor />} />
             <Route path="/clinic-billing" element={<ClinicBillingPage />} />
             <Route path="/clinic-billing/:id" element={<ClinicBillEditor />} />
+            <Route path="/clinic-medicines" element={<MedicineInventoryPage />} />
+            <Route path="/clinic-doctors" element={<ClinicDoctorsPage />} />
+            <Route path="/clinic-pnl" element={<ClinicPnLPage />} />
+            <Route path="/clinic-reports" element={<ClinicReportsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+        {/* Public routes (no auth) */}
+        <Routes>
+          <Route path="/verify-rx/:token" element={<VerifyRxPage />} />
         </Routes>
         </AuthProvider>
       </PlatformAuthProvider>

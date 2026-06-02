@@ -4,13 +4,20 @@ import {
   getPrescriptionById, createPrescription, updatePrescription,
   searchDrugs,
 } from '../../api';
+
+const apiPost = (path, body) =>
+  fetch(`/api/v1${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+    body: JSON.stringify(body),
+  }).then((r) => r.json());
 import { useAuth } from '../../context/AuthContext';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { P } from '../../styles/page';
 import toast from 'react-hot-toast';
 import {
   ChevronLeft, Save, Printer, Plus, Trash2, Search, AlertTriangle,
-  Pill, User, Stethoscope, Calendar, FileText, Activity, Send,
+  Pill, User, Stethoscope, Calendar, FileText, Activity, Send, Sparkles, QrCode,
 } from 'lucide-react';
 
 const FREQUENCIES = [
@@ -288,6 +295,9 @@ export default function PrescriptionEditor() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
+  const [rxToken, setRxToken] = useState('');
 
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
@@ -316,6 +326,7 @@ export default function PrescriptionEditor() {
           setRxNumber(rx.rxNumber);
           setCreatedAt(rx.createdAt);
           setStatus(rx.status);
+          setRxToken(rx.rxToken || '');
         } catch {
           toast.error('Prescription not found');
           navigate('/prescriptions');
@@ -331,6 +342,48 @@ export default function PrescriptionEditor() {
       setTimeout(() => window.print(), 800);
     }
   }, [id]);
+
+  const handleAiSuggest = async () => {
+    if (!diagnosis.trim() && !notes.trim()) {
+      toast.error('Enter symptoms/diagnosis first');
+      return;
+    }
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const result = await apiPost('/prescriptions/ai-suggest', {
+        symptoms: `${diagnosis} ${notes}`.trim(),
+        patientAge: null,
+        patientGender: null,
+      });
+      setAiResult(result);
+    } catch {
+      toast.error('AI suggestion failed');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAiTemplate = () => {
+    if (!aiResult?.prescriptionTemplate?.length) return;
+    aiResult.prescriptionTemplate.forEach((t) => {
+      setItems((prev) => [...prev, {
+        drugName: t.drugName || '',
+        brandName: '',
+        formulation: t.formulation || 'Tablet',
+        strength: '',
+        dose: t.dose || '',
+        frequency: t.frequency || '',
+        duration: t.duration || '',
+        instructions: t.instructions || '',
+        isScheduleH: false,
+        isScheduleX: false,
+      }]);
+    });
+    if (aiResult.diagnoses?.[0]?.name && !diagnosis) setDiagnosis(aiResult.diagnoses[0].name);
+    setAiResult(null);
+    toast.success('AI template applied');
+  };
 
   const addDrug = (drug) => {
     setItems((prev) => [
@@ -528,11 +581,55 @@ export default function PrescriptionEditor() {
 
         {/* Drug builder */}
         <div style={{ ...P.card, marginBottom: 16 }} className="no-print">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Pill size={15} color="var(--cyan)" />
-            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>Medicines</span>
-            <span style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 4 }}>— search and add drugs</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Pill size={15} color="var(--cyan)" />
+              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>Medicines</span>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>— search and add drugs</span>
+            </div>
+            <button
+              style={{ ...P.btn('secondary'), fontSize: 12, padding: '6px 12px', background: aiLoading ? '#F5F3FF' : undefined, color: '#7C3AED', border: '1.5px solid #C4B5FD' }}
+              onClick={handleAiSuggest}
+              disabled={aiLoading}
+            >
+              <Sparkles size={13} color="#7C3AED" />
+              {aiLoading ? 'Thinking…' : 'AI Suggest'}
+            </button>
           </div>
+
+          {/* AI Result panel */}
+          {aiResult && (
+            <div style={{ marginBottom: 14, padding: 14, background: '#F5F3FF', borderRadius: 10, border: '1px solid #C4B5FD' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#6D28D9', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={14} /> AI Suggestion
+              </div>
+              {aiResult.diagnoses?.length > 0 && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, marginBottom: 4 }}>Possible diagnoses:</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {aiResult.diagnoses.map((d, i) => (
+                      <span key={i} style={{ fontSize: 11, background: '#EDE9FE', color: '#6D28D9', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
+                        {d.name} <span style={{ opacity: 0.6 }}>({d.confidence})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {aiResult.prescriptionTemplate?.length > 0 && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, marginBottom: 4 }}>Suggested medicines ({aiResult.prescriptionTemplate.length}):</div>
+                  {aiResult.prescriptionTemplate.map((t, i) => (
+                    <div key={i} style={{ fontSize: 12, color: '#374151', marginBottom: 3 }}>• {t.drugName} {t.formulation} — {t.dose} {t.frequency} × {t.duration}</div>
+                  ))}
+                </div>
+              )}
+              {aiResult.advice && <div style={{ fontSize: 12, color: '#374151', fontStyle: 'italic', marginBottom: 10 }}>{aiResult.advice}</div>}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={{ ...P.btn('primary'), fontSize: 12, padding: '6px 14px', background: '#7C3AED' }} onClick={applyAiTemplate}>Apply Template</button>
+                <button style={{ ...P.btn('secondary'), fontSize: 12, padding: '6px 14px' }} onClick={() => setAiResult(null)}>Dismiss</button>
+              </div>
+            </div>
+          )}
 
           {/* Search bar */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
@@ -711,9 +808,22 @@ export default function PrescriptionEditor() {
             <div>Generated by Syllabrix HMS</div>
             <div style={{ fontFamily: 'monospace', marginTop: 2 }}>{rxNumber || 'DRAFT'}</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ borderTop: '1px solid #1E2B3C', paddingTop: 6, minWidth: 140, fontSize: 12 }}>
-              {doctorName ? `Dr. ${doctorName}` : 'Doctor Signature'}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
+            {rxToken && (
+              <div style={{ textAlign: 'center' }}>
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${encodeURIComponent(`${window.location.origin}/verify-rx/${rxToken}`)}`}
+                  alt="Rx QR"
+                  width={64} height={64}
+                  style={{ display: 'block', borderRadius: 4 }}
+                />
+                <div style={{ fontSize: 9, color: '#9CA3AF', marginTop: 2 }}>Scan to verify</div>
+              </div>
+            )}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ borderTop: '1px solid #1E2B3C', paddingTop: 6, minWidth: 140, fontSize: 12 }}>
+                {doctorName ? `Dr. ${doctorName}` : 'Doctor Signature'}
+              </div>
             </div>
           </div>
         </div>

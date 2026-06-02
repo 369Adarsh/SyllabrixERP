@@ -493,3 +493,17 @@ export const deleteClinicBill      = (id)            => api.delete(`/clinic-bill
 export const getClinicProcedures   = ()              => api.get('/clinic-billing/procedures');
 export const getClinicDayEnd       = (date)          => api.get('/clinic-billing/day-end', { params: { date } });
 export const getClinicOutstanding  = ()              => api.get('/clinic-billing/outstanding');
+export const getClinicPnL          = (params)        => api.get('/clinic-billing/pnl', { params });
+
+// ── Clinic Medicines / M8 ─────────────────────────────────────────────────────
+export const getClinicMedicines     = ()             => api.get('/clinic-medicines');
+export const getMedicineAlerts      = ()             => api.get('/clinic-medicines/alerts/expiry');
+export const getLowStockAlerts      = ()             => api.get('/clinic-medicines/alerts/low-stock');
+
+// ── Clinic Doctors / M9 ───────────────────────────────────────────────────────
+export const getClinicDoctors       = ()             => api.get('/clinic-doctors');
+
+// ── Clinic Reports / M13 ──────────────────────────────────────────────────────
+export const getClinicOpdTrend      = ()             => api.get('/clinic-reports/opd-trend');
+export const getClinicMonthlyRev    = ()             => api.get('/clinic-reports/monthly-revenue');
+export const getClinicDoctorPerf    = ()             => api.get('/clinic-reports/doctor-performance');

@@ -100,6 +100,11 @@ model Tenant {
   labReports              LabReport[]
   labCenters              LabCenter[]
   clinicBills             ClinicBill[]
+  clinicSuppliers         ClinicSupplier[]
+  clinicMedicines         ClinicMedicine[]
+  clinicMedicineBatches   ClinicMedicineBatch[]
+  clinicDispenses         ClinicDispense[]
+  clinicDoctorProfiles    ClinicDoctorProfile[]
 
   @@map("tenants")
 }
@@ -2667,6 +2672,7 @@ model Prescription {
   id             String             @id @default(uuid())
   tenantId       String
   rxNumber       String             @unique
+  rxToken        String?            @unique
   patientId      String?
   patientName    String
   patientPhone   String?
@@ -2860,4 +2866,115 @@ enum ClinicBillStatus {
   PAID
   PARTIAL
   CANCELLED
+}
+
+// ── Medicine Inventory & Dispensary (SYL-BC-HLC-CL07) ─────────────────────────
+model ClinicSupplier {
+  id         String                @id @default(uuid())
+  tenantId   String
+  name       String
+  phone      String?
+  email      String?
+  gstin      String?
+  address    String?
+  creditDays Int                   @default(0)
+  isActive   Boolean               @default(true)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  batches    ClinicMedicineBatch[]
+  tenant     Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("clinic_suppliers")
+}
+
+model ClinicMedicine {
+  id           String                @id @default(uuid())
+  tenantId     String
+  genericName  String
+  brandName    String?
+  manufacturer String?
+  formulation  String?
+  strength     String?
+  unit         String                @default("Strip")
+  mrp          Float?
+  reorderLevel Int                   @default(10)
+  scheduleType String                @default("NONE")
+  isActive     Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  batches      ClinicMedicineBatch[]
+  dispenses    ClinicDispense[]
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("clinic_medicines")
+}
+
+model ClinicMedicineBatch {
+  id            String         @id @default(uuid())
+  tenantId      String
+  medicineId    String
+  supplierId    String?
+  batchNumber   String
+  mfgDate       DateTime?
+  expiryDate    DateTime
+  quantity      Int
+  usedQuantity  Int            @default(0)
+  purchasePrice Float          @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  medicine      ClinicMedicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  supplier      ClinicSupplier? @relation(fields: [supplierId], references: [id])
+  dispenses     ClinicDispense[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, expiryDate])
+  @@map("clinic_medicine_batches")
+}
+
+model ClinicDispense {
+  id             String              @id @default(uuid())
+  tenantId       String
+  medicineId     String
+  batchId        String
+  patientName    String
+  patientId      String?
+  prescriptionId String?
+  rxNumber       String?
+  quantity       Int
+  dispensedBy    String?
+  notes          String?
+  dispensedAt    DateTime            @default(now())
+  medicine       ClinicMedicine      @relation(fields: [medicineId], references: [id])
+  batch          ClinicMedicineBatch @relation(fields: [batchId], references: [id])
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("clinic_dispenses")
+}
+
+// ── Clinic Doctor Profile (Module 9) ─────────────────────────────────────────
+model ClinicDoctorProfile {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  staffId             String   @unique
+  specialization      String?
+  mciRegNumber        String?
+  consultationFee     Float?
+  followUpFee         Float?
+  availableDays       String[]
+  morningStart        String?
+  morningEnd          String?
+  eveningStart        String?
+  eveningEnd          String?
+  bio                 String?
+  education           String?
+  experience          Int?
+  languages           String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("clinic_doctor_profiles")
 }
