@@ -95,6 +95,7 @@ model Tenant {
   opdTokens               OpdToken[]
   vitals                  Vitals[]
   clinicalNotes           ClinicalNote[]
+  prescriptions           Prescription[]
 
   @@map("tenants")
 }
@@ -2655,4 +2656,56 @@ model ClinicalNote {
 
   @@index([tenantId, customerId])
   @@map("clinical_notes")
+}
+
+// ── Prescriptions (SYL-BC-HLC-CL07) ──────────────────────────────────────────
+model Prescription {
+  id             String             @id @default(uuid())
+  tenantId       String
+  rxNumber       String             @unique
+  patientId      String?
+  patientName    String
+  patientPhone   String?
+  doctorId       String?
+  doctorName     String
+  appointmentId  String?
+  diagnosis      String?
+  notes          String?
+  followUpDate   DateTime?
+  status         PrescriptionStatus @default(ACTIVE)
+  isPrinted      Boolean            @default(false)
+  isDispensed    Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  items          PrescriptionItem[]
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(uuid())
+  prescriptionId String
+  drugName       String
+  brandName      String?
+  formulation    String?
+  strength       String?
+  dose           String?
+  frequency      String?
+  duration       String?
+  instructions   String?
+  isScheduleH    Boolean      @default(false)
+  isScheduleX    Boolean      @default(false)
+  sortOrder      Int          @default(0)
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@map("prescription_items")
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  DISPENSED
+  EXPIRED
+  CANCELLED
 }

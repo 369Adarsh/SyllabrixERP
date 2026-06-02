@@ -60,6 +60,8 @@ import CodeAuditor from './pages/admin/CodeAuditor';
 import OpdQueue from './pages/opd-queue/OpdQueue';
 import OpdQueueBoard from './pages/opd-queue/OpdQueueBoard';
 import EMRPage from './pages/clinical-notes/EMRPage';
+import PrescriptionsPage from './pages/prescriptions/PrescriptionsPage';
+import PrescriptionEditor from './pages/prescriptions/PrescriptionEditor';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -186,6 +188,8 @@ export default function App() {
             <Route path="/opd-queue" element={<OpdQueue />} />
             <Route path="/opd-queue/board" element={<OpdQueueBoard />} />
             <Route path="/emr/:appointmentId" element={<EMRPage />} />
+            <Route path="/prescriptions" element={<PrescriptionsPage />} />
+            <Route path="/prescriptions/:id" element={<PrescriptionEditor />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

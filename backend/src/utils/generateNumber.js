@@ -53,4 +53,15 @@ const generatePONumber = async () => {
   return `${prefix}-${pad(seq)}`;
 };
 
-module.exports = { generateInvoiceNumber, generateReceiptNumber, generateFeeReceiptNumber, generatePONumber };
+const generateRxNumber = async () => {
+  const prefix = `SYLRX-${yymm()}`;
+  const last = await prisma.prescription.findFirst({
+    where: { rxNumber: { startsWith: prefix } },
+    orderBy: { rxNumber: 'desc' },
+    select: { rxNumber: true },
+  });
+  const seq = last ? (parseInt(last.rxNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+module.exports = { generateInvoiceNumber, generateReceiptNumber, generateFeeReceiptNumber, generatePONumber, generateRxNumber };

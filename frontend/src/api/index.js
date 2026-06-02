@@ -460,3 +460,11 @@ export const getClinicalNote        = (appointmentId) => api.get(`/clinical-note
 export const getPatientNoteHistory  = (customerId, params) => api.get(`/clinical-notes/patient/${customerId}`, { params });
 export const saveClinicalNote       = (data)          => api.post('/clinical-notes', data);
 export const deleteClinicalNote     = (id)            => api.delete(`/clinical-notes/${id}`);
+
+// ── Prescriptions (Clinic) ────────────────────────────────────────────────────
+export const getPrescriptions       = (params)        => api.get('/prescriptions', { params });
+export const getPrescriptionById    = (id)            => api.get(`/prescriptions/${id}`);
+export const createPrescription     = (data)          => api.post('/prescriptions', data);
+export const updatePrescription     = (id, data)      => api.patch(`/prescriptions/${id}`, data);
+export const deletePrescription     = (id)            => api.delete(`/prescriptions/${id}`);
+export const searchDrugs            = (q)             => api.get('/prescriptions/drugs/search', { params: { q } });
