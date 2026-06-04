@@ -3,8 +3,9 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useAuth } from '../../context/AuthContext';
 import { useBranch } from '../../context/BranchContext';
 import { getTenantProfile, updateTenantProfile, uploadBusinessLogo, getUsers, createUser, updateUser, deleteUser, changePassword, getTaxRates, createTaxRate, deleteTaxRate, getAutomationConfig, saveAutomationConfig, getRoleRequests, createRoleRequest, sendDailyDigest, getDigestPreview, createBranch, updateBranch, toggleBranch } from '../../api';
-import { Building2, Users, Shield, Plus, X, Edit2, Trash2, CheckCircle, Percent, Zap, GraduationCap, Send, Clock, AlertCircle, ChevronDown, ChevronUp, Upload, ImageOff, Copy, Lock, Unlock, ChevronRight, Info, Eye, Settings2, GitBranch, ToggleRight } from 'lucide-react';
+import { Building2, Users, Shield, Plus, X, Edit2, Trash2, CheckCircle, Percent, Zap, GraduationCap, Send, Clock, AlertCircle, ChevronDown, ChevronUp, Upload, ImageOff, Copy, Lock, Unlock, ChevronRight, Info, Eye, Settings2, GitBranch, ToggleRight, Layers } from 'lucide-react';
 import ModuleFeatureSettings from './ModuleFeatureSettings';
+import WorkspaceTab from './WorkspaceTab';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
@@ -1985,13 +1986,14 @@ function BranchesTab() {
 }
 
 const TABS = [
-  { id: 'profile',    label: 'Business Profile', desc: 'Logo, address, receipt config',   icon: Building2    },
-  { id: 'branches',   label: 'Branches',         desc: 'Locations & team structure',      icon: GitBranch,   ownerOnly: true },
-  { id: 'features',   label: 'Module Features',  desc: 'Enable or restrict features',     icon: ToggleRight, ownerOnly: true },
-  { id: 'taxes',      label: 'GST / Tax Rates',  desc: 'Tax slabs for invoicing',         icon: Percent      },
-  { id: 'automation', label: 'Automation',       desc: 'Smart alerts & daily digest',     icon: Zap          },
-  { id: 'team',       label: 'Team',             desc: 'Staff, roles & permissions',      icon: Users        },
-  { id: 'security',   label: 'Security',         desc: 'Password & account security',     icon: Shield       },
+  { id: 'profile',    label: 'Business Profile', desc: 'Logo, address, receipt config',        icon: Building2    },
+  { id: 'branches',   label: 'Branches',         desc: 'Locations & team structure',           icon: GitBranch,   ownerOnly: true },
+  { id: 'features',   label: 'Module Features',  desc: 'Enable or restrict features',          icon: ToggleRight, ownerOnly: true },
+  { id: 'workspace',  label: 'Sidebar Workspace',desc: 'Customise sidebar per role',           icon: Layers,      ownerOnly: true },
+  { id: 'taxes',      label: 'GST / Tax Rates',  desc: 'Tax slabs for invoicing',              icon: Percent      },
+  { id: 'automation', label: 'Automation',       desc: 'Smart alerts & daily digest',          icon: Zap          },
+  { id: 'team',       label: 'Team',             desc: 'Staff, roles & permissions',           icon: Users        },
+  { id: 'security',   label: 'Security',         desc: 'Password & account security',          icon: Shield       },
 ];
 
 const PLAN_COLORS = {
@@ -2243,6 +2245,7 @@ export default function Settings() {
 
             {tab === 'branches'   && <BranchesTab />}
             {tab === 'features'   && <ModuleFeatureSettings />}
+            {tab === 'workspace'  && <WorkspaceTab />}
             {tab === 'taxes'      && <TaxRatesTab />}
             {tab === 'automation' && <AutomationTab />}
             {tab === 'team'       && <TeamTab currentUser={user} />}
