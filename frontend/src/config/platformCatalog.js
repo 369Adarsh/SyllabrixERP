@@ -209,15 +209,159 @@ export const MODULE_REGISTRY = {
     bodyStats:       'Body Stats',
     trainerNotes:    'Trainer Notes',
   }},
+
+  // ── SYL-BC-HLC clinic modules ───────────────────────────────────────────────
+  opdqueue: { code: 'SYL-MOD-OPD', label: 'OPD Queue', category: 'Healthcare', features: {
+    opdTokens:       'OPD Tokens',
+    queueManagement: 'Queue Management',
+    boardView:       'Live Board View',
+  }},
+
+  // ── Module 3 — Vitals Recording ──────────────────────────────────────────────
+  vitals: { code: 'SYL-MOD-VIT', label: 'Vitals Recording', category: 'Healthcare', features: {
+    recordVitals:    'Record Vitals (BP, Pulse, Temp, SpO₂, Weight)',
+    bmiCalc:         'BMI Auto-calculation',
+    vitalsHistory:   'Vitals Trend Graph',
+    abnormalFlag:    'Abnormal Value Flagging',
+    nurseWorkflow:   'Nurse Vitals Workflow View',
+  }},
+
+  clinicalNotes: { code: 'SYL-MOD-EMR', label: 'Clinical Notes / EMR', category: 'Healthcare', features: {
+    soapNotes:      'SOAP Notes',
+    patientHistory: 'Patient Visit History',
+    diagnosisCodes: 'Diagnosis / ICD Codes',
+  }},
+  prescriptions: { code: 'SYL-MOD-RX', label: 'Prescriptions', category: 'Healthcare', features: {
+    createRx:  'Write Prescription',
+    rxHistory: 'Prescription History',
+    printRx:   'Print Rx',
+    aiSuggest: 'AI Prescription Suggest',
+    qrVerify:  'QR-Verified Rx',
+  }},
+  labOrders: { code: 'SYL-MOD-LAB', label: 'Lab Orders & Reports', category: 'Healthcare', features: {
+    labOrders:    'Lab Orders',
+    labReports:   'Report Upload & View',
+    referralSlip: 'Referral Slip Print',
+    labCenters:   'Lab Center Directory',
+  }},
+  clinicBilling: { code: 'SYL-MOD-CBL', label: 'Clinic Billing', category: 'Healthcare', features: {
+    clinicBills:   'Clinic Bills',
+    dayEndSummary: 'Day-End Summary',
+    outstanding:   'Outstanding Dues',
+    pnlReport:     'Clinic P&L',
+  }},
+  clinicMedicines: { code: 'SYL-MOD-MED', label: 'Medicine Inventory', category: 'Healthcare', features: {
+    medicineStock: 'Medicine Stock',
+    batches:       'Batch Tracking',
+    dispensing:    'Dispensing',
+    scheduleH:     'Schedule H Register',
+    expiryAlerts:  'Expiry Alerts',
+  }},
+  clinicDoctors: { code: 'SYL-MOD-DOC', label: 'Clinic Doctors', category: 'Healthcare', features: {
+    doctorProfiles: 'Doctor Profiles',
+    mciReg:         'MCI Registration',
+    schedules:      'OPD Schedules & Fees',
+  }},
+  clinicPnl: { code: 'SYL-MOD-CPL', label: 'Clinic P&L', category: 'Healthcare', features: {
+    pnlStatement:     'P&L Statement',
+    revenueBreakdown: 'Revenue by Category',
+    doctorRevenue:    'Doctor-wise Revenue',
+  }},
+  clinicReports: { code: 'SYL-MOD-CLR', label: 'Clinic Reports', category: 'Healthcare', features: {
+    opdSummary:         'Daily OPD Summary',
+    monthlyRevenue:     'Monthly Revenue Trend',
+    patientGrowth:      'Patient Growth',
+    diagnosisFrequency: 'Diagnosis Frequency',
+    doctorPerformance:  'Doctor Performance',
+  }},
+
+  // ── Module 16 — ABDM / ABHA Integration ─────────────────────────────────────
+  abdm: { code: 'SYL-MOD-ABDM', label: 'ABDM / ABHA', category: 'Healthcare', features: {
+    abhaCapture:    'ABHA ID Capture & Linkage',
+    healthRecordPush: 'Health Record Push to ABHA',
+    abdmConfig:     'ABDM Facility Configuration',
+    abhaStats:      'ABHA Coverage Stats',
+  }},
+
+  // ── Module 17 — Bed & Ward Management ────────────────────────────────────────
+  ipdWards: { code: 'SYL-MOD-WRD', label: 'Wards & Beds', category: 'Healthcare', features: {
+    wardManagement: 'Ward Management',
+    bedManagement:  'Bed Management',
+    bedStatusUpdate:'Bed Status (Occupied / Cleaning / Reserved)',
+    occupancyReport:'Live Occupancy Report',
+  }},
+
+  // ── Modules 18–20 — IPD Admissions, Daily Rounds, Nursing Charts ─────────────
+  ipdAdmissions: { code: 'SYL-MOD-IPD', label: 'IPD Admissions', category: 'Healthcare', features: {
+    admitPatient:    'Admit Patient',
+    admissionList:   'Admission List & Status',
+    mlcFlag:         'MLC Case Flag',
+    dailyRounds:     'Daily Rounds / Progress Notes',
+    orderSheet:      'Doctor Order Sheet',
+    nursingMAR:      'Nursing MAR — Medication Administration',
+    vitalsChart:     'Vitals Chart & IV Fluids',
+    intakeOutput:    'Intake-Output Chart',
+    dischargeWorkflow:'Discharge Workflow',
+    census:          'Daily Inpatient Census',
+  }},
+
+  // ── Module 21 — Discharge Summary ────────────────────────────────────────────
+  dischargeSummary: { code: 'SYL-MOD-DSC', label: 'Discharge Summary', category: 'Healthcare', features: {
+    createSummary:      'Create Discharge Summary',
+    editSummary:        'Edit Clinical Fields',
+    printSummary:       'Print A4 Discharge Summary',
+    whatsappDelivery:   'WhatsApp PDF Delivery',
+  }},
+
+  // ── Module 22 — Operation Theatre ────────────────────────────────────────────
+  otSessions: { code: 'SYL-MOD-OTS', label: 'Operation Theatre', category: 'Healthcare', features: {
+    scheduleOT:      'Schedule OT Procedure',
+    otClearance:     'Pre-op Clearance Checklist',
+    intraopNotes:    'Intraoperative Notes',
+    anesthesiaRecord:'Anesthesia Record',
+    postOpOrders:    'Post-op Orders',
+    otUtilization:   'OT Utilization Report',
+  }},
+
+  // ── Module 23 — LIMS Laboratory ──────────────────────────────────────────────
+  lims: { code: 'SYL-MOD-LIM', label: 'LIMS — Laboratory', category: 'Healthcare', features: {
+    testCatalog:     'Test Catalog Management',
+    sampleCollection:'Sample Collection & Tracking',
+    resultEntry:     'Result Entry',
+    criticalAlerts:  'Critical Value Alerts',
+    reportGeneration:'Lab Report Generation',
+    qcTracking:      'Quality Control Tracking',
+  }},
+
+  // ── Module 24 — Radiology ─────────────────────────────────────────────────────
+  radiology: { code: 'SYL-MOD-RAD', label: 'Radiology', category: 'Healthcare', features: {
+    radiologyOrders: 'Radiology Orders',
+    worklist:        'Technician Worklist',
+    reportEntry:     'Radiologist Report Entry',
+    imageAttach:     'Image Attachment',
+    reportDelivery:  'Report Delivery',
+  }},
+
+  // ── Module 25 — Insurance & TPA ───────────────────────────────────────────────
+  insuranceClaims: { code: 'SYL-MOD-INS', label: 'Insurance & TPA', category: 'Healthcare', features: {
+    claimCreation:   'Claim Creation',
+    preAuthorization:'Pre-Authorization Tracking',
+    claimStatus:     'Claim Status Tracking',
+    cashlessFlag:    'Cashless Admission Flag',
+    settlementRecord:'Settlement Recording',
+    outstandingReport:'Outstanding Claims Report',
+  }},
+
 };
 
 export const MODULE_CATEGORY_COLORS = {
-  Finance:  '#34D399',
-  Commerce: '#60A5FA',
-  People:   '#A78BFA',
-  Service:  '#FBBF24',
-  Comms:    '#F472B6',
-  Platform: '#27DCFF',
+  Finance:    '#34D399',
+  Commerce:   '#60A5FA',
+  People:     '#A78BFA',
+  Service:    '#FBBF24',
+  Comms:      '#F472B6',
+  Platform:   '#27DCFF',
+  Healthcare: '#F87171',
 };
 
 // ── Permission presets ────────────────────────────────────────────────────────
@@ -267,6 +411,26 @@ export const DEFAULT_ROLES = [
       ai:             P.cr,
       automation:     P.cru,
       training:       P.full,
+      // Clinic modules
+      opdqueue:        P.cru,
+      clinicalNotes:   P.full,
+      prescriptions:   P.full,
+      labOrders:       P.cru,
+      clinicBilling:   P.cru,
+      clinicMedicines: P.cru,
+      clinicDoctors:   P.cru,
+      clinicPnl:       P.r,
+      clinicReports:   P.r,
+      // Modules 3, 16–25
+      vitals:           P.cru,
+      abdm:             P.cru,
+      ipdWards:         P.cru,
+      ipdAdmissions:    P.full,
+      dischargeSummary: P.full,
+      otSessions:       P.full,
+      lims:             P.full,
+      radiology:        P.full,
+      insuranceClaims:  P.full,
     },
   },
   {
@@ -295,6 +459,26 @@ export const DEFAULT_ROLES = [
       ai:             P.cr,
       automation:     P.r,
       training:       P.cru,
+      // Clinic modules
+      opdqueue:        P.cru,
+      clinicalNotes:   P.cru,
+      prescriptions:   P.cru,
+      labOrders:       P.cru,
+      clinicBilling:   P.cru,
+      clinicMedicines: P.r,
+      clinicDoctors:   P.r,
+      clinicPnl:       P.r,
+      clinicReports:   P.r,
+      // Modules 3, 16–25
+      vitals:           P.cru,
+      abdm:             P.cru,
+      ipdWards:         P.cru,
+      ipdAdmissions:    P.cru,
+      dischargeSummary: P.cru,
+      otSessions:       P.cru,
+      lims:             P.cru,
+      radiology:        P.cru,
+      insuranceClaims:  P.cru,
     },
   },
   {
@@ -413,29 +597,135 @@ export const EXTRA_ROLES = [
       attendance:   P.cr,
     },
   },
-  // ── CLINIC ────────────────────────────────────────────────────────────────────
+  // ── SYL-BC-HLC — CLINIC, DENTAL, HOSPITAL, DIAGNOSTIC_LAB, PHYSIOTHERAPY, AYURVEDA, VET_CLINIC ──
   {
-    templateKey: 'DOCTOR', name: 'Doctor', description: 'Views and manages patient appointments and medical records.',
-    color: '#3B82F6', isSystem: false, appliesTo: ['CLINIC'],
+    templateKey: 'DOCTOR', name: 'Doctor',
+    description: 'Full clinical access — EMR, prescriptions, lab orders, reports. No billing.',
+    color: '#3B82F6', isSystem: false,
+    appliesTo: ['CLINIC', 'DENTAL', 'HOSPITAL', 'DIAGNOSTIC_LAB', 'PHYSIOTHERAPY', 'AYURVEDA', 'VET_CLINIC'],
     permissions: {
-      appointments: P.cru,
-      customers:    P.r,
+      appointments:  P.cru,
+      customers:     P.r,
+      opdqueue:      { opdTokens: P.r, queueManagement: P.r },
+      vitals:        P.r,
+      clinicalNotes: P.full,
+      prescriptions: P.full,
+      labOrders:     { labOrders: P.cru, labReports: P.r, referralSlip: P.r, labCenters: P.r },
+      clinicReports: P.r,
+      clinicPnl:     P.r,
+      clinicDoctors: P.cru,
+      // Modules 16–25
+      abdm:             P.r,
+      ipdAdmissions:    { admitPatient: P.r, admissionList: P.r, dailyRounds: P.full, orderSheet: P.full, nursingMAR: P.r, vitalsChart: P.r, intakeOutput: P.r, dischargeSummary: P.full, census: P.r },
+      dischargeSummary: P.full,
+      otSessions:       P.full,
+      lims:             { sampleCollection: P.r, resultEntry: P.r, criticalAlerts: P.r, reportGeneration: P.r },
+      radiology:        { radiologyOrders: P.cru, worklist: P.r, reportEntry: P.full, reportDelivery: P.r },
+      insuranceClaims:  P.r,
     },
   },
   {
-    templateKey: 'RECEPTIONIST', name: 'Receptionist', description: 'Books appointments and manages patient billing.',
-    color: '#8B5CF6', isSystem: false, appliesTo: ['CLINIC'],
+    templateKey: 'RECEPTIONIST', name: 'Receptionist',
+    description: 'Patient registration, OPD queue, appointments, billing. Cannot view clinical notes.',
+    color: '#8B5CF6', isSystem: false,
+    appliesTo: ['CLINIC', 'DENTAL', 'HOSPITAL', 'PHYSIOTHERAPY', 'AYURVEDA', 'VET_CLINIC'],
     permissions: {
-      appointments: P.cru,
-      invoicing:    { createInvoice: P.cr, pdfDownload: P.r, paymentRecord: P.cr },
-      customers:    P.cru,
+      appointments:  P.cru,
+      customers:     P.cru,
+      opdqueue:      P.cru,
+      clinicBilling: P.cru,
+      labOrders:     { labOrders: P.cr, labReports: P.cr, referralSlip: P.r },
+      prescriptions: { rxHistory: P.r, printRx: P.r },
+      whatsapp:      P.cr,
+      // Modules 16–25
+      abdm:             { abhaCapture: P.cru, abhaStats: P.r },
+      ipdAdmissions:    { admitPatient: P.cr, admissionList: P.r, mlcFlag: P.r, census: P.r, dischargeSummary: P.r },
+      insuranceClaims:  { claimCreation: P.cr, preAuthorization: P.cr, claimStatus: P.r, cashlessFlag: P.cr },
     },
   },
   {
-    templateKey: 'LAB_TECHNICIAN', name: 'Lab Technician', description: 'Handles diagnostic records and test result uploads.',
-    color: '#06B6D4', isSystem: false, appliesTo: ['CLINIC'],
+    templateKey: 'NURSE', name: 'Nurse',
+    description: 'Vitals recording, OPD queue management, medicine dispensing.',
+    color: '#EC4899', isSystem: false,
+    appliesTo: ['CLINIC', 'HOSPITAL', 'PHYSIOTHERAPY'],
+    permissions: {
+      appointments:    P.r,
+      customers:       P.r,
+      opdqueue:        P.cru,
+      vitals:          P.full,
+      clinicMedicines: { medicineStock: P.r, batches: P.r, dispensing: P.cr },
+      // Modules 16–25
+      ipdAdmissions:   { nursingMAR: P.full, vitalsChart: P.full, intakeOutput: P.full, admissionList: P.r },
+      dischargeSummary:{ printSummary: P.r },
+    },
+  },
+  {
+    templateKey: 'LAB_TECHNICIAN', name: 'Lab Technician',
+    description: 'Manages lab orders, uploads test reports, and operates LIMS.',
+    color: '#06B6D4', isSystem: false,
+    appliesTo: ['CLINIC', 'HOSPITAL', 'DIAGNOSTIC_LAB'],
     permissions: {
       customers: P.r,
+      labOrders: P.cru,
+      lims:      P.full,
+    },
+  },
+  {
+    templateKey: 'PHARMACIST', name: 'Pharmacist',
+    description: 'Medicine inventory, dispensing, and Schedule H register.',
+    color: '#10B981', isSystem: false,
+    appliesTo: ['CLINIC', 'HOSPITAL'],
+    permissions: {
+      customers:       P.r,
+      prescriptions:   { rxHistory: P.r, printRx: P.r },
+      clinicMedicines: P.full,
+    },
+  },
+  // ── SYL-BC-HLC — HOSPITAL — Specialist roles ─────────────────────────────────
+  {
+    templateKey: 'RADIOLOGIST', name: 'Radiologist',
+    description: 'Reports on radiology investigations — reads worklist, enters findings and impression.',
+    color: '#a855f7', isSystem: false,
+    appliesTo: ['HOSPITAL'],
+    permissions: {
+      customers:  P.r,
+      radiology:  P.full,
+    },
+  },
+  {
+    templateKey: 'ANESTHESIOLOGIST', name: 'Anesthesiologist',
+    description: 'Manages OT anesthesia records, pre-op fitness assessment, and intraoperative notes.',
+    color: '#f97316', isSystem: false,
+    appliesTo: ['NURSING_HOME', 'HOSPITAL'],
+    permissions: {
+      customers:   P.r,
+      otSessions:  P.full,
+      ipdAdmissions: { admissionList: P.r, dailyRounds: P.r, orderSheet: P.r },
+    },
+  },
+  // ── SYL-BC-HLC — NURSING_HOME, HOSPITAL — IPD-specific roles ─────────────────
+  {
+    templateKey: 'WARD_NURSE', name: 'Ward Nurse',
+    description: 'IPD nursing staff — MAR, vitals, intake-output, progress note acknowledgment.',
+    color: '#EC4899', isSystem: false,
+    appliesTo: ['NURSING_HOME', 'HOSPITAL'],
+    permissions: {
+      customers:        P.r,
+      appointments:     P.r,
+      vitals:           P.full,
+      ipdAdmissions:    { admissionList: P.r, nursingMAR: P.full, vitalsChart: P.full, intakeOutput: P.full, orderSheet: P.r, dailyRounds: P.r },
+      ipdWards:         { bedStatusUpdate: P.cr, occupancyReport: P.r },
+      dischargeSummary: { printSummary: P.r },
+    },
+  },
+  {
+    templateKey: 'WARD_BOY', name: 'Ward Boy',
+    description: 'Bed status update only — marks beds as cleaned/available after discharge.',
+    color: '#6B7280', isSystem: false,
+    appliesTo: ['NURSING_HOME', 'HOSPITAL'],
+    permissions: {
+      ipdWards:      { bedStatusUpdate: P.cr },
+      ipdAdmissions: { admissionList: P.r },
     },
   },
   // ── Education ─────────────────────────────────────────────────────────────────

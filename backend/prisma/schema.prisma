@@ -92,6 +92,31 @@ model Tenant {
 
   hasBranches             Boolean                @default(false)
   featureConfigs          TenantFeatureConfig[]
+  opdTokens               OpdToken[]
+  vitals                  Vitals[]
+  clinicalNotes           ClinicalNote[]
+  prescriptions           Prescription[]
+  labOrders               LabOrder[]
+  labReports              LabReport[]
+  labCenters              LabCenter[]
+  clinicBills             ClinicBill[]
+  clinicSuppliers         ClinicSupplier[]
+  clinicMedicines         ClinicMedicine[]
+  clinicMedicineBatches   ClinicMedicineBatch[]
+  clinicDispenses         ClinicDispense[]
+  clinicDoctorProfiles    ClinicDoctorProfile[]
+  abdmConfig              Json?
+  wards                   Ward[]
+  beds                    Bed[]
+  ipdAdmissions           IPDAdmission[]
+  ipdProgressNotes        IPDProgressNote[]
+  nursingCharts           NursingChart[]
+  otSessions              OTSession[]
+  limsTests               LimsTest[]
+  limsSamples             LimsSample[]
+  limsResults             LimsResult[]
+  radiologyOrders         RadiologyOrder[]
+  insuranceClaims         InsuranceClaim[]
 
   @@map("tenants")
 }
@@ -164,6 +189,16 @@ model Customer {
   tags              String[]
   gymMembershipId   String?
   personalTrainerId String?
+  // Clinical fields — only populated for CLINIC business type tenants
+  bloodGroup              String?
+  dateOfBirth             DateTime?
+  gender                  String?
+  allergies               String[]
+  chronicConditions       String[]
+  abhaId                  String?
+  referredBy              String?
+  emergencyContactName    String?
+  emergencyContactPhone   String?
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
   appointments      Appointment[]
@@ -672,6 +707,7 @@ enum BusinessType {
   PHYSIOTHERAPY
   AYURVEDA
   HOSPITAL
+  NURSING_HOME
   VET_CLINIC
 
   // ── Beauty & Personal Care ───────────────────────────────────────────────
@@ -2562,4 +2598,717 @@ model PlatformSetting {
   updatedBy String?
 
   @@map("platform_settings")
+}
+
+// ── OPD Queue / Token System (SYL-BC-HLC-CL07) ───────────────────────────────
+model OpdToken {
+  id            String         @id @default(uuid())
+  tenantId      String
+  tokenNumber   Int
+  visitDate     DateTime       @default(now())
+  patientId     String?        // Customer.id — null for unregistered walk-ins
+  patientName   String?        // Denormalized — stored at creation time
+  doctorId      String?        // Staff.id
+  doctorName    String?        // Denormalized
+  status        OpdTokenStatus @default(WAITING)
+  appointmentId String?        @unique
+  calledAt      DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, visitDate])
+  @@map("opd_tokens")
+}
+
+enum OpdTokenStatus {
+  WAITING
+  CALLED
+  IN_CONSULTATION
+  COMPLETED
+  SKIPPED
+}
+
+// ── Vitals Recording (SYL-BC-HLC-CL07) ───────────────────────────────────────
+model Vitals {
+  id              String   @id @default(uuid())
+  tenantId        String
+  customerId      String?  // Customer.id (string ref — no Prisma relation to avoid cross-model changes)
+  appointmentId   String?  @unique // one vitals set per appointment
+  bpSystolic      Int?     // mmHg
+  bpDiastolic     Int?     // mmHg
+  pulse           Int?     // bpm
+  temperature     Float?   // °C
+  weight          Float?   // kg
+  height          Float?   // cm  
+  spo2            Int?     // %
+  bloodGlucose    Float?   // mg/dL (random)
+  respiratoryRate Int?     // breaths/min
+  recordedBy      String?  // staff name (denormalized)
+  notes           String?
+  recordedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("vitals")
+}
+
+// ── EMR / Clinical Notes — SOAP (SYL-BC-HLC-CL07) ────────────────────────────
+model ClinicalNote {
+  id             String    @id @default(uuid())
+  tenantId       String
+  customerId     String?   // Patient Customer.id (string ref)
+  appointmentId  String    @unique // one note per appointment
+  doctorId       String?
+  doctorName     String?   // Denormalized
+  patientName    String?   // Denormalized — for history display
+  serviceName    String?   // Denormalized — for history display
+  soapS          String?   // Subjective: chief complaint, history, duration
+  soapO          String?   // Objective: examination findings
+  soapA          String?   // Assessment: diagnosis
+  soapP          String?   // Plan: treatment, follow-up instructions
+  diagnosisCode  String?   // ICD-10 or free-text code
+  followUpDate   DateTime?
+  followUpNotes  String?
+  isConfidential Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, customerId])
+  @@map("clinical_notes")
+}
+
+// ── Prescriptions (SYL-BC-HLC-CL07) ──────────────────────────────────────────
+model Prescription {
+  id             String             @id @default(uuid())
+  tenantId       String
+  rxNumber       String             @unique
+  rxToken        String?            @unique
+  patientId      String?
+  patientName    String
+  patientPhone   String?
+  doctorId       String?
+  doctorName     String
+  appointmentId  String?
+  diagnosis      String?
+  notes          String?
+  followUpDate   DateTime?
+  status         PrescriptionStatus @default(ACTIVE)
+  isPrinted      Boolean            @default(false)
+  isDispensed    Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  items          PrescriptionItem[]
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(uuid())
+  prescriptionId String
+  drugName       String
+  brandName      String?
+  formulation    String?
+  strength       String?
+  dose           String?
+  frequency      String?
+  duration       String?
+  instructions   String?
+  isScheduleH    Boolean      @default(false)
+  isScheduleX    Boolean      @default(false)
+  sortOrder      Int          @default(0)
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@map("prescription_items")
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  DISPENSED
+  EXPIRED
+  CANCELLED
+}
+
+// ── Lab Orders & Reports (SYL-BC-HLC-CL07) ───────────────────────────────────
+model LabCenter {
+  id        String     @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  address   String?
+  email     String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  orders    LabOrder[]
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("lab_centers")
+}
+
+model LabOrder {
+  id            String         @id @default(uuid())
+  tenantId      String
+  orderNumber   String         @unique
+  patientId     String?
+  patientName   String
+  patientPhone  String?
+  doctorId      String?
+  doctorName    String
+  appointmentId String?
+  labCenterId   String?
+  labCenterName String?
+  clinicalInfo  String?
+  urgency       String         @default("ROUTINE")
+  status        LabOrderStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         LabOrderItem[]
+  reports       LabReport[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  labCenter     LabCenter?     @relation(fields: [labCenterId], references: [id])
+
+  @@index([tenantId, patientId])
+  @@map("lab_orders")
+}
+
+model LabOrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  testName   String
+  testCode   String?
+  category   String?
+  status     String   @default("PENDING")
+  reportNote String?
+  isAbnormal Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  order      LabOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("lab_order_items")
+}
+
+model LabReport {
+  id          String    @id @default(uuid())
+  tenantId    String
+  orderId     String?
+  patientId   String?
+  patientName String
+  reportName  String
+  fileUrl     String?
+  fileType    String?
+  notes       String?
+  isAbnormal  Boolean   @default(false)
+  isViewed    Boolean   @default(false)
+  reportedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  order       LabOrder? @relation(fields: [orderId], references: [id])
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@map("lab_reports")
+}
+
+enum LabOrderStatus {
+  PENDING
+  PARTIAL
+  COMPLETED
+  CANCELLED
+}
+
+// ── Clinic Billing (SYL-BC-HLC-CL07) ─────────────────────────────────────────
+model ClinicBill {
+  id            String          @id @default(uuid())
+  tenantId      String
+  billNumber    String          @unique
+  patientId     String?
+  patientName   String
+  patientPhone  String?
+  appointmentId String?
+  doctorId      String?
+  doctorName    String?
+  billDate      DateTime        @default(now())
+  status        ClinicBillStatus @default(DRAFT)
+  subtotal      Float           @default(0)
+  discountAmount Float          @default(0)
+  exemptAmount  Float           @default(0)
+  taxableAmount Float           @default(0)
+  gstAmount     Float           @default(0)
+  totalAmount   Float           @default(0)
+  cashAmount    Float           @default(0)
+  upiAmount     Float           @default(0)
+  cardAmount    Float           @default(0)
+  paidAmount    Float           @default(0)
+  dueAmount     Float           @default(0)
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  items         ClinicBillItem[]
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, billDate])
+  @@map("clinic_bills")
+}
+
+model ClinicBillItem {
+  id          String     @id @default(uuid())
+  billId      String
+  category    String     // CONSULTATION, PROCEDURE, MEDICINE, DIAGNOSTIC, OTHER
+  description String
+  quantity    Int        @default(1)
+  unitPrice   Float
+  discount    Float      @default(0)
+  isGstExempt Boolean    @default(true)
+  taxRate     Float      @default(0)
+  taxAmount   Float      @default(0)
+  lineTotal   Float
+  bill        ClinicBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("clinic_bill_items")
+}
+
+enum ClinicBillStatus {
+  DRAFT
+  PENDING
+  PAID
+  PARTIAL
+  CANCELLED
+}
+
+// ── Medicine Inventory & Dispensary (SYL-BC-HLC-CL07) ─────────────────────────
+model ClinicSupplier {
+  id         String                @id @default(uuid())
+  tenantId   String
+  name       String
+  phone      String?
+  email      String?
+  gstin      String?
+  address    String?
+  creditDays Int                   @default(0)
+  isActive   Boolean               @default(true)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  batches    ClinicMedicineBatch[]
+  tenant     Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("clinic_suppliers")
+}
+
+model ClinicMedicine {
+  id           String                @id @default(uuid())
+  tenantId     String
+  genericName  String
+  brandName    String?
+  manufacturer String?
+  formulation  String?
+  strength     String?
+  unit         String                @default("Strip")
+  mrp          Float?
+  reorderLevel Int                   @default(10)
+  scheduleType String                @default("NONE")
+  isActive     Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  batches      ClinicMedicineBatch[]
+  dispenses    ClinicDispense[]
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("clinic_medicines")
+}
+
+model ClinicMedicineBatch {
+  id            String         @id @default(uuid())
+  tenantId      String
+  medicineId    String
+  supplierId    String?
+  batchNumber   String
+  mfgDate       DateTime?
+  expiryDate    DateTime
+  quantity      Int
+  usedQuantity  Int            @default(0)
+  purchasePrice Float          @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  medicine      ClinicMedicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  supplier      ClinicSupplier? @relation(fields: [supplierId], references: [id])
+  dispenses     ClinicDispense[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, expiryDate])
+  @@map("clinic_medicine_batches")
+}
+
+model ClinicDispense {
+  id             String              @id @default(uuid())
+  tenantId       String
+  medicineId     String
+  batchId        String
+  patientName    String
+  patientId      String?
+  prescriptionId String?
+  rxNumber       String?
+  quantity       Int
+  dispensedBy    String?
+  notes          String?
+  dispensedAt    DateTime            @default(now())
+  medicine       ClinicMedicine      @relation(fields: [medicineId], references: [id])
+  batch          ClinicMedicineBatch @relation(fields: [batchId], references: [id])
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("clinic_dispenses")
+}
+
+// ── Clinic Doctor Profile (Module 9) ─────────────────────────────────────────
+model ClinicDoctorProfile {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  staffId             String   @unique
+  specialization      String?
+  mciRegNumber        String?
+  consultationFee     Float?
+  followUpFee         Float?
+  availableDays       String[]
+  morningStart        String?
+  morningEnd          String?
+  eveningStart        String?
+  eveningEnd          String?
+  bio                 String?
+  education           String?
+  experience          Int?
+  languages           String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("clinic_doctor_profiles")
+}
+
+// ── Ward & Bed Management (SYL-BC-HLC-NH08 Module 17) ────────────────────────
+model Ward {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  wardType  String   @default("GENERAL")
+  floor     String?
+  totalBeds Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  beds      Bed[]
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("wards")
+}
+
+model Bed {
+  id         String        @id @default(uuid())
+  tenantId   String
+  wardId     String
+  bedNumber  String
+  bedType    String        @default("STANDARD")
+  dailyRate  Float         @default(0)
+  status     BedStatus     @default(AVAILABLE)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  ward       Ward          @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  admissions IPDAdmission[]
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, wardId, bedNumber])
+  @@index([tenantId, status])
+  @@map("beds")
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  UNDER_CLEANING
+  RESERVED
+  MAINTENANCE
+}
+
+// ── IPD Admission Management (SYL-BC-HLC-NH08 Modules 18–20) ─────────────────
+model IPDAdmission {
+  id                  String          @id @default(uuid())
+  tenantId            String
+  admissionNumber     String          @unique
+  patientId           String?
+  patientName         String
+  patientPhone        String?
+  patientAge          Int?
+  patientGender       String?
+  bedId               String?
+  wardId              String?
+  wardName            String?
+  bedNumber           String?
+  admittingDoctorId   String?
+  admittingDoctorName String?
+  admissionDiagnosis  String?
+  isMLC               Boolean         @default(false)
+  advanceAmount       Float           @default(0)
+  attendantName       String?
+  attendantPhone      String?
+  admissionDate       DateTime        @default(now())
+  dischargeDate       DateTime?
+  status              AdmissionStatus @default(ADMITTED)
+  dischargeType       String?
+  dailyCharges        Json?
+  dischargeSummary    Json?
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  progressNotes       IPDProgressNote[]
+  nursingCharts       NursingChart[]
+  bed                 Bed?            @relation(fields: [bedId], references: [id])
+  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("ipd_admissions")
+}
+
+enum AdmissionStatus {
+  ADMITTED
+  DISCHARGED
+  TRANSFERRED
+  LAMA
+  ABSCONDED
+  DECEASED
+}
+
+// ── IPD Progress Notes / Daily Rounds (Module 19) ─────────────────────────────
+model IPDProgressNote {
+  id          String      @id @default(uuid())
+  tenantId    String
+  admissionId String
+  doctorName  String
+  doctorId    String?
+  noteType    String      @default("PROGRESS")
+  findings    String?
+  orders      Json?
+  vitals      Json?
+  noteDate    DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  admission   IPDAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, admissionId])
+  @@map("ipd_progress_notes")
+}
+
+// ── Nursing Charts / MAR (Module 20) ──────────────────────────────────────────
+model NursingChart {
+  id          String      @id @default(uuid())
+  tenantId    String
+  admissionId String
+  chartType   String
+  chartDate   DateTime    @default(now())
+  data        Json
+  recordedBy  String?
+  notes       String?
+  createdAt   DateTime    @default(now())
+  admission   IPDAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, admissionId, chartType])
+  @@map("nursing_charts")
+}
+
+// ── Operation Theatre Management (Module 22) ──────────────────────────────────
+model OTSession {
+  id                   String    @id @default(uuid())
+  tenantId             String
+  sessionNumber        String    @unique
+  patientId            String?
+  patientName          String
+  admissionId          String?
+  procedureName        String
+  surgeonName          String
+  anesthesiologistName String?
+  otRoom               String?
+  scheduledDate        DateTime
+  estimatedDuration    Int?      // minutes
+  sessionType          String    @default("ELECTIVE") // ELECTIVE, EMERGENCY
+  status               OTStatus  @default(SCHEDULED)
+  clearance            Json?     // pre-op checklist: consent, NPO, investigations, anesthesiaFitness
+  intraopNotes         String?
+  anesthesiaType       String?   // GA, SA, LA, REGIONAL
+  anesthesiaNotes      String?
+  postOpOrders         String?
+  consumables          Json?     // materials used
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, scheduledDate])
+  @@map("ot_sessions")
+}
+
+enum OTStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+// ── LIMS — Laboratory (Module 23) ─────────────────────────────────────────────
+model LimsTest {
+  id               String   @id @default(uuid())
+  tenantId         String
+  testCode         String
+  testName         String
+  category         String   @default("GENERAL") // HEMATOLOGY, BIOCHEMISTRY, MICROBIOLOGY, SEROLOGY, URINE, HISTOPATHOLOGY
+  unit             String?
+  refRangeLow      Float?
+  refRangeHigh     Float?
+  referenceText    String?
+  turnaroundHours  Int      @default(24)
+  price            Float    @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, testCode])
+  @@index([tenantId, category])
+  @@map("lims_tests")
+}
+
+model LimsSample {
+  id           String       @id @default(uuid())
+  tenantId     String
+  sampleNumber String       @unique
+  patientId    String?
+  patientName  String
+  admissionId  String?
+  testsOrdered Json         // [{testCode, testName}]
+  collectedBy  String?
+  collectedAt  DateTime     @default(now())
+  status       SampleStatus @default(COLLECTED)
+  reportedBy   String?
+  reportedAt   DateTime?
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  results      LimsResult[]
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("lims_samples")
+}
+
+enum SampleStatus {
+  COLLECTED
+  IN_PROCESSING
+  RESULTED
+  REPORTED
+  DELIVERED
+}
+
+model LimsResult {
+  id         String     @id @default(uuid())
+  tenantId   String
+  sampleId   String
+  testCode   String
+  testName   String
+  value      String
+  unit       String?
+  refRange   String?
+  isAbnormal Boolean    @default(false)
+  isCritical Boolean    @default(false)
+  enteredBy  String?
+  enteredAt  DateTime   @default(now())
+  sample     LimsSample @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, sampleId])
+  @@map("lims_results")
+}
+
+// ── Radiology (Module 24) ─────────────────────────────────────────────────────
+model RadiologyOrder {
+  id             String          @id @default(uuid())
+  tenantId       String
+  orderNumber    String          @unique
+  patientId      String?
+  patientName    String
+  admissionId    String?
+  orderedBy      String
+  modality       String          // XRAY, USG, CT, MRI, ECG, ECHO, MAMMOGRAPHY
+  bodyPart       String?
+  clinicalInfo   String?
+  priority       String          @default("ROUTINE") // ROUTINE, URGENT, STAT
+  status         RadiologyStatus @default(ORDERED)
+  technicianName String?
+  findings       String?
+  impression     String?
+  reportedBy     String?
+  reportedAt     DateTime?
+  imageUrls      String[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, modality])
+  @@map("radiology_orders")
+}
+
+enum RadiologyStatus {
+  ORDERED
+  SCHEDULED
+  IN_PROGRESS
+  REPORTED
+  DELIVERED
+}
+
+// ── Insurance & TPA Management (Module 25) ────────────────────────────────────
+model InsuranceClaim {
+  id               String      @id @default(uuid())
+  tenantId         String
+  claimNumber      String      @unique
+  patientId        String?
+  patientName      String
+  admissionId      String?
+  policyNumber     String?
+  memberId         String?
+  tpaName          String?
+  insurerName      String?
+  coverageAmount   Float?
+  isCashless       Boolean     @default(false)
+  preAuthCode      String?
+  preAuthAmount    Float?
+  claimedAmount    Float?
+  approvedAmount   Float?
+  status           ClaimStatus @default(PENDING)
+  submittedAt      DateTime?
+  settledAt        DateTime?
+  rejectionReason  String?
+  notes            String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("insurance_claims")
+}
+
+enum ClaimStatus {
+  PENDING
+  PRE_AUTH_REQUESTED
+  PRE_AUTH_APPROVED
+  UNDER_QUERY
+  APPROVED
+  REJECTED
+  SETTLED
 }

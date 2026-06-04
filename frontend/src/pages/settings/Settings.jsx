@@ -1985,14 +1985,21 @@ function BranchesTab() {
 }
 
 const TABS = [
-  { id: 'profile',   label: 'Business Profile', icon: Building2   },
-  { id: 'branches',  label: 'Branches',         icon: GitBranch,  ownerOnly: true },
-  { id: 'features',  label: 'Module Features',  icon: ToggleRight, ownerOnly: true },
-  { id: 'taxes',     label: 'GST / Tax Rates',  icon: Percent     },
-  { id: 'automation',label: 'Automation',        icon: Zap         },
-  { id: 'team',      label: 'Team',             icon: Users       },
-  { id: 'security',  label: 'Security',         icon: Shield      },
+  { id: 'profile',    label: 'Business Profile', desc: 'Logo, address, receipt config',   icon: Building2    },
+  { id: 'branches',   label: 'Branches',         desc: 'Locations & team structure',      icon: GitBranch,   ownerOnly: true },
+  { id: 'features',   label: 'Module Features',  desc: 'Enable or restrict features',     icon: ToggleRight, ownerOnly: true },
+  { id: 'taxes',      label: 'GST / Tax Rates',  desc: 'Tax slabs for invoicing',         icon: Percent      },
+  { id: 'automation', label: 'Automation',       desc: 'Smart alerts & daily digest',     icon: Zap          },
+  { id: 'team',       label: 'Team',             desc: 'Staff, roles & permissions',      icon: Users        },
+  { id: 'security',   label: 'Security',         desc: 'Password & account security',     icon: Shield       },
 ];
+
+const PLAN_COLORS = {
+  STARTER:    { bg: '#EFF6FF', text: '#1D4ED8', border: '#BFDBFE' },
+  GROWTH:     { bg: '#F0FDF4', text: '#15803D', border: '#BBF7D0' },
+  PRO:        { bg: '#FAF5FF', text: '#7C3AED', border: '#E9D5FF' },
+  ENTERPRISE: { bg: '#FFF7ED', text: '#C2410C', border: '#FED7AA' },
+};
 
 export default function Settings() {
   const { isMobile } = useBreakpoint();
@@ -2014,70 +2021,233 @@ export default function Settings() {
     setProfile(r.data.data || r.data);
   };
 
+  const activeTab  = TABS.find(t => t.id === tab);
+  const planColor  = PLAN_COLORS[tenant?.plan] || PLAN_COLORS.STARTER;
+  const isFeatures = tab === 'features';
+
   return (
-    <div style={{ padding: isMobile ? '16px' : '24px 32px', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: isMobile ? 16 : 28 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: isMobile ? 20 : 24, color: 'var(--navy)', letterSpacing: '-0.02em' }}>Settings</h1>
-        <p style={{ color: '#6B7280', fontSize: 14, marginTop: 2 }}>Manage your business profile and team</p>
+    <div style={{ padding: isMobile ? '16px' : '28px 32px', maxWidth: 1120, margin: '0 auto' }}>
+
+      {/* ── Page header ─────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        marginBottom: 24, flexWrap: 'wrap', gap: 10,
+      }}>
+        <div>
+          <h1 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            fontSize: isMobile ? 22 : 26, color: 'var(--navy)',
+            letterSpacing: '-0.02em', margin: 0, lineHeight: 1.2,
+          }}>
+            Settings
+          </h1>
+          <p style={{ color: '#6B7280', fontSize: 13, margin: '4px 0 0' }}>
+            Configure your business, team, and module features
+          </p>
+        </div>
+
+        {tenant && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: '#fff', border: '1px solid #E5E7EB',
+            borderRadius: 10, padding: '8px 14px', flexShrink: 0,
+          }}>
+            {profile?.logoUrl ? (
+              <img src={profile.logoUrl} alt="" style={{ width: 22, height: 22, objectFit: 'contain', borderRadius: 4 }} />
+            ) : (
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Building2 size={12} color="#fff" />
+              </div>
+            )}
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {tenant.name}
+            </span>
+            <span style={{
+              fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 20,
+              background: planColor.bg, color: planColor.text,
+              border: `1px solid ${planColor.border}`,
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+            }}>
+              {tenant.plan}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 32 }}>
-        {/* Tab nav — horizontal scrollable on mobile, vertical on desktop */}
-        {isMobile ? (
-          <div className="tabs-row">
-            <div style={{ display: 'flex', gap: 4, background: '#F3F4F6', borderRadius: 10, padding: 4, width: 'fit-content', minWidth: 'max-content' }}>
-              {visibleTabs.map(t => (
-                <button key={t.id} onClick={() => setTab(t.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 7,
-                  border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
-                  background: tab === t.id ? 'var(--navy)' : 'transparent',
-                  color: tab === t.id ? '#fff' : '#6B7280',
-                }}>
-                  <t.icon size={14} />
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, width: 180, flexShrink: 0 }}>
+      {/* ── Mobile: horizontal scrollable tab strip ───────────────────────── */}
+      {isMobile && (
+        <div style={{ overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
+          <div style={{
+            display: 'flex', gap: 4,
+            background: '#F3F4F6', borderRadius: 12, padding: 4,
+            width: 'fit-content', minWidth: 'max-content',
+          }}>
             {visibleTabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10,
-                border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, textAlign: 'left',
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 13px', borderRadius: 9,
+                border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
                 background: tab === t.id ? 'var(--navy)' : 'transparent',
-                color: tab === t.id ? '#fff' : '#6B7280',
+                color:      tab === t.id ? '#fff' : '#6B7280',
                 transition: 'all 0.15s',
               }}>
-                <t.icon size={16} />
+                <t.icon size={13} />
                 {t.label}
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Desktop: two-column layout ────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+
+        {/* Left nav sidebar */}
+        {!isMobile && (
+          <nav style={{
+            width: 210, flexShrink: 0,
+            background: '#fff',
+            border: '1px solid #E5E7EB',
+            borderRadius: 16,
+            padding: '10px 8px',
+            position: 'sticky', top: 16,
+            boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+          }}>
+            {visibleTabs.map(t => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', textAlign: 'left',
+                    padding: '9px 10px', borderRadius: 10, marginBottom: 2,
+                    border: 'none', cursor: 'pointer',
+                    background: active ? 'var(--navy)' : 'transparent',
+                    transition: 'all 0.12s',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#F3F4F6'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* Icon box */}
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                    background: active ? 'rgba(255,255,255,0.15)' : '#F3F4F6',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.12s',
+                  }}>
+                    <t.icon size={15} color={active ? '#fff' : '#6B7280'} />
+                  </div>
+
+                  {/* Label + desc */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: active ? 700 : 500, lineHeight: 1.3,
+                      color: active ? '#fff' : 'var(--navy)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {t.label}
+                    </div>
+                    <div style={{
+                      fontSize: 10, color: active ? 'rgba(255,255,255,0.55)' : '#9CA3AF',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      marginTop: 1,
+                    }}>
+                      {t.desc}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </nav>
         )}
 
-        {/* Content */}
-        <div style={{ flex: 1, background: '#fff', borderRadius: 16, border: '1px solid var(--border)', padding: tab === 'features' ? 0 : isMobile ? '18px 16px' : '28px 32px', overflow: tab === 'features' ? 'hidden' : 'visible' }}>
-          {tab === 'profile' && (
-            profile
-              ? <ProfileTab tenant={profile} onSaved={handleProfileSaved} />
-              : profileError
-                ? <div style={{ textAlign: 'center', padding: 48 }}>
-                    <AlertCircle size={32} color="#EF4444" style={{ margin: '0 auto 12px', display: 'block' }} />
-                    <div style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>Could not load business profile. Check your connection.</div>
-                    <button onClick={() => { setProfileError(false); getTenantProfile().then(r => setProfile(r.data.data || r.data)).catch(() => setProfileError(true)); }}
-                      style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: 'var(--navy)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                      Retry
-                    </button>
-                  </div>
-                : <div style={{ color: '#9CA3AF', textAlign: 'center', padding: 48 }}>Loading…</div>
+        {/* Content card */}
+        <div style={{
+          flex: 1, minWidth: 0,
+          background: '#fff',
+          border: '1px solid #E5E7EB',
+          borderRadius: 16,
+          overflow: 'hidden',
+          boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+        }}>
+
+          {/* Tab header strip — shown on all tabs except Module Features (it has its own header) */}
+          {activeTab && !isFeatures && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '16px 28px',
+              borderBottom: '1px solid #F0F0F0',
+              background: 'linear-gradient(to right, #FAFAFA, #fff)',
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+                background: 'var(--navy)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(15,35,73,0.18)',
+              }}>
+                <activeTab.icon size={17} color="#fff" />
+              </div>
+              <div>
+                <div style={{
+                  fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800,
+                  color: 'var(--navy)', lineHeight: 1.2,
+                }}>
+                  {activeTab.label}
+                </div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>
+                  {activeTab.desc}
+                </div>
+              </div>
+            </div>
           )}
-          {tab === 'branches' && <BranchesTab />}
-          {tab === 'features' && <ModuleFeatureSettings />}
-          {tab === 'taxes' && <TaxRatesTab />}
-          {tab === 'automation' && <AutomationTab />}
-          {tab === 'team' && <TeamTab currentUser={user} />}
-          {tab === 'security' && <SecurityTab />}
+
+          {/* Tab body */}
+          <div style={{ padding: isFeatures ? 0 : isMobile ? '20px 16px' : '28px 32px' }}>
+
+            {tab === 'profile' && (
+              profile
+                ? <ProfileTab tenant={profile} onSaved={handleProfileSaved} />
+                : profileError
+                  ? (
+                    <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                      <AlertCircle size={36} color="#EF4444" style={{ margin: '0 auto 14px', display: 'block' }} />
+                      <div style={{ color: '#374151', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
+                        Could not load business profile
+                      </div>
+                      <div style={{ color: '#6B7280', fontSize: 13, marginBottom: 20 }}>
+                        Check your connection and try again.
+                      </div>
+                      <button
+                        onClick={() => {
+                          setProfileError(false);
+                          getTenantProfile()
+                            .then(r => setProfile(r.data.data || r.data))
+                            .catch(() => setProfileError(true));
+                        }}
+                        style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: 'var(--navy)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )
+                  : (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid #E5E7EB', borderTopColor: 'var(--cyan)', animation: 'spin 0.7s linear infinite' }} />
+                      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    </div>
+                  )
+            )}
+
+            {tab === 'branches'   && <BranchesTab />}
+            {tab === 'features'   && <ModuleFeatureSettings />}
+            {tab === 'taxes'      && <TaxRatesTab />}
+            {tab === 'automation' && <AutomationTab />}
+            {tab === 'team'       && <TeamTab currentUser={user} />}
+            {tab === 'security'   && <SecurityTab />}
+          </div>
         </div>
       </div>
     </div>

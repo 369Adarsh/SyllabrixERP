@@ -13,6 +13,7 @@ router.get('/:id', ctrl.get);
 router.post('/', ctrl.create);
 router.put('/:id', ctrl.update);
 router.patch('/:id/status', ctrl.updateStatus);
+router.patch('/:id/reschedule', ctrl.reschedule);
 router.delete('/:id', ctrl.remove);
 
 module.exports = router;

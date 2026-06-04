@@ -1,47 +1,192 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getCompanyFeatures, setCompanyFeature, getBranchFeatures, setBranchFeature } from '../../api';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Lock, AlertCircle, Zap, Building2, GitBranch } from 'lucide-react';
 
-/* ── Module registry ─────────────────────────────────── */
-const MODULE_LABELS = {
-  'SYL-MOD-POS': { name: 'Point of Sale',   emoji: '🛒' },
-  'SYL-MOD-STK': { name: 'Inventory',       emoji: '📦' },
-  'SYL-MOD-INV': { name: 'Invoicing',       emoji: '🧾' },
-  'SYL-MOD-CUS': { name: 'Customers',       emoji: '👥' },
-  'SYL-MOD-EXP': { name: 'Expenses',        emoji: '💸' },
-  'SYL-MOD-VND': { name: 'Vendors',         emoji: '🤝' },
-  'SYL-MOD-ACC': { name: 'Accounts',        emoji: '📊' },
-  'SYL-MOD-REP': { name: 'Reports',         emoji: '📈' },
-  'SYL-MOD-STF': { name: 'Staff',           emoji: '👤' },
-  'SYL-MOD-ATT': { name: 'Attendance',      emoji: '📅' },
-  'SYL-MOD-PAY': { name: 'Payroll',         emoji: '💰' },
-  'SYL-MOD-APT': { name: 'Appointments',    emoji: '📆' },
-  'SYL-MOD-FEE': { name: 'Fees',            emoji: '🎓' },
-  'SYL-MOD-STU': { name: 'Students',        emoji: '🎒' },
-  'SYL-MOD-AST': { name: 'Assets',          emoji: '🏗' },
-  'SYL-MOD-LSE': { name: 'Lease',           emoji: '🏠' },
-  'SYL-MOD-MBR': { name: 'Membership Plans',emoji: '⭐' },
-  'SYL-MOD-WA':  { name: 'WhatsApp',        emoji: '💬' },
-  'SYL-MOD-CMP': { name: 'Campaigns',       emoji: '📣' },
-  'SYL-MOD-AIC': { name: 'AI Copilot',      emoji: '🤖' },
-  'SYL-MOD-AUT': { name: 'Automation',      emoji: '⚡' },
-  'SYL-MOD-B2B': { name: 'B2B Portal',      emoji: '🏢' },
+// ── Module key (tenant.modules array) → module code ──────────────────────────
+const MODULE_KEY_TO_CODE = {
+  // Generic / Commerce
+  pos:              'SYL-MOD-POS',
+  inventory:        'SYL-MOD-STK',
+  invoicing:        'SYL-MOD-INV',
+  customers:        'SYL-MOD-CUS',
+  expenses:         'SYL-MOD-EXP',
+  vendors:          'SYL-MOD-VND',
+  accounts:         'SYL-MOD-ACC',
+  reports:          'SYL-MOD-REP',
+  staff:            'SYL-MOD-STF',
+  attendance:       'SYL-MOD-ATT',
+  payroll:          'SYL-MOD-PAY',
+  appointments:     'SYL-MOD-APT',
+  fees:             'SYL-MOD-FEE',
+  students:         'SYL-MOD-STU',
+  assets:           'SYL-MOD-AST',
+  lease:            'SYL-MOD-LSE',
+  membershipplans:  'SYL-MOD-MBR',
+  whatsapp:         'SYL-MOD-WA',
+  campaigns:        'SYL-MOD-CMP',
+  b2b:              'SYL-MOD-B2B',
+  ai:               'SYL-MOD-AIC',
+  automation:       'SYL-MOD-AUT',
+  training:         'SYL-MOD-TRN',
+  progress:         'SYL-MOD-PRG',
+  // Healthcare — OPD
+  opdqueue:         'SYL-MOD-OPD',
+  vitals:           'SYL-MOD-VIT',
+  clinicalNotes:    'SYL-MOD-EMR',
+  prescriptions:    'SYL-MOD-RX',
+  labOrders:        'SYL-MOD-LAB',
+  clinicBilling:    'SYL-MOD-CBL',
+  clinicMedicines:  'SYL-MOD-MED',
+  clinicDoctors:    'SYL-MOD-DOC',
+  clinicPnl:        'SYL-MOD-CPL',
+  clinicReports:    'SYL-MOD-CLR',
+  abdm:             'SYL-MOD-ABDM',
+  // Healthcare — IPD
+  ipdWards:         'SYL-MOD-WRD',
+  ipdAdmissions:    'SYL-MOD-IPD',
+  dischargeSummary: 'SYL-MOD-DSC',
+  otSessions:       'SYL-MOD-OTS',
+  lims:             'SYL-MOD-LIM',
+  radiology:        'SYL-MOD-RAD',
+  insuranceClaims:  'SYL-MOD-INS',
 };
 
-const MODULE_CATEGORIES = [
-  { label: 'Core Operations', modules: ['SYL-MOD-POS', 'SYL-MOD-STK', 'SYL-MOD-INV', 'SYL-MOD-CUS'] },
-  { label: 'Finance',         modules: ['SYL-MOD-EXP', 'SYL-MOD-VND', 'SYL-MOD-ACC', 'SYL-MOD-REP'] },
-  { label: 'Team & HR',       modules: ['SYL-MOD-STF', 'SYL-MOD-ATT', 'SYL-MOD-PAY'] },
-  { label: 'Education',       modules: ['SYL-MOD-APT', 'SYL-MOD-FEE', 'SYL-MOD-STU'] },
-  { label: 'Property',        modules: ['SYL-MOD-AST', 'SYL-MOD-LSE', 'SYL-MOD-MBR'] },
-  { label: 'Marketing',       modules: ['SYL-MOD-WA',  'SYL-MOD-CMP', 'SYL-MOD-AUT'] },
-  { label: 'Advanced',        modules: ['SYL-MOD-AIC', 'SYL-MOD-B2B'] },
+// ── All module labels + emojis (every code the platform knows) ────────────────
+const MODULE_LABELS = {
+  // Commerce
+  'SYL-MOD-POS':  { name: 'Point of Sale',         emoji: '🛒' },
+  'SYL-MOD-STK':  { name: 'Inventory',              emoji: '📦' },
+  'SYL-MOD-INV':  { name: 'Invoicing',              emoji: '🧾' },
+  'SYL-MOD-CUS':  { name: 'Customers',              emoji: '👥' },
+  'SYL-MOD-EXP':  { name: 'Expenses',               emoji: '💸' },
+  'SYL-MOD-VND':  { name: 'Vendors',                emoji: '🤝' },
+  'SYL-MOD-ACC':  { name: 'Accounts',               emoji: '📊' },
+  'SYL-MOD-REP':  { name: 'Reports',                emoji: '📈' },
+  // HR & Admin
+  'SYL-MOD-STF':  { name: 'Staff',                  emoji: '👤' },
+  'SYL-MOD-ATT':  { name: 'Attendance',             emoji: '📅' },
+  'SYL-MOD-PAY':  { name: 'Payroll',                emoji: '💰' },
+  'SYL-MOD-AST':  { name: 'Assets',                 emoji: '🏗️' },
+  // Scheduling & Services
+  'SYL-MOD-APT':  { name: 'Appointments',           emoji: '📆' },
+  // Education
+  'SYL-MOD-FEE':  { name: 'Fees',                   emoji: '🎓' },
+  'SYL-MOD-STU':  { name: 'Students',               emoji: '🎒' },
+  'SYL-MOD-PRG':  { name: 'Student Progress',       emoji: '📚' },
+  // Fitness
+  'SYL-MOD-MBR':  { name: 'Membership Plans',       emoji: '⭐' },
+  'SYL-MOD-TRN':  { name: 'Training Plans',         emoji: '🏋️' },
+  // Property
+  'SYL-MOD-LSE':  { name: 'Lease',                  emoji: '🏠' },
+  // Marketing & AI
+  'SYL-MOD-WA':   { name: 'WhatsApp',               emoji: '💬' },
+  'SYL-MOD-CMP':  { name: 'Campaigns',              emoji: '📣' },
+  'SYL-MOD-AUT':  { name: 'Automation',             emoji: '⚡' },
+  'SYL-MOD-AIC':  { name: 'AI Copilot',             emoji: '🤖' },
+  'SYL-MOD-B2B':  { name: 'B2B Portal',             emoji: '🏢' },
+  // Healthcare — OPD
+  'SYL-MOD-OPD':  { name: 'OPD Queue',              emoji: '🪙' },
+  'SYL-MOD-VIT':  { name: 'Vitals Recording',       emoji: '🩺' },
+  'SYL-MOD-EMR':  { name: 'Clinical Notes / EMR',   emoji: '📋' },
+  'SYL-MOD-RX':   { name: 'Prescriptions',          emoji: '💊' },
+  'SYL-MOD-LAB':  { name: 'Lab Orders',             emoji: '🧪' },
+  'SYL-MOD-CBL':  { name: 'Clinic Billing',         emoji: '🏥' },
+  'SYL-MOD-MED':  { name: 'Medicine Inventory',     emoji: '💉' },
+  'SYL-MOD-DOC':  { name: 'Clinic Doctors',         emoji: '👨‍⚕️' },
+  'SYL-MOD-CPL':  { name: 'Clinic P&L',             emoji: '📉' },
+  'SYL-MOD-CLR':  { name: 'Clinic Reports',         emoji: '📊' },
+  'SYL-MOD-ABDM': { name: 'ABDM / ABHA',            emoji: '🛡️' },
+  // Healthcare — IPD
+  'SYL-MOD-WRD':  { name: 'Wards & Beds',           emoji: '🛏️' },
+  'SYL-MOD-IPD':  { name: 'IPD Admissions',         emoji: '🏨' },
+  'SYL-MOD-DSC':  { name: 'Discharge Summary',      emoji: '📄' },
+  'SYL-MOD-OTS':  { name: 'Operation Theatre',      emoji: '🔬' },
+  'SYL-MOD-LIM':  { name: 'LIMS — Laboratory',      emoji: '🔭' },
+  'SYL-MOD-RAD':  { name: 'Radiology',              emoji: '🩻' },
+  'SYL-MOD-INS':  { name: 'Insurance & TPA',        emoji: '🗂️' },
+};
+
+// ── Extra module codes added per business type (beyond tenant.modules) ────────
+// These are healthcare-specific modules the backend doesn't store in tenant.modules
+// but the frontend override configs enable for these business types.
+const HLC_OPD_EXTRA = [
+  'SYL-MOD-OPD', 'SYL-MOD-VIT', 'SYL-MOD-EMR', 'SYL-MOD-RX',
+  'SYL-MOD-LAB', 'SYL-MOD-CBL', 'SYL-MOD-MED', 'SYL-MOD-DOC',
+  'SYL-MOD-CPL', 'SYL-MOD-CLR', 'SYL-MOD-ABDM',
+];
+const HLC_IPD_EXTRA = [
+  'SYL-MOD-WRD', 'SYL-MOD-IPD', 'SYL-MOD-DSC',
+  'SYL-MOD-OTS', 'SYL-MOD-LIM', 'SYL-MOD-RAD', 'SYL-MOD-INS',
 ];
 
-/* ── Tier config ─────────────────────────────────────── */
+const BUSINESS_TYPE_EXTRA_CODES = {
+  // OPD-only healthcare
+  CLINIC:         HLC_OPD_EXTRA,
+  DENTAL:         HLC_OPD_EXTRA,
+  DIAGNOSTIC_LAB: HLC_OPD_EXTRA,
+  PHYSIOTHERAPY:  HLC_OPD_EXTRA,
+  AYURVEDA:       HLC_OPD_EXTRA,
+  VET_CLINIC:     HLC_OPD_EXTRA,
+  // Full hospital — OPD + IPD
+  HOSPITAL:       [...HLC_OPD_EXTRA, ...HLC_IPD_EXTRA],
+  NURSING_HOME:   [...HLC_OPD_EXTRA, ...HLC_IPD_EXTRA],
+};
+
+// ── All categories (filtered at render time to only visible codes) ─────────────
+const ALL_MODULE_CATEGORIES = [
+  {
+    label: 'Core Operations',
+    modules: ['SYL-MOD-POS', 'SYL-MOD-STK', 'SYL-MOD-INV', 'SYL-MOD-CUS'],
+  },
+  {
+    label: 'Finance',
+    modules: ['SYL-MOD-EXP', 'SYL-MOD-VND', 'SYL-MOD-ACC', 'SYL-MOD-REP'],
+  },
+  {
+    label: 'Team & HR',
+    modules: ['SYL-MOD-STF', 'SYL-MOD-ATT', 'SYL-MOD-PAY', 'SYL-MOD-AST'],
+  },
+  {
+    label: 'Scheduling',
+    modules: ['SYL-MOD-APT'],
+  },
+  {
+    label: 'Education',
+    modules: ['SYL-MOD-FEE', 'SYL-MOD-STU', 'SYL-MOD-PRG'],
+  },
+  {
+    label: 'Fitness',
+    modules: ['SYL-MOD-MBR', 'SYL-MOD-TRN'],
+  },
+  {
+    label: 'Property',
+    modules: ['SYL-MOD-LSE'],
+  },
+  {
+    label: 'Marketing & AI',
+    modules: ['SYL-MOD-WA', 'SYL-MOD-CMP', 'SYL-MOD-AUT', 'SYL-MOD-AIC', 'SYL-MOD-B2B'],
+  },
+  {
+    label: 'Healthcare — OPD',
+    modules: [
+      'SYL-MOD-OPD', 'SYL-MOD-VIT', 'SYL-MOD-EMR', 'SYL-MOD-RX',
+      'SYL-MOD-LAB', 'SYL-MOD-CBL', 'SYL-MOD-MED', 'SYL-MOD-DOC',
+      'SYL-MOD-CPL', 'SYL-MOD-CLR', 'SYL-MOD-ABDM',
+    ],
+  },
+  {
+    label: 'Healthcare — IPD',
+    modules: [
+      'SYL-MOD-WRD', 'SYL-MOD-IPD', 'SYL-MOD-DSC',
+      'SYL-MOD-OTS', 'SYL-MOD-LIM', 'SYL-MOD-RAD', 'SYL-MOD-INS',
+    ],
+  },
+];
+
+/* ── Tier config ─────────────────────────────────────────────────────────────── */
 const TIERS = {
   BASIC:      { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0', dot: '#22C55E' },
   STANDARD:   { bg: '#EFF6FF', text: '#1E40AF', border: '#BFDBFE', dot: '#3B82F6' },
@@ -49,7 +194,7 @@ const TIERS = {
   ENTERPRISE: { bg: '#FFF7ED', text: '#9A3412', border: '#FED7AA', dot: '#F97316' },
 };
 
-/* ── Small components ────────────────────────────────── */
+/* ── Small components ──────────────────────────────────────────────────────────*/
 function TierPill({ tier }) {
   const c = TIERS[tier] || TIERS.BASIC;
   return (
@@ -91,7 +236,7 @@ function Toggle({ on, disabled, onChange, size = 'md' }) {
   );
 }
 
-/* ── Feature row ─────────────────────────────────────── */
+/* ── Feature row ─────────────────────────────────────────────────────────────── */
 function FeatureRow({ feature, level, isOwner, onToggle }) {
   const [busy, setBusy] = useState(false);
   const locked   = !feature.planUnlocked;
@@ -122,10 +267,7 @@ function FeatureRow({ feature, level, isOwner, onToggle }) {
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2, flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: 13, fontWeight: 600,
-            color: locked ? '#9CA3AF' : 'var(--ink, #111827)',
-          }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: locked ? '#9CA3AF' : 'var(--ink, #111827)' }}>
             {feature.name}
           </span>
           <TierPill tier={feature.tier} />
@@ -145,8 +287,7 @@ function FeatureRow({ feature, level, isOwner, onToggle }) {
         )}
         {locked && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, fontSize: 11, color: '#D97706' }}>
-            <Zap size={10} />
-            Upgrade plan to unlock
+            <Zap size={10} /> Upgrade plan to unlock
           </div>
         )}
       </div>
@@ -173,17 +314,48 @@ function FeatureRow({ feature, level, isOwner, onToggle }) {
   );
 }
 
-/* ── Main component ──────────────────────────────────── */
+/* ── Main component ──────────────────────────────────────────────────────────── */
 export default function ModuleFeatureSettings() {
-  const { user }                = useAuth();
-  const { branchId, branches }  = useBranch();
+  const { user, tenant }           = useAuth();
+  const { branchId, branches }     = useBranch();
   const isOwner = ['OWNER', 'ADMIN'].includes(user?.role);
 
-  const [activeModule, setActiveModule]     = useState('SYL-MOD-POS');
+  // ── Build the set of module codes visible for this tenant ──────────────────
+  const visibleCodes = useMemo(() => {
+    // 1. Convert tenant.modules (key array) to codes
+    const fromModules = (tenant?.modules || [])
+      .map(k => MODULE_KEY_TO_CODE[k])
+      .filter(Boolean);
+
+    // 2. Add business-type-specific extra codes (e.g. clinic OPD/IPD modules)
+    const extra = BUSINESS_TYPE_EXTRA_CODES[tenant?.businessType] || [];
+
+    return new Set([...fromModules, ...extra]);
+  }, [tenant?.modules, tenant?.businessType]);
+
+  // ── Filter categories to only show modules this tenant has ─────────────────
+  const visibleCategories = useMemo(() =>
+    ALL_MODULE_CATEGORIES
+      .map(cat => ({ ...cat, modules: cat.modules.filter(code => visibleCodes.has(code)) }))
+      .filter(cat => cat.modules.length > 0),
+    [visibleCodes]
+  );
+
+  // ── Default to first available module for this tenant ──────────────────────
+  const defaultModule = visibleCategories[0]?.modules[0] || 'SYL-MOD-CUS';
+
+  const [activeModule, setActiveModule]     = useState(defaultModule);
   const [viewLevel, setViewLevel]           = useState('company');
   const [selectedBranch, setSelectedBranch] = useState(branchId || '');
   const [features, setFeatures]             = useState([]);
   const [loading, setLoading]               = useState(true);
+
+  // Re-sync activeModule when tenant loads (avoids showing a non-owned module)
+  useEffect(() => {
+    if (visibleCodes.size > 0 && !visibleCodes.has(activeModule)) {
+      setActiveModule(visibleCategories[0]?.modules[0] || 'SYL-MOD-CUS');
+    }
+  }, [visibleCodes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = async () => {
     setLoading(true);
@@ -199,7 +371,7 @@ export default function ModuleFeatureSettings() {
     }
   };
 
-  useEffect(() => { load(); }, [activeModule, viewLevel, selectedBranch]);
+  useEffect(() => { load(); }, [activeModule, viewLevel, selectedBranch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = async (featureKey, enabled, enforced) => {
     try {
@@ -225,20 +397,24 @@ export default function ModuleFeatureSettings() {
 
   const activeCount   = features.filter(f => f.effective).length;
   const unlockedCount = features.filter(f => f.planUnlocked).length;
-  const modInfo       = MODULE_LABELS[activeModule] || {};
+  const modInfo       = MODULE_LABELS[activeModule] || { name: activeModule, emoji: '📦' };
 
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 600, fontFamily: 'var(--font-body)' }}>
 
-      {/* ── Left: module list ───────────────────────────── */}
+      {/* ── Left: module list (filtered to this tenant) ──────────────────────── */}
       <aside style={{
-        width: 200, flexShrink: 0,
+        width: 210, flexShrink: 0,
         borderRight: '1px solid #E5E7EB',
         overflowY: 'auto',
         paddingTop: 8, paddingBottom: 16,
         background: '#FAFAFA',
       }}>
-        {MODULE_CATEGORIES.map(cat => (
+        {visibleCategories.length === 0 ? (
+          <div style={{ padding: '24px 16px', fontSize: 12, color: '#9CA3AF', textAlign: 'center' }}>
+            No modules assigned to this business yet.
+          </div>
+        ) : visibleCategories.map(cat => (
           <div key={cat.label}>
             <div style={{
               fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -246,13 +422,13 @@ export default function ModuleFeatureSettings() {
             }}>
               {cat.label}
             </div>
-            {cat.modules.map(mod => {
-              const info = MODULE_LABELS[mod];
-              const active = activeModule === mod;
+            {cat.modules.map(code => {
+              const info = MODULE_LABELS[code] || { name: code, emoji: '📦' };
+              const active = activeModule === code;
               return (
                 <button
-                  key={mod}
-                  onClick={() => setActiveModule(mod)}
+                  key={code}
+                  onClick={() => setActiveModule(code)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
                     width: '100%', textAlign: 'left', border: 'none',
@@ -275,7 +451,7 @@ export default function ModuleFeatureSettings() {
         ))}
       </aside>
 
-      {/* ── Right: feature panel ─────────────────────────── */}
+      {/* ── Right: feature panel ─────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
 
         {/* Module header */}
@@ -311,9 +487,7 @@ export default function ModuleFeatureSettings() {
             </div>
 
             {/* Scope switcher */}
-            <div style={{
-              display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 3, gap: 2,
-            }}>
+            <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 3, gap: 2 }}>
               <button
                 onClick={() => setViewLevel('company')}
                 style={{
@@ -384,8 +558,14 @@ export default function ModuleFeatureSettings() {
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           ) : features.length === 0 ? (
-            <div style={{ padding: 60, textAlign: 'center', color: '#9CA3AF', fontSize: 14 }}>
-              No features found for this module.
+            <div style={{ padding: '48px 0', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>{modInfo.emoji}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>
+                {modInfo.name}
+              </div>
+              <div style={{ fontSize: 13, color: '#9CA3AF' }}>
+                No configurable features for this module on your current plan.
+              </div>
             </div>
           ) : (
             ['BASIC', 'STANDARD', 'ADVANCED', 'ENTERPRISE'].map(tier => {

@@ -11,6 +11,8 @@ import {
   Truck, Receipt, MessageCircle, Briefcase, UserCheck, Globe, Megaphone,
   CreditCard, FileX, ClipboardList, TrendingUp, BookOpen, Store, Award, RotateCcw,
   GitBranch, ChevronDown, Network, ArrowLeftRight, Flag, Code2, Dumbbell, Zap,
+  ListOrdered, Pill, FlaskConical, Stethoscope, IndianRupee, Activity,
+  ShieldCheck, BedDouble, Scissors, Microscope, Radio, Shield,
 } from 'lucide-react';
 
 const LANGUAGES = [
@@ -37,6 +39,24 @@ const ALL_LINKS = [
   { to: '/invoices',     icon: FileText,        tKey: 'nav.invoices',    module: 'invoicing',   roles: OPS_FIN },
   { to: '/customers',    icon: Users,           tKey: 'nav.customers',   module: 'customers',   roles: OPS_FIN },
   { to: '/appointments',       icon: Calendar,       tKey: 'nav.appointments',    module: 'appointments', roles: OPS },
+  { to: '/opd-queue',         icon: ListOrdered,    label: 'OPD Queue',          module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/vitals',            icon: Activity,       label: 'Vitals',             module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinical-notes',   icon: Stethoscope,    label: 'Clinical Notes',     module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/prescriptions',     icon: Pill,           label: 'Prescriptions',      module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/lab-orders',        icon: FlaskConical,   label: 'Lab Orders',         module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-billing',    icon: Receipt,        label: 'Clinic Billing',     module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-medicines',  icon: Package,        label: 'Medicine Stock',     module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-doctors',    icon: Stethoscope,    label: 'Doctors',            module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-pnl',        icon: IndianRupee,    label: 'Clinic P&L',         module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/clinic-reports',    icon: BarChart3,      label: 'Clinic Reports',     module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/abdm',              icon: ShieldCheck,    label: 'ABDM / ABHA',        module: 'appointments', roles: OPS, clinicOnly: true },
+  { to: '/ipd-wards',         icon: BedDouble,      label: 'Wards & Beds',       module: 'appointments', roles: OPS, nursingHomeOnly: true },
+  { to: '/ipd-admissions',    icon: ClipboardList,  label: 'IPD Admissions',     module: 'appointments', roles: OPS, nursingHomeOnly: true },
+  { to: '/discharge-summary', icon: FileText,       label: 'Discharge Summary',  module: 'appointments', roles: OPS, nursingHomeOnly: true },
+  { to: '/ot-sessions',       icon: Scissors,       label: 'Operation Theatre',  module: 'appointments', roles: OPS, nursingHomeOnly: true },
+  { to: '/lims',              icon: Microscope,     label: 'LIMS — Lab',         module: 'appointments', roles: OPS, nursingHomeOnly: true },
+  { to: '/radiology',         icon: Radio,          label: 'Radiology',          module: 'appointments', roles: OPS, nursingHomeOnly: true },
+  { to: '/insurance-claims',  icon: Shield,         label: 'Insurance & TPA',    module: 'appointments', roles: OPS, nursingHomeOnly: true },
   { to: '/membership-plans',  icon: Award,          tKey: 'nav.membershipPlans', module: 'membershipplans', roles: OPS, gymOnly: true },
   { to: '/receipts',          icon: CreditCard,     label: 'Receipts',           module: 'membershipplans', roles: OPS_FIN, gymOnly: true },
   { to: '/training-plans',    icon: Dumbbell,       label: 'Training Plans',     module: 'training',        roles: [...OPS, 'STAFF'], gymOnly: true },
@@ -48,6 +68,7 @@ const ALL_LINKS = [
   { to: '/expenses',     icon: Receipt,         tKey: 'nav.expenses',    module: null,          roles: OPS_FIN },
   { to: '/assets',       icon: Briefcase,       tKey: 'nav.assets',      module: null,          roles: OPS },
   { to: '/staff',        icon: UserCheck,       tKey: 'nav.staff',       module: null,          roles: OPS },
+  { to: '/attendance',   icon: Calendar,        label: 'Attendance',     module: null,          roles: OPS },
   { to: '/campaigns',    icon: Megaphone,       tKey: 'nav.campaigns',   module: 'campaigns',   roles: OPS },
   { to: '/whatsapp',     icon: MessageCircle,   tKey: 'nav.whatsapp',    module: 'whatsapp',    roles: OPS },
   { to: '/automation',   icon: Zap,             label: 'Automation',     module: 'automation',  roles: OPS },
@@ -68,6 +89,8 @@ export default function Sidebar({ isOpen, onClose, isMobile, onOpenReport }) {
   const currentLang = i18n.language?.slice(0, 2) || 'en';
   const isGym = modules.includes('membershipplans');
   const isEducation = modules.includes('progress');
+  const isClinic = ['CLINIC', 'NURSING_HOME', 'HOSPITAL', 'DENTAL', 'PHYSIOTHERAPY', 'AYURVEDA', 'VET_CLINIC', 'DIAGNOSTIC_LAB'].includes(tenant?.businessType);
+  const isNursingHome = ['NURSING_HOME', 'HOSPITAL'].includes(tenant?.businessType);
   const role = user?.role || 'STAFF';
 
   // Close branch dropdown on outside click
@@ -100,6 +123,8 @@ export default function Sidebar({ isOpen, onClose, isMobile, onOpenReport }) {
 
   const links = ALL_LINKS.filter((l) => {
     if (l.gymOnly && !isGym) return false;
+    if (l.clinicOnly && !isClinic) return false;
+    if (l.nursingHomeOnly && !isNursingHome) return false;
     if (isGym && GYM_HIDDEN.includes(l.to)) return false;
     if (isEducation && EDUCATION_HIDDEN.includes(l.to)) return false;
     if (l.educationOnly && !isEducation) return false;

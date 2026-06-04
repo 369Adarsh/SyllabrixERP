@@ -21,6 +21,51 @@ export const ROUTE_MODULE_MAP = {
     label: 'Appointments',
     features: ['Schedule View', 'Services Management', 'Calendar', 'Status Update', 'WhatsApp Reminder'],
   },
+  '/opd-queue': {
+    module: 'opdqueue',
+    label: 'OPD Queue',
+    features: ['Token Assignment', 'Queue Status', 'Call Next Token', 'Mark No-Show', 'Live Board View', 'Day Stats'],
+  },
+  '/emr': {
+    module: 'clinicalNotes',
+    label: 'Clinical Notes / EMR',
+    features: ['SOAP Notes (S/O/A/P)', 'Patient Visit History', 'Diagnosis / ICD Codes', 'Follow-up Date', 'Copy Previous Note'],
+  },
+  '/prescriptions': {
+    module: 'prescriptions',
+    label: 'Prescriptions',
+    features: ['Write Prescription', 'Drug Search', 'Frequency / Duration / Instructions', 'Print Rx', 'AI Suggest', 'QR Verification', 'Rx History'],
+  },
+  '/lab-orders': {
+    module: 'labOrders',
+    label: 'Lab Orders & Reports',
+    features: ['Create Lab Order', 'Test Catalog', 'Referral Slip Print', 'Report Upload', 'Mark Viewed', 'Lab Centers'],
+  },
+  '/clinic-billing': {
+    module: 'clinicBilling',
+    label: 'Clinic Billing',
+    features: ['Create Bill', 'Consultation / Procedure Quick-Add', 'GST Treatment', 'Multi-mode Payment', 'Day-End Summary', 'Outstanding Dues', 'Print Bill'],
+  },
+  '/clinic-medicines': {
+    module: 'clinicMedicines',
+    label: 'Medicine Inventory',
+    features: ['Medicine Master', 'Add Stock Batch', 'Expiry Alerts', 'Low Stock Alerts', 'Dispensing', 'Schedule H Register', 'Supplier Directory'],
+  },
+  '/clinic-doctors': {
+    module: 'clinicDoctors',
+    label: 'Clinic Doctors',
+    features: ['Doctor Profiles', 'MCI Registration', 'Specialization', 'Consultation Fees', 'Available Days', 'OPD Timings'],
+  },
+  '/clinic-pnl': {
+    module: 'clinicPnl',
+    label: 'Clinic P&L',
+    features: ['Revenue by Category', 'Expense Summary', 'P&L Statement', 'Doctor-wise Revenue', 'Month / Year Picker'],
+  },
+  '/clinic-reports': {
+    module: 'clinicReports',
+    label: 'Clinic Reports',
+    features: ['Daily OPD Summary', 'OPD Trend (30 days)', 'Monthly Revenue Chart', 'Patient Growth', 'Diagnosis Frequency', 'Doctor Performance'],
+  },
   '/marketplace': {
     module: 'b2b',
     label: 'B2B Marketplace',

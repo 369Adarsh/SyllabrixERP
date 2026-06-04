@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
-
-const BASE = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace('/api/v1', '/api/platform')
-  : 'http://localhost:5000/api/platform';
-
-const api = axios.create({ baseURL: BASE });
-api.interceptors.request.use((c) => {
-  const t = localStorage.getItem('saToken');
-  if (t) c.headers.Authorization = `Bearer ${t}`;
-  return c;
-});
+import { getSASettings, updateSASettings, testSAApiKey } from '../../api/platform';
 
 const SECTIONS = [
   {
@@ -206,7 +195,7 @@ function FieldCard({ field, savedData, onSaved }) {
     setSaving(true);
     setTestResult(null);
     try {
-      await api.put('/settings', { [field.key]: value.trim() });
+      await updateSASettings({ [field.key]: value.trim() });
       toast.success(`${field.label} saved`);
       setValue('');
       onSaved();
@@ -221,7 +210,7 @@ function FieldCard({ field, savedData, onSaved }) {
     setTesting(true);
     setTestResult(null);
     try {
-      const r = await api.post('/settings/test-key', { provider: field.provider, key: keyToTest || '__saved__' });
+      const r = await testSAApiKey(field.provider, keyToTest || '__saved__');
       setTestResult({ status: 'valid', message: r.data.data?.message || 'Key is working' });
     } catch (e) {
       setTestResult({ status: 'invalid', message: e.response?.data?.message || 'Key test failed' });
@@ -231,7 +220,7 @@ function FieldCard({ field, savedData, onSaved }) {
   const handleClear = async () => {
     if (!confirm(`Remove ${field.label}?`)) return;
     try {
-      await api.put('/settings', { [field.key]: '' });
+      await updateSASettings({ [field.key]: '' });
       toast.success(`${field.label} removed`);
       setValue('');
       setTestResult(null);
@@ -348,7 +337,7 @@ export default function ApiKeys() {
 
   const load = async () => {
     try {
-      const r = await api.get('/settings');
+      const r = await getSASettings();
       setSettings(r.data.data || []);
     } catch { toast.error('Failed to load settings'); }
     finally { setLoading(false); }

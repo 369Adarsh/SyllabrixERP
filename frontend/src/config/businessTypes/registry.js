@@ -54,6 +54,7 @@ const REGISTRY = {
   HOSPITAL:          { categoryCode: 'SYL-BC-HLC', typeCode: 'SYL-BC-HLC-HP05' },
   VET_CLINIC:        { categoryCode: 'SYL-BC-HLC', typeCode: 'SYL-BC-HLC-VC06' },
   CLINIC:            { categoryCode: 'SYL-BC-HLC', typeCode: 'SYL-BC-HLC-CL07' },
+  NURSING_HOME:      { categoryCode: 'SYL-BC-HLC', typeCode: 'SYL-BC-HLC-NH08' },
 
   // ── SYL-BC-FIT — Fitness & Sports ────────────────────────────────────────
   GYM:               { categoryCode: 'SYL-BC-FIT', typeCode: 'SYL-BC-FIT-GY01' },

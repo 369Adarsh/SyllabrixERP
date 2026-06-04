@@ -94,6 +94,7 @@ export const getAppointment = (id) => api.get(`/appointments/${id}`);
 export const createAppointment = (data) => api.post('/appointments', data);
 export const updateAppointment = (id, data) => api.put(`/appointments/${id}`, data);
 export const updateAppointmentStatus = (id, status) => api.patch(`/appointments/${id}/status`, { status });
+export const rescheduleAppointment   = (id, data)   => api.patch(`/appointments/${id}/reschedule`, data);
 export const cancelAppointment = (id) => api.delete(`/appointments/${id}`);
 
 // Fees
@@ -437,3 +438,73 @@ export const getMemberReceipts = (params) => api.get('/receipts', { params });
 export const getMemberReceiptsSummary = (params) => api.get('/receipts/summary', { params });
 export const backfillMemberReceipts = () => api.post('/receipts/backfill');
 export const updateReceiptPayment = (id, paymentMethod) => api.patch(`/receipts/${id}/payment`, { paymentMethod });
+
+
+// ── OPD Queue (Clinic) ────────────────────────────────────────────────────────
+export const getOpdQueue        = ()         => api.get('/opd-queue');
+export const getOpdQueueStats   = ()         => api.get('/opd-queue/stats');
+export const assignOpdToken     = (data)     => api.post('/opd-queue', data);
+export const callOpdToken       = (id)       => api.patch(`/opd-queue/${id}/call`);
+export const startOpdToken      = (id)       => api.patch(`/opd-queue/${id}/start`);
+export const completeOpdToken   = (id)       => api.patch(`/opd-queue/${id}/complete`);
+export const skipOpdToken       = (id)       => api.patch(`/opd-queue/${id}/skip`);
+export const requeueOpdToken    = (id)       => api.patch(`/opd-queue/${id}/requeue`);
+
+// ── Vitals (Clinic) ───────────────────────────────────────────────────────────
+export const recordVitals            = (data)          => api.post('/vitals', data);
+export const getVitalsByAppointment  = (appointmentId) => api.get(`/vitals/appointment/${appointmentId}`);
+export const getVitalsByPatient      = (customerId, params) => api.get(`/vitals/patient/${customerId}`, { params });
+export const deleteVitals            = (id)            => api.delete(`/vitals/${id}`);
+
+// ── Clinical Notes / EMR (Clinic) ─────────────────────────────────────────────
+export const getClinicalNote        = (appointmentId) => api.get(`/clinical-notes/appointment/${appointmentId}`);
+export const getPatientNoteHistory  = (customerId, params) => api.get(`/clinical-notes/patient/${customerId}`, { params });
+export const saveClinicalNote       = (data)          => api.post('/clinical-notes', data);
+export const deleteClinicalNote     = (id)            => api.delete(`/clinical-notes/${id}`);
+
+// ── Prescriptions (Clinic) ────────────────────────────────────────────────────
+export const getPrescriptions       = (params)        => api.get('/prescriptions', { params });
+export const getPrescriptionById    = (id)            => api.get(`/prescriptions/${id}`);
+export const createPrescription     = (data)          => api.post('/prescriptions', data);
+export const updatePrescription     = (id, data)      => api.patch(`/prescriptions/${id}`, data);
+export const deletePrescription     = (id)            => api.delete(`/prescriptions/${id}`);
+export const searchDrugs            = (q)             => api.get('/prescriptions/drugs/search', { params: { q } });
+
+// ── Lab Orders (Clinic) ───────────────────────────────────────────────────────
+export const getLabOrders          = (params)        => api.get('/lab-orders', { params });
+export const getLabOrderById       = (id)            => api.get(`/lab-orders/${id}`);
+export const createLabOrder        = (data)          => api.post('/lab-orders', data);
+export const updateLabOrder        = (id, data)      => api.patch(`/lab-orders/${id}`, data);
+export const deleteLabOrder        = (id)            => api.delete(`/lab-orders/${id}`);
+export const searchLabTests        = (q)             => api.get('/lab-orders/tests/search', { params: { q } });
+export const getLabTestCatalog     = ()              => api.get('/lab-orders/tests/catalog');
+export const getLabCenters         = ()              => api.get('/lab-orders/centers');
+export const saveLabCenter         = (data)          => api.post('/lab-orders/centers', data);
+export const deleteLabCenter       = (id)            => api.delete(`/lab-orders/centers/${id}`);
+export const addLabReport          = (data)          => api.post('/lab-orders/reports', data);
+export const markLabReportViewed   = (id)            => api.patch(`/lab-orders/reports/${id}/viewed`);
+export const deleteLabReport       = (id)            => api.delete(`/lab-orders/reports/${id}`);
+
+// ── Clinic Billing (Clinic) ───────────────────────────────────────────────────
+export const getClinicBills        = (params)        => api.get('/clinic-billing', { params });
+export const getClinicBillById     = (id)            => api.get(`/clinic-billing/${id}`);
+export const createClinicBill      = (data)          => api.post('/clinic-billing', data);
+export const updateClinicBill      = (id, data)      => api.patch(`/clinic-billing/${id}`, data);
+export const deleteClinicBill      = (id)            => api.delete(`/clinic-billing/${id}`);
+export const getClinicProcedures   = ()              => api.get('/clinic-billing/procedures');
+export const getClinicDayEnd       = (date)          => api.get('/clinic-billing/day-end', { params: { date } });
+export const getClinicOutstanding  = ()              => api.get('/clinic-billing/outstanding');
+export const getClinicPnL          = (params)        => api.get('/clinic-billing/pnl', { params });
+
+// ── Clinic Medicines / M8 ─────────────────────────────────────────────────────
+export const getClinicMedicines     = ()             => api.get('/clinic-medicines');
+export const getMedicineAlerts      = ()             => api.get('/clinic-medicines/alerts/expiry');
+export const getLowStockAlerts      = ()             => api.get('/clinic-medicines/alerts/low-stock');
+
+// ── Clinic Doctors / M9 ───────────────────────────────────────────────────────
+export const getClinicDoctors       = ()             => api.get('/clinic-doctors');
+
+// ── Clinic Reports / M13 ──────────────────────────────────────────────────────
+export const getClinicOpdTrend      = ()             => api.get('/clinic-reports/opd-trend');
+export const getClinicMonthlyRev    = ()             => api.get('/clinic-reports/monthly-revenue');
+export const getClinicDoctorPerf    = ()             => api.get('/clinic-reports/doctor-performance');

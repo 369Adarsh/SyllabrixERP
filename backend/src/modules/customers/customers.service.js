@@ -69,10 +69,16 @@ const generateGymMembershipId = async (tenantId) => {
   return `${prefix}${String(lastNum + 1).padStart(4, '0')}`;
 };
 
+const MEDICAL_FIELDS = [
+  'bloodGroup', 'dateOfBirth', 'gender', 'allergies', 'chronicConditions',
+  'abhaId', 'referredBy', 'emergencyContactName', 'emergencyContactPhone',
+];
+
 const create = async (tenantId, data) => {
-  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'personalTrainerId'];
+  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'personalTrainerId', ...MEDICAL_FIELDS];
   const payload = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)));
   if (payload.birthday) payload.birthday = new Date(payload.birthday);
+  if (payload.dateOfBirth) payload.dateOfBirth = new Date(payload.dateOfBirth);
   if (data.isGymMember) {
     payload.gymMembershipId = await generateGymMembershipId(tenantId);
   }
@@ -80,9 +86,10 @@ const create = async (tenantId, data) => {
 };
 
 const update = (tenantId, id, data) => {
-  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'creditLimit', 'personalTrainerId', 'gymMembershipId'];
+  const allowed = ['name', 'phone', 'email', 'address', 'gstin', 'notes', 'birthday', 'tags', 'creditLimit', 'personalTrainerId', 'gymMembershipId', ...MEDICAL_FIELDS];
   const payload = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)));
   if (payload.birthday) payload.birthday = new Date(payload.birthday);
+  if (payload.dateOfBirth) payload.dateOfBirth = new Date(payload.dateOfBirth);
   return prisma.customer.update({ where: { id, tenantId }, data: payload });
 };
 

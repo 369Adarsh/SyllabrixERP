@@ -51,6 +51,23 @@ const stockTransferRoutes = require('./modules/branches/stockTransfer.routes');
 const featuresRoutes = require('./modules/features/features.routes');
 const helpRoutes = require('./modules/help/help.routes');
 const receiptsRoutes = require('./modules/receipts/receipts.routes');
+const opdQueueRoutes = require('./modules/opd-queue/opd-queue.routes');
+const vitalsRoutes = require('./modules/vitals/vitals.routes');
+const clinicalNotesRoutes = require('./modules/clinical-notes/clinical-notes.routes');
+const prescriptionsRoutes = require('./modules/prescriptions/prescriptions.routes');
+const labOrdersRoutes        = require('./modules/lab-orders/lab-orders.routes');
+const clinicBillingRoutes    = require('./modules/clinic-billing/clinic-billing.routes');
+const clinicMedicinesRoutes  = require('./modules/clinic-medicines/clinic-medicines.routes');
+const clinicDoctorsRoutes    = require('./modules/clinic-doctors/clinic-doctors.routes');
+const clinicReportsRoutes    = require('./modules/clinic-reports/clinic-reports.routes');
+const abdmRoutes             = require('./modules/abdm/abdm.routes');
+const ipdWardsRoutes         = require('./modules/ipd-wards/ipd-wards.routes');
+const ipdAdmissionsRoutes    = require('./modules/ipd-admissions/ipd-admissions.routes');
+const otSessionsRoutes       = require('./modules/ot-sessions/ot-sessions.routes');
+const limsRoutes             = require('./modules/lims/lims.routes');
+const radiologyRoutes        = require('./modules/radiology/radiology.routes');
+const insuranceClaimsRoutes  = require('./modules/insurance-claims/insurance-claims.routes');
+const prescCtrl              = require('./modules/prescriptions/prescriptions.controller');
 
 const { razorpayWebhook } = require('./modules/invoicing/invoicing.controller');
 const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/whatsapp.controller');
@@ -188,6 +205,25 @@ app.use('/api/v1/stock-transfers', stockTransferRoutes);
 app.use('/api/v1/features', featuresRoutes);
 app.use('/api/v1/help', helpRoutes);
 app.use('/api/v1/receipts', receiptsRoutes);
+app.use('/api/v1/opd-queue', opdQueueRoutes);
+app.use('/api/v1/vitals', vitalsRoutes);
+app.use('/api/v1/clinical-notes', clinicalNotesRoutes);
+app.use('/api/v1/prescriptions', prescriptionsRoutes);
+app.use('/api/v1/lab-orders',      labOrdersRoutes);
+app.use('/api/v1/clinic-billing',  clinicBillingRoutes);
+app.use('/api/v1/clinic-medicines', clinicMedicinesRoutes);
+app.use('/api/v1/clinic-doctors',   clinicDoctorsRoutes);
+app.use('/api/v1/clinic-reports',   clinicReportsRoutes);
+app.use('/api/v1/abdm',             abdmRoutes);
+app.use('/api/v1/ipd-wards',        ipdWardsRoutes);
+app.use('/api/v1/ipd-admissions',   ipdAdmissionsRoutes);
+app.use('/api/v1/ot-sessions',      otSessionsRoutes);
+app.use('/api/v1/lims',             limsRoutes);
+app.use('/api/v1/radiology',        radiologyRoutes);
+app.use('/api/v1/insurance-claims', insuranceClaimsRoutes);
+
+// ── Public prescription verify (no auth) ─────────────────────────────────────
+app.get('/api/v1/public/rx/:token', prescCtrl.verifyRx);
 
 // ── UPI Payment Redirect (public, no auth) ────────────────────────────────────
 app.get('/pay', (req, res) => {
