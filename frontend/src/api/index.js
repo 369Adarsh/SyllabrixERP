@@ -8,6 +8,8 @@ export const uploadBusinessLogo = (formData) => api.post('/tenant/logo', formDat
 });
 export const getTenantModules = () => api.get('/tenant/modules');
 export const getTenantStats = () => api.get('/tenant/stats');
+export const updateSidebarConfig = (config) => api.patch('/tenant/sidebar-config', config);
+export const updateLabelConfig   = (labels) => api.patch('/tenant/label-config', labels);
 
 // Users
 export const getUsers = () => api.get('/users');

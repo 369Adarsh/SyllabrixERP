@@ -452,10 +452,10 @@ async function seedSharmaClinic() {
       const count = rand(15, 32);
       for (let t = 1; t <= count; t++) {
         const pat = pick(allPats);
-        const statusPool = day > 0 ? ['COMPLETED','COMPLETED','COMPLETED','NO_SHOW','COMPLETED'] : ['WAITING','WAITING','IN_CONSULTATION','CALLED','COMPLETED'];
+        const statusPool = day > 0 ? ['COMPLETED','COMPLETED','COMPLETED','SKIPPED','COMPLETED'] : ['WAITING','WAITING','IN_CONSULTATION','CALLED','COMPLETED'];
         tokenRows.push({
-          tenantId: TID, patientId: pat.id, patientName: pat.name, patientPhone: pat.phone,
-          tokenNumber: t, tokenDate: new Date(d.toISOString().slice(0,10)),
+          tenantId: TID, patientId: pat.id, patientName: pat.name,
+          tokenNumber: t, visitDate: new Date(d.toISOString().slice(0,10)),
           status: pick(statusPool), doctorName: 'Dr. Arjun Sharma',
           createdAt: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, t * 4),
         });
@@ -474,7 +474,7 @@ async function seedSharmaClinic() {
       { category:'SALARIES',  description:'Staff salaries (Kavita Rao + Meena Devi)', amount:36000 },
       { category:'UTILITIES', description:'Electricity + WiFi + landline', amount:3800 },
       { category:'SUPPLIES',  description:'Medical supplies + consumables (Metropolis Traders)', amount:6500 },
-      { category:'EQUIPMENT', description:'Equipment AMC (BP machine, ECG, Nebulizer)', amount:1200 },
+      { category:'MAINTENANCE', description:'Equipment AMC (BP machine, ECG, Nebulizer)', amount:1200 },
     ];
     for (let m = 11; m >= 0; m--) {
       const md = new Date(); md.setMonth(md.getMonth()-m); md.setDate(1);
@@ -484,7 +484,7 @@ async function seedSharmaClinic() {
       }
       if (m % 3 === 0) rows.push({ tenantId: TID, category:'SUPPLIES', description:`Quarterly medicine purchase (${md.toLocaleString('en-IN',{month:'short',year:'numeric'})})`, amount: rand(18000,26000), date: new Date(md.getFullYear(), md.getMonth(), rand(6,12)) });
       if (m === 11) {
-        rows.push({ tenantId: TID, category:'EQUIPMENT', description:'Annual AMC renewal — ECG + Autoclave', amount:8500, date: new Date(md.getFullYear(), md.getMonth(), 15) });
+        rows.push({ tenantId: TID, category:'MAINTENANCE', description:'Annual AMC renewal — ECG + Autoclave', amount:8500, date: new Date(md.getFullYear(), md.getMonth(), 15) });
         rows.push({ tenantId: TID, category:'OTHER', description:'Medical council renewal + CPD workshop', amount:4500, date: new Date(md.getFullYear(), md.getMonth(), 20) });
       }
     }
@@ -492,24 +492,25 @@ async function seedSharmaClinic() {
     console.log(`  ✓  Expenses: ${rows.length} entries (12 months)`);
   }
 
-  // ── Attendance (90 days) ────────────────────────────────────────────────────
+  // ── Attendance (90 days) — punch IN + OUT per staff per working day ──────────
   const existingAtt = await prisma.attendanceLog.count({ where: { tenantId: TID } });
   if (existingAtt < 100) {
     const staffRecs = await prisma.staff.findMany({ where: { tenantId: TID }, select: { id:true } });
-    const attRows = [];
+    const punchRows = [];
     for (let day = 90; day >= 1; day--) {
       const d = dAgo(day);
-      if (d.getDay() === 0) continue;
+      if (d.getDay() === 0) continue; // skip Sundays
       for (const s of staffRecs) {
-        if (rand(0,19) === 0) continue;
+        if (rand(0,19) === 0) continue; // ~5% absent
         const inT  = new Date(d.getFullYear(), d.getMonth(), d.getDate(), rand(9,10), rand(0,30));
         const outT = new Date(d.getFullYear(), d.getMonth(), d.getDate(), rand(20,21), rand(0,59));
-        attRows.push({ tenantId: TID, staffId: s.id, date: new Date(d.toISOString().slice(0,10)), checkIn: inT, checkOut: outT, status:'PRESENT', hoursWorked: parseFloat(((outT-inT)/3600000).toFixed(1)) });
+        punchRows.push({ tenantId: TID, staffId: s.id, punchType: 'IN',  punchTime: inT,  method: 'MANUAL' });
+        punchRows.push({ tenantId: TID, staffId: s.id, punchType: 'OUT', punchTime: outT, method: 'MANUAL' });
       }
     }
-    if (attRows.length > 0) {
-      await prisma.attendanceLog.createMany({ data: attRows, skipDuplicates: true });
-      console.log(`  ✓  Attendance: ${attRows.length} records (90 days)`);
+    if (punchRows.length > 0) {
+      await prisma.attendanceLog.createMany({ data: punchRows, skipDuplicates: true });
+      console.log(`  ✓  Attendance: ${punchRows.length / 2} days × ${staffRecs.length} staff = ${punchRows.length} punch logs`);
     }
   }
 

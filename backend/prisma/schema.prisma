@@ -26,6 +26,8 @@ model Tenant {
   modules                 Json
   receiptConfig           Json?
   automationConfig        Json?
+  sidebarConfig           Json?
+  labelConfig             Json?
   currency                String                 @default("INR")
   locale                  String                 @default("en-IN")
   timezone                String                 @default("Asia/Kolkata")
