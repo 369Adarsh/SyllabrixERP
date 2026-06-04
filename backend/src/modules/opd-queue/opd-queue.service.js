@@ -12,12 +12,22 @@ const endOfToday = () => {
   return d;
 };
 
-const getQueue = async (tenantId) => {
-  const tokens = await prisma.opdToken.findMany({
-    where: { tenantId, visitDate: { gte: startOfToday(), lte: endOfToday() } },
-    orderBy: [{ status: 'asc' }, { tokenNumber: 'asc' }],
-  });
-  // Sort: CALLED/IN_CONSULTATION first, then WAITING by token#, then COMPLETED/SKIPPED last
+const getQueue = async (tenantId, { date, doctorId } = {}) => {
+  // If a specific date is provided use it; otherwise default to today
+  let start, end;
+  if (date) {
+    start = new Date(date); start.setHours(0, 0, 0, 0);
+    end   = new Date(date); end.setHours(23, 59, 59, 999);
+  } else {
+    start = startOfToday();
+    end   = endOfToday();
+  }
+
+  const where = { tenantId, visitDate: { gte: start, lte: end } };
+  if (doctorId) where.doctorId = doctorId;
+
+  const tokens = await prisma.opdToken.findMany({ where, orderBy: { tokenNumber: 'asc' } });
+
   const order = { CALLED: 0, IN_CONSULTATION: 1, WAITING: 2, COMPLETED: 3, SKIPPED: 4 };
   return tokens.sort((a, b) => {
     const os = order[a.status] - order[b.status];

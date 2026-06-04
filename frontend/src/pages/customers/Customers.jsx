@@ -1248,6 +1248,7 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
 
             /* ── MEDICAL PROFILE ── */
             ) : tab === 'medical' && isClinic ? (
+              <>
               <form onSubmit={handleSaveMedical} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
                 {/* Summary pills if data exists */}
@@ -1396,6 +1397,7 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
                   </Section>
                 </div>
               )}
+              </>
 
             ) : null
           )}

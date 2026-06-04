@@ -173,3 +173,25 @@ export const reorderLandingPhotos    = (updates) => api.patch('/landing-photos/r
 
 export const seedDemoData            = ()       => api.post('/seed-demo');
 export const seedClinicData          = ()       => api.post('/seed-clinic');
+
+// Feature Catalog (Platform Control)
+export const getSAFeatures           = (moduleKey)          => api.get('/features', { params: moduleKey ? { moduleKey } : {} });
+export const getSAFeatureAdoption    = (moduleKey)          => api.get('/features/adoption', { params: moduleKey ? { moduleKey } : {} });
+export const toggleSAFeature         = (featureKey, active) => api.patch(`/features/${featureKey}/toggle`, { isActive: active });
+
+// Nerve Center Roles (Configuration wing)
+export const getSANcRoles            = ()       => api.get('/nc-roles');
+export const createSANcRole          = (data)   => api.post('/nc-roles', data);
+export const updateSANcRole          = (id, d)  => api.patch(`/nc-roles/${id}`, d);
+export const deleteNcRole            = (id)     => api.delete(`/nc-roles/${id}`);
+
+// Nerve Center Grants / Admin access (Team wing)
+export const getSANcGrants           = (adminId)  => api.get(`/nc-grants/${adminId}`);
+export const createNcGrant           = (adminId, data) => api.post(`/nc-grants/${adminId}`, data);
+export const revokeNcGrant           = (grantId)  => api.delete(`/nc-grants/${grantId}/revoke`);
+export const assignNcRole            = (adminId, roleId) => api.patch(`/nc-roles/${adminId}/assign`, { roleId });
+
+// API Keys / Settings (Configuration wing)
+export const getSASettings           = ()         => api.get('/settings');
+export const updateSASettings        = (data)     => api.put('/settings', data);
+export const testSAApiKey            = (provider, key) => api.post('/settings/test-key', { provider, key });

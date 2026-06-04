@@ -1,6 +1,6 @@
 const svc = require('./opd-queue.service');
 
-const list    = async (req, res, next) => { try { res.json({ success: true, data: await svc.getQueue(req.tenantId) }); } catch (e) { next(e); } };
+const list    = async (req, res, next) => { try { res.json({ success: true, data: await svc.getQueue(req.tenantId, req.query) }); } catch (e) { next(e); } };
 const stats   = async (req, res, next) => { try { res.json({ success: true, data: await svc.getStats(req.tenantId) }); } catch (e) { next(e); } };
 const assign  = async (req, res, next) => { try { res.status(201).json({ success: true, data: await svc.assignToken(req.tenantId, req.body) }); } catch (e) { next(e); } };
 const call    = async (req, res, next) => { try { res.json({ success: true, data: await svc.callToken(req.tenantId, req.params.id) }); } catch (e) { next(e); } };

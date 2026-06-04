@@ -5,6 +5,8 @@ import {
   callOpdToken, startOpdToken, completeOpdToken, skipOpdToken, requeueOpdToken,
   getCustomers, getStaff,
 } from '../../api';
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
 import { P } from '../../styles/page';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import toast from 'react-hot-toast';
@@ -118,36 +120,71 @@ function ActionBtn({ icon: Icon, label, color, onClick, disabled }) {
 export default function OpdQueue() {
   const { isMobile } = useBreakpoint();
   const navigate = useNavigate();
+
+  // Date filter — defaults to today
+  const [queueDate, setQueueDate] = useState(todayISO());
+  const isToday = queueDate === todayISO();
+
   const [queue, setQueue]     = useState([]);
   const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing]   = useState(false);
-  const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors]   = useState([]);
-  const [form, setForm]         = useState({ patientId: '', walkInName: '', doctorId: '' });
-  const [patientSearch, setPatientSearch] = useState('');
+
+  // Typeahead patient search
+  const [patientQuery, setPatientQuery]   = useState('');
+  const [patientResults, setPatientResults] = useState([]);
   const [showPatientDrop, setShowPatientDrop] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const patientTimer = useRef(null);
+  const patientRef   = useRef(null);
+
+  const [doctors,  setDoctors]  = useState([]);
+  const [form, setForm] = useState({ patientId: '', walkInName: '', doctorId: '' });
   const [assigning, setAssigning] = useState(false);
   const refreshRef = useRef(null);
 
+  // Close patient dropdown on outside click
+  useEffect(() => {
+    const h = (e) => { if (patientRef.current && !patientRef.current.contains(e.target)) setShowPatientDrop(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  // Debounced patient search
+  const searchPatients = useCallback((q) => {
+    clearTimeout(patientTimer.current);
+    if (!q.trim()) { setPatientResults([]); setShowPatientDrop(false); return; }
+    patientTimer.current = setTimeout(async () => {
+      try {
+        const r = await getCustomers({ search: q, limit: 8 });
+        setPatientResults(r.data.data || []);
+        setShowPatientDrop(true);
+      } catch { /* silent */ }
+    }, 280);
+  }, []);
+
   const load = useCallback(async () => {
     try {
-      const [qRes, sRes] = await Promise.all([getOpdQueue(), getOpdQueueStats()]);
+      const params = isToday ? {} : { date: queueDate };
+      const [qRes, sRes] = await Promise.all([
+        getOpdQueue(params),
+        getOpdQueueStats(),
+      ]);
       setQueue(qRes.data.data || []);
       setStats(sRes.data.data || {});
     } catch { /* silent */ }
     finally { setLoading(false); }
-  }, []);
+  }, [queueDate, isToday]);
 
   useEffect(() => {
     load();
-    // Auto-refresh every 30 seconds
-    refreshRef.current = setInterval(load, 30000);
-    return () => clearInterval(refreshRef.current);
-  }, [load]);
+    if (isToday) {
+      refreshRef.current = setInterval(load, 30000);
+      return () => clearInterval(refreshRef.current);
+    }
+  }, [load, isToday]);
 
   useEffect(() => {
-    getCustomers({ limit: 200 }).then(r => setPatients(r.data.data || [])).catch(() => {});
     getStaff().then(r => setDoctors(r.data.data || [])).catch(() => {});
   }, []);
 
@@ -174,16 +211,12 @@ export default function OpdQueue() {
       await assignOpdToken(payload);
       toast.success('Token assigned');
       setForm({ patientId: '', walkInName: '', doctorId: '' });
-      setPatientSearch('');
+      setSelectedPatient(null);
+      setPatientQuery('');
       await load();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to assign token'); }
     finally { setAssigning(false); }
   };
-
-  const selectedPatient = patients.find(p => p.id === form.patientId);
-  const filteredPatients = patients.filter(p =>
-    !patientSearch || p.name.toLowerCase().includes(patientSearch.toLowerCase()) || p.phone?.includes(patientSearch)
-  ).slice(0, 8);
 
   const activeTokens    = queue.filter(t => ['WAITING', 'CALLED', 'IN_CONSULTATION'].includes(t.status));
   const completedTokens = queue.filter(t => ['COMPLETED', 'SKIPPED'].includes(t.status));
@@ -196,9 +229,22 @@ export default function OpdQueue() {
       <div style={P.head}>
         <div>
           <h1 style={P.h1(isMobile)}>OPD Queue</h1>
-          <p style={P.sub}>{today()}</p>
+          <p style={P.sub}>{isToday ? today() : `Queue for ${new Date(queueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Date picker */}
+          <input
+            type="date"
+            value={queueDate}
+            onChange={e => setQueueDate(e.target.value)}
+            style={{ padding: '7px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 13, background: isToday ? '#fff' : '#FFF7ED', color: isToday ? 'var(--navy)' : '#C2410C', cursor: 'pointer', outline: 'none' }}
+          />
+          {!isToday && (
+            <button onClick={() => setQueueDate(todayISO())}
+              style={{ padding: '7px 12px', borderRadius: 9, border: '1.5px solid var(--cyan)', color: 'var(--cyan)', background: 'transparent', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              Today
+            </button>
+          )}
           <button onClick={load} style={{ ...P.btn('ghost'), display: 'flex', alignItems: 'center', gap: 6 }}>
             <RefreshCw size={14} /> Refresh
           </button>
@@ -239,8 +285,8 @@ export default function OpdQueue() {
           </div>
 
           <form onSubmit={handleAssign} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Patient selector */}
-            <div style={{ position: 'relative' }}>
+            {/* Patient typeahead */}
+            <div ref={patientRef} style={{ position: 'relative' }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Patient</div>
               {selectedPatient ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', border: '1.5px solid var(--cyan)', borderRadius: 9, background: '#F0FDFA' }}>
@@ -248,35 +294,33 @@ export default function OpdQueue() {
                     <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--navy)' }}>{selectedPatient.name}</div>
                     {selectedPatient.phone && <div style={{ fontSize: 11, color: '#6B7280' }}>{selectedPatient.phone}</div>}
                   </div>
-                  <button type="button" onClick={() => { setForm(f => ({ ...f, patientId: '' })); setPatientSearch(''); }}
+                  <button type="button" onClick={() => { setSelectedPatient(null); setForm(f => ({ ...f, patientId: '', walkInName: '' })); setPatientQuery(''); }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 16 }}>×</button>
                 </div>
               ) : (
-                <div>
+                <>
                   <input
-                    value={patientSearch}
-                    onChange={e => { setPatientSearch(e.target.value); setShowPatientDrop(true); }}
-                    onFocus={() => setShowPatientDrop(true)}
+                    value={patientQuery}
+                    onChange={e => { setPatientQuery(e.target.value); searchPatients(e.target.value); }}
+                    onFocus={() => patientResults.length > 0 && setShowPatientDrop(true)}
                     placeholder="Search registered patient…"
                     style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 13, boxSizing: 'border-box', outline: 'none' }}
                   />
-                  {showPatientDrop && (
+                  {showPatientDrop && patientResults.length > 0 && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid var(--border)', borderRadius: 9, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 50, maxHeight: 200, overflowY: 'auto' }}>
-                      {filteredPatients.length === 0
-                        ? <div style={{ padding: '10px 14px', fontSize: 12, color: '#9CA3AF' }}>No patients found</div>
-                        : filteredPatients.map(p => (
-                          <div key={p.id} onClick={() => { setForm(f => ({ ...f, patientId: p.id, walkInName: '' })); setShowPatientDrop(false); setPatientSearch(''); }}
-                            style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 1 }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
-                            <span style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
-                            {p.phone && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{p.phone}</span>}
-                          </div>
-                        ))
-                      }
+                      {patientResults.map(p => (
+                        <div key={p.id}
+                          onMouseDown={() => { setSelectedPatient(p); setForm(f => ({ ...f, patientId: p.id, walkInName: '' })); setShowPatientDrop(false); setPatientQuery(''); }}
+                          style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 1 }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                          onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                          <span style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
+                          {p.phone && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{p.phone}</span>}
+                        </div>
+                      ))}
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
 

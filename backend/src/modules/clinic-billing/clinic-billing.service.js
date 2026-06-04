@@ -227,14 +227,11 @@ const getOutstanding = async (tenantId) => {
 const getProcedures = () => PROCEDURES;
 
 // ── Module 12: Clinic P&L ─────────────────────────────────────────────────────
-const getPnL = async (tenantId, params = {}) => {
-  const { year, month } = params;
-  const now = new Date();
-  const y = parseInt(year) || now.getFullYear();
-  const m = parseInt(month) || now.getMonth() + 1;
 
+// Aggregates bills + expenses for a single calendar month
+const _monthPnL = async (tenantId, y, m) => {
   const start = new Date(y, m - 1, 1);
-  const end = new Date(y, m, 1);
+  const end   = new Date(y, m,     1);
 
   const [bills, expenses] = await Promise.all([
     prisma.clinicBill.findMany({
@@ -243,17 +240,14 @@ const getPnL = async (tenantId, params = {}) => {
     }),
     prisma.expense.findMany({
       where: { tenantId, date: { gte: start, lt: end } },
-      select: { category: true, amount: true, description: true, date: true },
+      select: { category: true, amount: true },
     }),
   ]);
 
-  const revenue = {
-    consultation: 0, procedure: 0, medicine: 0, diagnostic: 0, other: 0, total: 0,
-    byDoctor: {},
-  };
+  const revenue = { consultation: 0, procedure: 0, medicine: 0, diagnostic: 0, other: 0, total: 0, byDoctor: {} };
   bills.forEach((b) => {
     b.items.forEach((item) => {
-      const cat = item.category.toLowerCase();
+      const cat = (item.category || 'OTHER').toLowerCase();
       if (revenue[cat] !== undefined) revenue[cat] += item.lineTotal;
       else revenue.other += item.lineTotal;
       revenue.total += item.lineTotal;
@@ -263,19 +257,65 @@ const getPnL = async (tenantId, params = {}) => {
     }
   });
 
-  const expenseTotal = expenses.reduce((s, e) => s + e.amount, 0);
-  const expenseByCategory = expenses.reduce((acc, e) => {
-    acc[e.category] = (acc[e.category] || 0) + e.amount;
+  const expenseTotal       = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const expenseByCategory  = expenses.reduce((acc, e) => {
+    const cat = e.category || 'Other';
+    acc[cat] = (acc[cat] || 0) + (e.amount || 0);
     return acc;
   }, {});
 
   return {
-    period: { year: y, month: m },
     revenue, expenseTotal, expenseByCategory,
     grossProfit: revenue.total - expenseTotal,
     bills: bills.length,
     expenses: expenses.length,
   };
+};
+
+const getPnL = async (tenantId, params = {}) => {
+  const { year, month } = params;
+  const now = new Date();
+  const y   = parseInt(year)  || now.getFullYear();
+
+  // Annual view — no month param → return 12-month breakdown
+  if (!month) {
+    const monthlyData = await Promise.all(
+      Array.from({ length: 12 }, (_, i) => _monthPnL(tenantId, y, i + 1).then(d => ({ month: i + 1, ...d }))),
+    );
+
+    // Roll up annual totals
+    const revenue = { consultation: 0, procedure: 0, medicine: 0, diagnostic: 0, other: 0, total: 0, byDoctor: {} };
+    let expenseTotal = 0, bills = 0, expenses = 0;
+    const expenseByCategory = {};
+
+    monthlyData.forEach(md => {
+      ['consultation','procedure','medicine','diagnostic','other','total'].forEach(k => { revenue[k] += md.revenue[k] || 0; });
+      Object.entries(md.revenue.byDoctor || {}).forEach(([d, v]) => { revenue.byDoctor[d] = (revenue.byDoctor[d] || 0) + v; });
+      expenseTotal += md.expenseTotal;
+      bills        += md.bills;
+      expenses     += md.expenses;
+      Object.entries(md.expenseByCategory || {}).forEach(([c, v]) => { expenseByCategory[c] = (expenseByCategory[c] || 0) + v; });
+    });
+
+    return {
+      period: { year: y },
+      revenue, expenseTotal, expenseByCategory,
+      grossProfit: revenue.total - expenseTotal,
+      bills, expenses,
+      months: monthlyData.map(md => ({
+        month: md.month,
+        revenue:  md.revenue.total,
+        expenses: md.expenseTotal,
+        profit:   md.grossProfit,
+        bills:    md.bills,
+      })),
+    };
+  }
+
+  // Monthly view
+  const m    = parseInt(month);
+  const data = await _monthPnL(tenantId, y, m);
+  return { period: { year: y, month: m }, ...data };
 };
 
 module.exports = { listBills, getBillById, createBill, updateBill, deleteBill, dayEndSummary, getOutstanding, getProcedures, getPnL };
