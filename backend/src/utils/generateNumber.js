@@ -53,4 +53,92 @@ const generatePONumber = async () => {
   return `${prefix}-${pad(seq)}`;
 };
 
-module.exports = { generateInvoiceNumber, generateReceiptNumber, generateFeeReceiptNumber, generatePONumber };
+const generateAdmissionNumber = async () => {
+  const prefix = `ADM-${yymm()}`;
+  const last = await prisma.iPDAdmission.findFirst({
+    where: { admissionNumber: { startsWith: prefix } },
+    orderBy: { admissionNumber: 'desc' },
+    select: { admissionNumber: true },
+  });
+  const seq = last ? (parseInt(last.admissionNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateClinicBillNumber = async () => {
+  const prefix = `SYLCB-${yymm()}`;
+  const last = await prisma.clinicBill.findFirst({
+    where: { billNumber: { startsWith: prefix } },
+    orderBy: { billNumber: 'desc' },
+    select: { billNumber: true },
+  });
+  const seq = last ? (parseInt(last.billNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateLabOrderNumber = async () => {
+  const prefix = `LO-${yymm()}`;
+  const last = await prisma.labOrder.findFirst({
+    where: { orderNumber: { startsWith: prefix } },
+    orderBy: { orderNumber: 'desc' },
+    select: { orderNumber: true },
+  });
+  const seq = last ? (parseInt(last.orderNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateRxNumber = async () => {
+  const prefix = `SYLRX-${yymm()}`;
+  const last = await prisma.prescription.findFirst({
+    where: { rxNumber: { startsWith: prefix } },
+    orderBy: { rxNumber: 'desc' },
+    select: { rxNumber: true },
+  });
+  const seq = last ? (parseInt(last.rxNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateOTSessionNumber = async () => {
+  const prefix = `OT-${yymm()}`;
+  const last = await prisma.oTSession.findFirst({
+    where: { sessionNumber: { startsWith: prefix } },
+    orderBy: { sessionNumber: 'desc' },
+    select: { sessionNumber: true },
+  });
+  const seq = last ? (parseInt(last.sessionNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateSampleNumber = async () => {
+  const prefix = `SMP-${yymm()}`;
+  const last = await prisma.limsSample.findFirst({
+    where: { sampleNumber: { startsWith: prefix } },
+    orderBy: { sampleNumber: 'desc' },
+    select: { sampleNumber: true },
+  });
+  const seq = last ? (parseInt(last.sampleNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateRadiologyOrderNumber = async () => {
+  const prefix = `RAD-${yymm()}`;
+  const last = await prisma.radiologyOrder.findFirst({
+    where: { orderNumber: { startsWith: prefix } },
+    orderBy: { orderNumber: 'desc' },
+    select: { orderNumber: true },
+  });
+  const seq = last ? (parseInt(last.orderNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+const generateClaimNumber = async () => {
+  const prefix = `CLM-${yymm()}`;
+  const last = await prisma.insuranceClaim.findFirst({
+    where: { claimNumber: { startsWith: prefix } },
+    orderBy: { claimNumber: 'desc' },
+    select: { claimNumber: true },
+  });
+  const seq = last ? (parseInt(last.claimNumber.slice(-5)) || 0) + 1 : 1;
+  return `${prefix}-${pad(seq)}`;
+};
+
+module.exports = { generateInvoiceNumber, generateReceiptNumber, generateFeeReceiptNumber, generatePONumber, generateRxNumber, generateLabOrderNumber, generateClinicBillNumber, generateAdmissionNumber, generateOTSessionNumber, generateSampleNumber, generateRadiologyOrderNumber, generateClaimNumber };

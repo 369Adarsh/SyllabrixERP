@@ -141,6 +141,24 @@ const toggleModule = async (tenantId, moduleName, enable) => {
   });
 };
 
+const updateLabelConfig = async (tenantId, labels) => {
+  if (typeof labels !== 'object' || Array.isArray(labels) || labels === null)
+    throw Object.assign(new Error('Invalid label config'), { statusCode: 400 });
+  // Sanitise: keys must be route paths (/...), values must be non-empty strings ≤ 40 chars
+  const clean = {};
+  for (const [k, v] of Object.entries(labels)) {
+    if (typeof k === 'string' && k.startsWith('/') && typeof v === 'string' && v.trim().length > 0)
+      clean[k] = v.trim().slice(0, 40);
+  }
+  return prisma.tenant.update({ where: { id: tenantId }, data: { labelConfig: clean } });
+};
+
+const updateSidebarConfig = async (tenantId, config) => {
+  if (typeof config !== 'object' || Array.isArray(config) || config === null)
+    throw Object.assign(new Error('Invalid sidebar config'), { statusCode: 400 });
+  return prisma.tenant.update({ where: { id: tenantId }, data: { sidebarConfig: config } });
+};
+
 const getStats = async (tenantId) => {
   const [users, products, invoices, customers] = await Promise.all([
     prisma.user.count({ where: { tenantId } }),
@@ -151,4 +169,4 @@ const getStats = async (tenantId) => {
   return { users, products, invoices, customers };
 };
 
-module.exports = { BUSINESS_MODULES, getProfile, updateProfile, getModules, toggleModule, getStats };
+module.exports = { BUSINESS_MODULES, getProfile, updateProfile, getModules, toggleModule, updateSidebarConfig, updateLabelConfig, getStats };

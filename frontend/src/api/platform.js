@@ -172,3 +172,40 @@ export const deleteLandingPhoto      = (id)     => api.delete(`/landing-photos/$
 export const reorderLandingPhotos    = (updates) => api.patch('/landing-photos/reorder', { updates });
 
 export const seedDemoData            = ()       => api.post('/seed-demo');
+export const seedClinicData          = ()       => api.post('/seed-clinic');
+
+// Feature Catalog (Platform Control)
+export const getSAFeatures           = (moduleKey)          => api.get('/features', { params: moduleKey ? { moduleKey } : {} });
+export const getSAFeatureAdoption    = (moduleKey)          => api.get('/features/adoption', { params: moduleKey ? { moduleKey } : {} });
+export const toggleSAFeature         = (featureKey, active) => api.patch(`/features/${featureKey}/toggle`, { isActive: active });
+
+// Nerve Center Roles (Configuration wing)
+export const getSANcRoles            = ()       => api.get('/nc-roles');
+export const createSANcRole          = (data)   => api.post('/nc-roles', data);
+export const updateSANcRole          = (id, d)  => api.patch(`/nc-roles/${id}`, d);
+export const deleteNcRole            = (id)     => api.delete(`/nc-roles/${id}`);
+
+// Nerve Center Grants / Admin access (Team wing)
+export const getSANcGrants           = (adminId)  => api.get(`/nc-grants/${adminId}`);
+export const createNcGrant           = (adminId, data) => api.post(`/nc-grants/${adminId}`, data);
+export const revokeNcGrant           = (grantId)  => api.delete(`/nc-grants/${grantId}/revoke`);
+export const assignNcRole            = (adminId, roleId) => api.patch(`/nc-roles/${adminId}/assign`, { roleId });
+
+// API Keys / Settings (Configuration wing)
+export const getSASettings           = ()         => api.get('/settings');
+export const updateSASettings        = (data)     => api.put('/settings', data);
+export const testSAApiKey            = (provider, key) => api.post('/settings/test-key', { provider, key });
+
+// Transport Request (TR) System
+export const getTRStats              = ()           => api.get('/transport/stats');
+export const getTREnvironments       = ()           => api.get('/transport/environments');
+export const listTRs                 = (params)     => api.get('/transport', { params });
+export const getTR                   = (id)         => api.get(`/transport/${id}`);
+export const createTR                = (data)       => api.post('/transport', data);
+export const updateTR                = (id, data)   => api.patch(`/transport/${id}`, data);
+export const promoteTR               = (id, notes)  => api.post(`/transport/${id}/promote`, { notes });
+export const rollbackTR              = (id, reason) => api.post(`/transport/${id}/rollback`, { reason });
+export const toggleTRScopeLock       = (id)         => api.patch(`/transport/${id}/scope-lock`);
+export const addTRComment            = (id, body)   => api.post(`/transport/${id}/comments`, { body });
+export const addTRTestScenario       = (id, data)   => api.post(`/transport/${id}/test-scenarios`, data);
+export const updateTRTestResult      = (id, scenarioId, data) => api.patch(`/transport/${id}/test-scenarios/${scenarioId}`, data);

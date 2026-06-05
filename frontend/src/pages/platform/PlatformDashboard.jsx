@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSAPlatformDashboard, getSAComplianceStats, getSAAuditReports, getActivityActiveTenants, seedDemoData } from '../../api/platform';
+import { getSAPlatformDashboard, getSAComplianceStats, getSAAuditReports, getActivityActiveTenants, seedDemoData, seedClinicData } from '../../api/platform';
 import toast from 'react-hot-toast';
 
 const StatCard = ({ label, value, sub, accent = '#1FB8D6', icon }) => (
@@ -36,6 +36,7 @@ export default function PlatformDashboard() {
   const [activeToday, setActiveToday] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [seeding, setSeeding]         = useState(false);
+  const [seedingClinic, setSeedingClinic] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -224,6 +225,38 @@ export default function PlatformDashboard() {
             }}
           >
             {seeding ? 'Seeding…' : 'Run Seed'}
+          </button>
+        </div>
+
+        {/* Clinic GP Demo */}
+        <div style={{ background: '#192533', borderRadius: 12, border: '1px solid #1E2D3D', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginTop: 12 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 4 }}>🏥 Seed Sharma Medical Centre Demo</div>
+            <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
+              General Physician clinic with 5 patients, medical profiles, appointments and expenses.<br />
+              Login: <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>owner@sharmamedical.test</code> / <code style={{ color: '#1FB8D6', fontFamily: 'monospace' }}>SharmaClinic@2026</code>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              setSeedingClinic(true);
+              try {
+                const r = await seedClinicData();
+                toast.success(r.data?.message || 'Clinic seeded successfully');
+              } catch (err) {
+                toast.error(err.response?.data?.message || 'Seed failed');
+              } finally {
+                setSeedingClinic(false);
+              }
+            }}
+            disabled={seedingClinic}
+            style={{
+              padding: '10px 20px', borderRadius: 8, border: 'none', cursor: seedingClinic ? 'not-allowed' : 'pointer',
+              background: seedingClinic ? '#1E2D3D' : 'linear-gradient(135deg,#0E9F6E,#34D399)',
+              color: seedingClinic ? '#64748B' : '#0B131C', fontWeight: 700, fontSize: 13, flexShrink: 0,
+            }}
+          >
+            {seedingClinic ? 'Seeding…' : 'Run Seed'}
           </button>
         </div>
       </div>}

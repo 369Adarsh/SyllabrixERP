@@ -38,6 +38,8 @@ router.put('/profile', authorize('OWNER', 'ADMIN'), ctrl.updateProfile);
 router.post('/logo', authorize('OWNER', 'ADMIN'), logoUpload.single('logo'), ctrl.uploadLogo);
 router.get('/modules', ctrl.getModules);
 router.patch('/modules', authorize('OWNER'), ctrl.toggleModule);
+router.patch('/sidebar-config', authorize('OWNER'), ctrl.updateSidebarConfig);
+router.patch('/label-config',   authorize('OWNER'), ctrl.updateLabelConfig);
 router.get('/stats', ctrl.getStats);
 
 module.exports = router;

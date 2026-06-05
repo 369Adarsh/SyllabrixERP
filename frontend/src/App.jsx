@@ -41,6 +41,7 @@ import Expenses from './pages/expenses/Expenses';
 import WhatsApp from './pages/whatsapp/WhatsApp';
 import Assets from './pages/assets/Assets';
 import StaffAttendance from './pages/staff/StaffAttendance';
+import AttendancePage from './pages/attendance/AttendancePage';
 import TrainingPlans from './pages/staff/TrainingPlans';
 import CampaignManager from './pages/campaigns/CampaignManager';
 import Accounts from './pages/accounts/Accounts';
@@ -57,6 +58,30 @@ import StockNetwork from './pages/inventory/StockNetwork';
 import StockTransfers from './pages/inventory/StockTransfers';
 import Automation from './pages/automation/Automation';
 import CodeAuditor from './pages/admin/CodeAuditor';
+import OpdQueue from './pages/opd-queue/OpdQueue';
+import OpdQueueBoard from './pages/opd-queue/OpdQueueBoard';
+import VitalsPage from './pages/vitals/VitalsPage';
+import ClinicalNotesPage from './pages/clinical-notes/ClinicalNotesPage';
+import EMRPage from './pages/clinical-notes/EMRPage';
+import PrescriptionsPage from './pages/prescriptions/PrescriptionsPage';
+import PrescriptionEditor from './pages/prescriptions/PrescriptionEditor';
+import LabOrdersPage from './pages/lab-orders/LabOrdersPage';
+import LabOrderEditor from './pages/lab-orders/LabOrderEditor';
+import ClinicBillingPage from './pages/clinic-billing/ClinicBillingPage';
+import ClinicBillEditor from './pages/clinic-billing/ClinicBillEditor';
+import MedicineInventoryPage from './pages/clinic-medicines/MedicineInventoryPage';
+import ClinicDoctorsPage from './pages/clinic-doctors/ClinicDoctorsPage';
+import ClinicPnLPage from './pages/clinic-pnl/ClinicPnLPage';
+import ClinicReportsPage from './pages/clinic-reports/ClinicReportsPage';
+import ABDMPage from './pages/abdm/ABDMPage';
+import WardBedsPage from './pages/ipd-wards/WardBedsPage';
+import IPDAdmissionsPage from './pages/ipd-admissions/IPDAdmissionsPage';
+import DischargeSummaryPage from './pages/discharge-summary/DischargeSummaryPage';
+import OTSessionsPage from './pages/ot-sessions/OTSessionsPage';
+import LIMSPage from './pages/lims/LIMSPage';
+import RadiologyPage from './pages/radiology/RadiologyPage';
+import InsuranceClaimsPage from './pages/insurance-claims/InsuranceClaimsPage';
+import VerifyRxPage from './pages/verify-rx/VerifyRxPage';
 import SupportConsole from './pages/platform/SupportConsole';
 import Revenue from './pages/platform/Revenue';
 import Plans from './pages/platform/Plans';
@@ -74,6 +99,10 @@ import BusinessBuilder from './pages/platform/BusinessBuilder';
 import ApiKeys from './pages/platform/ApiKeys';
 import NerveRoles from './pages/platform/NerveRoles';
 import LandingMedia from './pages/platform/LandingMedia';
+import TransportManager from './pages/platform/TransportManager';
+import TransportNew from './pages/platform/TransportNew';
+import TransportDetail from './pages/platform/TransportDetail';
+import TransportEnvironments from './pages/platform/TransportEnvironments';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -133,7 +162,11 @@ export default function App() {
             <Route path="business-builder"  element={<BusinessBuilder />} />
             <Route path="api-keys"          element={<ApiKeys />} />
             <Route path="nerve-roles"       element={<NerveRoles />} />
-            <Route path="landing-media"     element={<LandingMedia />} />
+            <Route path="landing-media"         element={<LandingMedia />} />
+            <Route path="transport"             element={<TransportManager />} />
+            <Route path="transport/new"         element={<TransportNew />} />
+            <Route path="transport/environments" element={<TransportEnvironments />} />
+            <Route path="transport/:id"         element={<TransportDetail />} />
           </Route>
 
           {/* ── Tenant App ── */}
@@ -162,6 +195,7 @@ export default function App() {
             <Route path="/whatsapp/*" element={<WhatsApp />} />
             <Route path="/assets/*" element={<Assets />} />
             <Route path="/staff/*" element={<StaffAttendance />} />
+            <Route path="/attendance" element={<AttendancePage />} />
             <Route path="/campaigns/*" element={<CampaignManager />} />
             <Route path="/bills/*" element={<Navigate to="/vendors" replace />} />
             <Route path="/accounts/*" element={<Accounts />} />
@@ -180,9 +214,36 @@ export default function App() {
             <Route path="/training-plans/*" element={<TrainingPlans />} />
             <Route path="/automation/*" element={<Automation />} />
             <Route path="/code-audit" element={<CodeAuditor />} />
+            <Route path="/opd-queue" element={<OpdQueue />} />
+            <Route path="/opd-queue/board" element={<OpdQueueBoard />} />
+            <Route path="/vitals" element={<VitalsPage />} />
+            <Route path="/clinical-notes" element={<ClinicalNotesPage />} />
+            <Route path="/emr/:appointmentId" element={<EMRPage />} />
+            <Route path="/prescriptions" element={<PrescriptionsPage />} />
+            <Route path="/prescriptions/:id" element={<PrescriptionEditor />} />
+            <Route path="/lab-orders" element={<LabOrdersPage />} />
+            <Route path="/lab-orders/:id" element={<LabOrderEditor />} />
+            <Route path="/clinic-billing" element={<ClinicBillingPage />} />
+            <Route path="/clinic-billing/:id" element={<ClinicBillEditor />} />
+            <Route path="/clinic-medicines" element={<MedicineInventoryPage />} />
+            <Route path="/clinic-doctors" element={<ClinicDoctorsPage />} />
+            <Route path="/clinic-pnl" element={<ClinicPnLPage />} />
+            <Route path="/clinic-reports" element={<ClinicReportsPage />} />
+            <Route path="/abdm" element={<ABDMPage />} />
+            <Route path="/ipd-wards" element={<WardBedsPage />} />
+            <Route path="/ipd-admissions" element={<IPDAdmissionsPage />} />
+            <Route path="/discharge-summary" element={<DischargeSummaryPage />} />
+            <Route path="/ot-sessions" element={<OTSessionsPage />} />
+            <Route path="/lims" element={<LIMSPage />} />
+            <Route path="/radiology" element={<RadiologyPage />} />
+            <Route path="/insurance-claims" element={<InsuranceClaimsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+        {/* Public routes (no auth) */}
+        <Routes>
+          <Route path="/verify-rx/:token" element={<VerifyRxPage />} />
         </Routes>
         </AuthProvider>
       </PlatformAuthProvider>

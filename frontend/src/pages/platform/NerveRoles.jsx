@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
-
-const BASE = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace('/api/v1', '/api/platform')
-  : 'http://localhost:5000/api/platform';
-
-const api = axios.create({ baseURL: BASE });
-api.interceptors.request.use((c) => {
-  const t = localStorage.getItem('saToken');
-  if (t) c.headers.Authorization = `Bearer ${t}`;
-  return c;
-});
+import { getSANcRoles, createSANcRole, updateSANcRole, deleteNcRole } from '../../api/platform';
 
 const WINGS = ['COMMAND', 'GROWTH', 'TENANTS', 'PLATFORM', 'OPERATIONS', 'INTELLIGENCE', 'ADMIN'];
 const WING_META = {
@@ -151,10 +140,10 @@ function RoleModal({ role, onClose, onSaved }) {
     setSaving(true);
     try {
       if (isEdit) {
-        await api.patch(`/nc-roles/${role.id}`, { label, description: desc, permissions: perms });
+        await updateSANcRole(role.id, { label, description: desc, permissions: perms });
         toast.success('Role updated');
       } else {
-        await api.post('/nc-roles', { name, label, description: desc, permissions: perms });
+        await createSANcRole({ name, label, description: desc, permissions: perms });
         toast.success('Role created');
       }
       onSaved();
@@ -234,7 +223,7 @@ export default function NerveRoles() {
 
   const load = async () => {
     try {
-      const r = await api.get('/nc-roles');
+      const r = await getSANcRoles();
       setRoles(r.data.data || []);
     } catch { toast.error('Failed to load roles'); }
     finally { setLoading(false); }
@@ -245,7 +234,7 @@ export default function NerveRoles() {
   const handleDelete = async (role) => {
     if (!confirm(`Delete role "${role.label}"? This cannot be undone.`)) return;
     try {
-      await api.delete(`/nc-roles/${role.id}`);
+      await deleteNcRole(role.id);
       toast.success('Role deleted');
       load();
     } catch (e) { toast.error(e.response?.data?.message || 'Delete failed'); }

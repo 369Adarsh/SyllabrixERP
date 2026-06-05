@@ -1,18 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getSAAdmins, createSAAdmin } from '../../api/platform';
-import axios from 'axios';
+import { getSAAdmins, createSAAdmin, getSANcRoles, getSANcGrants, createNcGrant, revokeNcGrant, assignNcRole } from '../../api/platform';
 import toast from 'react-hot-toast';
-
-const BASE = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace('/api/v1', '/api/platform')
-  : 'http://localhost:5000/api/platform';
-
-const api = axios.create({ baseURL: BASE });
-api.interceptors.request.use((c) => {
-  const t = localStorage.getItem('saToken');
-  if (t) c.headers.Authorization = `Bearer ${t}`;
-  return c;
-});
 
 const WINGS = ['COMMAND', 'GROWTH', 'TENANTS', 'PLATFORM', 'OPERATIONS', 'INTELLIGENCE', 'ADMIN'];
 const WING_ICON = { COMMAND: '▦', GROWTH: '💰', TENANTS: '🏢', PLATFORM: '⚙️', OPERATIONS: '🔧', INTELLIGENCE: '📈', ADMIN: '🔑' };
@@ -64,7 +52,7 @@ function GrantModal({ admin, onClose, onSaved }) {
 
     setSaving(true);
     try {
-      await api.post(`/nc-grants/${admin.id}`, { wing, access: ops, reason, expiresAt });
+      await createNcGrant(admin.id, { wing, access: ops, reason, expiresAt });
       toast.success('Access granted');
       onSaved();
       onClose();
@@ -174,7 +162,7 @@ function AdminPanel({ admin, roles, onClose, onUpdated }) {
 
   const loadGrants = async () => {
     try {
-      const r = await api.get(`/nc-grants/${admin.id}`);
+      const r = await getSANcGrants(admin.id);
       setGrants(r.data.data || []);
     } catch { toast.error('Failed to load grants'); }
     finally { setLoadingG(false); }
@@ -186,7 +174,7 @@ function AdminPanel({ admin, roles, onClose, onUpdated }) {
     if (!assignRole) return toast.error('Select a role');
     setSavingRole(true);
     try {
-      await api.patch(`/nc-roles/${admin.id}/assign`, { roleId: assignRole });
+      await assignNcRole(admin.id, assignRole);
       toast.success('Role assigned');
       onUpdated();
     } catch (e) { toast.error(e.response?.data?.message || 'Failed to assign role'); }
@@ -196,7 +184,7 @@ function AdminPanel({ admin, roles, onClose, onUpdated }) {
   const handleRevoke = async (grantId) => {
     if (!confirm('Revoke this grant?')) return;
     try {
-      await api.delete(`/nc-grants/${grantId}/revoke`);
+      await revokeNcGrant(grantId);
       toast.success('Grant revoked');
       loadGrants();
     } catch (e) { toast.error(e.response?.data?.message || 'Failed to revoke'); }
@@ -323,7 +311,7 @@ export default function Admins() {
   const load = async () => {
     setLoading(true);
     try {
-      const [aRes, rRes] = await Promise.all([getSAAdmins(), api.get('/nc-roles')]);
+      const [aRes, rRes] = await Promise.all([getSAAdmins(), getSANcRoles()]);
       setAdmins(aRes.data.data || []);
       setRoles(rRes.data.data || []);
     } catch { toast.error('Failed to load admins'); }

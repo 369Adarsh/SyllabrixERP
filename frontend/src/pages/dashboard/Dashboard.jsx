@@ -803,6 +803,8 @@ const A = {
   fee:      (sub = 'Record payment')       => ({ label: 'Collect fee',     sub, href: '/fees',         color: 'var(--emerald)', icon: CheckCircle }),
   student:  (sub = 'New admission')        => ({ label: 'Add student',     sub, href: '/fees',         color: 'var(--navy)',    icon: GraduationCap }),
   customer: (sub = 'View all')             => ({ label: 'Customers',       sub, href: '/customers',    color: 'var(--amber)',   icon: Users }),
+  patient:  (sub = 'View all')             => ({ label: 'Patients',        sub, href: '/customers',    color: 'var(--amber)',   icon: Users }),
+  member:   (sub = 'View all')             => ({ label: 'Members',         sub, href: '/customers',    color: 'var(--amber)',   icon: Users }),
   addCust:  (sub = 'Build your base')      => ({ label: 'Add customer',    sub, href: '/customers',    color: 'var(--emerald)', icon: Users }),
   staff:    ()                             => ({ label: 'Staff attendance', sub: 'Mark today', href: '/staff', color: '#6B7280', icon: UserCheck }),
   vendor:   ()                             => ({ label: 'Order from vendor', sub: 'Purchase order', href: '/vendors', color: '#6B7280', icon: Truck }),
@@ -850,12 +852,12 @@ const QUICK_ACTIONS = {
   VET_CLINIC:     [A.apt('Book appointment'), A.sale('POS billing'), A.inventory(), A.reports()],
 
   // ── Clinic / Healthcare ────────────────────────────────────────────────────
-  CLINIC:         [A.apt('Book a patient'), A.invoice('Bill a patient'), A.customer('Patients'), A.staff()],
-  DENTAL:         [A.apt('New patient'), A.invoice(), A.customer('Patients'), A.reports()],
-  DIAGNOSTIC_LAB: [A.apt('New test booking'), A.invoice(), A.customer('Patients'), A.reports()],
-  PHYSIOTHERAPY:  [A.apt('Book session'), A.fee('Collect session fee'), A.customer('Patients'), A.reports()],
-  AYURVEDA:       [A.apt('Book consultation'), A.invoice(), A.inventory(), A.reports()],
-  HOSPITAL:       [A.apt('OPD booking'), A.invoice('Bill patient'), A.customer('Patients'), A.staff()],
+  CLINIC:         [A.apt('Book a patient'), A.invoice('Bill a patient'), A.patient('View all'), A.staff()],
+  DENTAL:         [A.apt('New patient'), A.invoice(), A.patient('View all'), A.reports()],
+  DIAGNOSTIC_LAB: [A.apt('New test booking'), A.invoice(), A.patient('View all'), A.reports()],
+  PHYSIOTHERAPY:  [A.apt('Book session'), A.fee('Collect session fee'), A.patient('View all'), A.reports()],
+  AYURVEDA:       [A.apt('Book consultation'), A.invoice(), A.patient('View all'), A.reports()],
+  HOSPITAL:       [A.apt('OPD booking'), A.invoice('Bill patient'), A.patient('View all'), A.staff()],
 
   // ── Coaching / Education ─────────────────────────────────────────────────────
   COACHING:       [A.fee('Collect fee'), A.student(), A.invoice('Bill a parent'), A.reports('Fee report')],
@@ -866,13 +868,13 @@ const QUICK_ACTIONS = {
   COMPUTER_TRAINING: [A.fee('Collect fee'), A.apt('Schedule batch'), A.invoice(), A.reports()],
 
   // ── Fitness & Sports ─────────────────────────────────────────────────────────
-  GYM:             [A.apt('Book a session'), A.invoice('Membership billing'), A.customer('Manage members'), A.expense()],
+  GYM:             [A.apt('Book a session'), A.invoice('Membership billing'), A.member('Manage members'), A.expense()],
   SPA:             [A.apt('Book session'), A.fee('Collect fee'), A.customer(), A.reports()],
-  YOGA_STUDIO:     [A.apt('Book a class'), A.fee('Collect fee'), A.customer('Members'), A.reports()],
+  YOGA_STUDIO:     [A.apt('Book a class'), A.fee('Collect fee'), A.member('View members'), A.reports()],
   MARTIAL_ARTS:    [A.apt('Book a session'), A.fee('Collect fee'), A.customer('Students'), A.expense()],
   SPORTS_ACADEMY:  [A.apt('Book a session'), A.fee('Collect fee'), A.sale('Kit & equipment'), A.customer('Athletes')],
-  SWIMMING_ACADEMY:[A.apt('Book a class'), A.fee('Collect fee'), A.customer('Members'), A.expense()],
-  CROSSFIT_STUDIO: [A.apt('Book a session'), A.fee('Collect fee'), A.sale('Supplements & merch'), A.customer('Members')],
+  SWIMMING_ACADEMY:[A.apt('Book a class'), A.fee('Collect fee'), A.member('View members'), A.expense()],
+  CROSSFIT_STUDIO: [A.apt('Book a session'), A.fee('Collect fee'), A.sale('Supplements & merch'), A.member('View members')],
 
   // ── Events ───────────────────────────────────────────────────────────────────
   EVENT_PLANNER:  [A.apt('New booking'), A.invoice(), A.customer(), A.reports()],

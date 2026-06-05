@@ -1,37 +1,51 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-
-const api = () => import('../../api/platform').then(m => m);
-
-// Direct calls via platform axios
-const loadFeatures  = (moduleKey) => import('../../api/platform').then(m => m.platformApi.get('/features', { params: moduleKey ? { moduleKey } : {} }));
-const loadAdoption  = (moduleKey) => import('../../api/platform').then(m => m.platformApi.get('/features/adoption', { params: moduleKey ? { moduleKey } : {} }));
-const toggleFeature = (featureKey, isActive) => import('../../api/platform').then(m => m.platformApi.patch(`/features/${featureKey}/toggle`, { isActive }));
+import { getSAFeatures, getSAFeatureAdoption, toggleSAFeature } from '../../api/platform';
 
 const MODULE_LABELS = {
-  'SYL-MOD-POS': { name: 'Point of Sale',      emoji: '🛒' },
-  'SYL-MOD-INV': { name: 'Invoicing',           emoji: '🧾' },
-  'SYL-MOD-STK': { name: 'Inventory',           emoji: '📦' },
-  'SYL-MOD-CUS': { name: 'Customers',           emoji: '👥' },
-  'SYL-MOD-EXP': { name: 'Expenses',            emoji: '💸' },
-  'SYL-MOD-VND': { name: 'Vendors',             emoji: '🤝' },
-  'SYL-MOD-ACC': { name: 'Accounts',            emoji: '📊' },
-  'SYL-MOD-REP': { name: 'Reports',             emoji: '📈' },
-  'SYL-MOD-STF': { name: 'Staff',               emoji: '👤' },
-  'SYL-MOD-ATT': { name: 'Attendance',          emoji: '📅' },
-  'SYL-MOD-PAY': { name: 'Payroll',             emoji: '💰' },
-  'SYL-MOD-APT': { name: 'Appointments',        emoji: '📆' },
-  'SYL-MOD-FEE': { name: 'Fees',                emoji: '🎓' },
-  'SYL-MOD-STU': { name: 'Students',            emoji: '🎒' },
-  'SYL-MOD-AST': { name: 'Assets',              emoji: '🏗' },
-  'SYL-MOD-LSE': { name: 'Lease',               emoji: '🏠' },
-  'SYL-MOD-MBR': { name: 'Membership Plans',    emoji: '⭐' },
-  'SYL-MOD-WA':  { name: 'WhatsApp',            emoji: '💬' },
-  'SYL-MOD-CMP': { name: 'Campaigns',           emoji: '📣' },
-  'SYL-MOD-AIC': { name: 'AI Copilot',          emoji: '🤖' },
-  'SYL-MOD-AUT': { name: 'Automation',          emoji: '⚡' },
-  'SYL-MOD-B2B': { name: 'B2B Portal',          emoji: '🏢' },
-  'SYL-MOD-TRN': { name: 'Training Plans',      emoji: '🏋️' },
+  // ── General modules ──────────────────────────────────────────────────────
+  'SYL-MOD-POS':  { name: 'Point of Sale',        emoji: '🛒' },
+  'SYL-MOD-INV':  { name: 'Invoicing',             emoji: '🧾' },
+  'SYL-MOD-STK':  { name: 'Inventory',             emoji: '📦' },
+  'SYL-MOD-CUS':  { name: 'Customers',             emoji: '👥' },
+  'SYL-MOD-EXP':  { name: 'Expenses',              emoji: '💸' },
+  'SYL-MOD-VND':  { name: 'Vendors',               emoji: '🤝' },
+  'SYL-MOD-ACC':  { name: 'Accounts',              emoji: '📊' },
+  'SYL-MOD-REP':  { name: 'Reports',               emoji: '📈' },
+  'SYL-MOD-STF':  { name: 'Staff',                 emoji: '👤' },
+  'SYL-MOD-ATT':  { name: 'Attendance',            emoji: '📅' },
+  'SYL-MOD-PAY':  { name: 'Payroll',               emoji: '💰' },
+  'SYL-MOD-APT':  { name: 'Appointments',          emoji: '📆' },
+  'SYL-MOD-FEE':  { name: 'Fees',                  emoji: '🎓' },
+  'SYL-MOD-STU':  { name: 'Students',              emoji: '🎒' },
+  'SYL-MOD-AST':  { name: 'Assets',                emoji: '🏗' },
+  'SYL-MOD-LSE':  { name: 'Lease',                 emoji: '🏠' },
+  'SYL-MOD-MBR':  { name: 'Membership Plans',      emoji: '⭐' },
+  'SYL-MOD-WA':   { name: 'WhatsApp',              emoji: '💬' },
+  'SYL-MOD-CMP':  { name: 'Campaigns',             emoji: '📣' },
+  'SYL-MOD-AIC':  { name: 'AI Copilot',            emoji: '🤖' },
+  'SYL-MOD-AUT':  { name: 'Automation',            emoji: '⚡' },
+  'SYL-MOD-B2B':  { name: 'B2B Portal',            emoji: '🏢' },
+  'SYL-MOD-TRN':  { name: 'Training Plans',        emoji: '🏋️' },
+  // ── Healthcare modules (SYL-BC-HLC) ─────────────────────────────────────
+  'SYL-MOD-OPD':  { name: 'OPD Queue',             emoji: '🏥' },
+  'SYL-MOD-VIT':  { name: 'Vitals Recording',      emoji: '💓' },
+  'SYL-MOD-EMR':  { name: 'Clinical Notes / EMR',  emoji: '📋' },
+  'SYL-MOD-RX':   { name: 'Prescriptions',         emoji: '💊' },
+  'SYL-MOD-LAB':  { name: 'Lab Orders',            emoji: '🧪' },
+  'SYL-MOD-CBL':  { name: 'Clinic Billing',        emoji: '🧾' },
+  'SYL-MOD-MED':  { name: 'Medicine Inventory',    emoji: '💉' },
+  'SYL-MOD-DOC':  { name: 'Clinic Doctors',        emoji: '👨‍⚕️' },
+  'SYL-MOD-CPL':  { name: 'Clinic P&L',            emoji: '📉' },
+  'SYL-MOD-CLR':  { name: 'Clinic Reports',        emoji: '📊' },
+  'SYL-MOD-ABDM': { name: 'ABDM / ABHA',           emoji: '🆔' },
+  'SYL-MOD-WRD':  { name: 'Wards & Beds',          emoji: '🛏' },
+  'SYL-MOD-IPD':  { name: 'IPD Admissions',        emoji: '🏨' },
+  'SYL-MOD-DSC':  { name: 'Discharge Summary',     emoji: '📝' },
+  'SYL-MOD-OTS':  { name: 'Operation Theatre',     emoji: '🔬' },
+  'SYL-MOD-LIM':  { name: 'LIMS — Laboratory',     emoji: '🧫' },
+  'SYL-MOD-RAD':  { name: 'Radiology',             emoji: '🩻' },
+  'SYL-MOD-INS':  { name: 'Insurance & TPA',       emoji: '🛡' },
 };
 
 const TIER_COLORS = {
@@ -74,8 +88,8 @@ export default function FeatureCatalog() {
     setLoading(true);
     try {
       const [fRes, aRes] = await Promise.all([
-        loadFeatures(activeModule || null),
-        loadAdoption(activeModule || null),
+        getSAFeatures(activeModule || null),
+        getSAFeatureAdoption(activeModule || null),
       ]);
       setFeatures(fRes.data.data || []);
       setAdoption(aRes.data.data || []);
@@ -91,7 +105,7 @@ export default function FeatureCatalog() {
   const handleToggle = async (featureKey, currentState) => {
     setTogglingKey(featureKey);
     try {
-      await toggleFeature(featureKey, !currentState);
+      await toggleSAFeature(featureKey, !currentState);
       await load();
       toast.success(`Feature ${!currentState ? 'enabled' : 'disabled'} globally`);
     } catch {

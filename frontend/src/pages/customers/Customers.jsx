@@ -7,7 +7,7 @@ import {
   getSubscriptions, createSubscription, updateSubscriptionStatus,
   sendSubscriptionReminder, deleteSubscription, adjustCustomerCredit,
   getSegmentCustomers, getStudents, createStudent, updateStudent, createFee, updateFee, getFees, collectFee,
-  getMembershipPlans, createMemberReceipt,
+  getMembershipPlans, createMemberReceipt, getVitalsByPatient,
 } from '../../api';
 import {
   Plus, Users, Search, Edit2, Trash2, X, Phone, Mail, Star,
@@ -750,23 +750,99 @@ function AddSubscriptionModal({ customerId, onClose, onSaved }) {
 }
 
 // ── Customer 360° slide-over panel ───────────────────────────────────────────
+const calcAge = (dob) => {
+  if (!dob) return null;
+  const diff = Date.now() - new Date(dob).getTime();
+  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+};
+
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+const ALLERGY_SUGGESTIONS = ['Penicillin', 'Aspirin', 'NSAIDs', 'Sulfa drugs', 'Latex', 'Dust', 'Pollen', 'Eggs', 'Peanuts'];
+const CONDITION_SUGGESTIONS = ['Diabetes Type 2', 'Hypertension', 'Hypothyroidism', 'Asthma', 'CKD', 'CAD', 'COPD', 'Epilepsy', 'Arthritis'];
+
+function TagInput({ values = [], onChange, suggestions = [], placeholder }) {
+  const [input, setInput] = useState('');
+  const add = (val) => {
+    const v = val.trim();
+    if (v && !values.includes(v)) onChange([...values, v]);
+    setInput('');
+  };
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+        {values.map((v) => (
+          <span key={v} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: '#2563EB', fontSize: 12, fontWeight: 600, padding: '3px 8px', borderRadius: 20 }}>
+            {v}
+            <button type="button" onClick={() => onChange(values.filter(x => x !== v))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 0, lineHeight: 1 }}>×</button>
+          </span>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(input); } }}
+          placeholder={placeholder}
+          style={{ flex: 1, minWidth: 140, padding: '7px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, outline: 'none' }}
+        />
+        <button type="button" onClick={() => add(input)} style={{ padding: '7px 12px', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>Add</button>
+      </div>
+      {suggestions.filter(s => !values.includes(s)).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+          {suggestions.filter(s => !values.includes(s)).slice(0, 5).map(s => (
+            <button key={s} type="button" onClick={() => onChange([...values, s])}
+              style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, border: '1px solid var(--border)', background: '#F9FAFB', cursor: 'pointer', color: '#6B7280' }}>
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CustomerPanel({ customerId, onClose, onEdit }) {
+  const { tenant } = useAuth();
+  const isClinic = tenant?.businessType === 'CLINIC';
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
   const [showAddSub, setShowAddSub] = useState(false);
   const [creditForm, setCreditForm] = useState({ amount: '', operation: 'add' });
+  const [medForm, setMedForm] = useState(null);
+  const [medSaving, setMedSaving] = useState(false);
+  const [vitalsHistory, setVitalsHistory] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await getCustomer(customerId);
-      setCustomer(r.data.data);
+      const c = r.data.data;
+      setCustomer(c);
+      setMedForm({
+        bloodGroup: c.bloodGroup || '',
+        dateOfBirth: c.dateOfBirth ? new Date(c.dateOfBirth).toISOString().split('T')[0] : '',
+        gender: c.gender || '',
+        allergies: c.allergies || [],
+        chronicConditions: c.chronicConditions || [],
+        abhaId: c.abhaId || '',
+        referredBy: c.referredBy || '',
+        emergencyContactName: c.emergencyContactName || '',
+        emergencyContactPhone: c.emergencyContactPhone || '',
+      });
     } catch { toast.error('Failed to load customer'); }
     finally { setLoading(false); }
   }, [customerId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Load vitals history when Medical tab is active
+  useEffect(() => {
+    if (!isClinic || tab !== 'medical' || !customerId) return;
+    getVitalsByPatient(customerId, { limit: 8 })
+      .then(r => setVitalsHistory(r.data.data || []))
+      .catch(() => {});
+  }, [isClinic, tab, customerId]);
 
   const handleReminder = async (sub) => {
     try {
@@ -803,11 +879,23 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
 
+  const handleSaveMedical = async (e) => {
+    e.preventDefault();
+    setMedSaving(true);
+    try {
+      await updateCustomer(customerId, medForm);
+      toast.success('Medical profile saved');
+      load();
+    } catch { toast.error('Failed to save'); }
+    finally { setMedSaving(false); }
+  };
+
   const activeSub = customer?.subscriptions?.find((s) => s.status === 'ACTIVE');
   const tabs = [
     { key: 'overview', label: 'Overview' },
     { key: 'subscriptions', label: `Plans (${customer?.subscriptions?.length || 0})` },
     { key: 'history', label: 'History' },
+    ...(isClinic ? [{ key: 'medical', label: 'Medical' }] : []),
   ];
 
   return (
@@ -1157,6 +1245,159 @@ function CustomerPanel({ customerId, onClose, onEdit }) {
                   </div>
                 )}
               </div>
+
+            /* ── MEDICAL PROFILE ── */
+            ) : tab === 'medical' && isClinic ? (
+              <>
+              <form onSubmit={handleSaveMedical} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                {/* Summary pills if data exists */}
+                {(customer.bloodGroup || customer.chronicConditions?.length > 0 || customer.allergies?.length > 0) && (
+                  <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: '10px 14px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {customer.bloodGroup && (
+                      <span style={{ background: '#DC2626', color: '#fff', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{customer.bloodGroup}</span>
+                    )}
+                    {customer.allergies?.map(a => (
+                      <span key={a} style={{ background: '#FEE2E2', color: '#DC2626', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20 }}>⚠ {a}</span>
+                    ))}
+                    {customer.chronicConditions?.map(c => (
+                      <span key={c} style={{ background: '#DBEAFE', color: '#1D4ED8', fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20 }}>{c}</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Basic clinical info */}
+                <Section title="Clinical Info">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Blood Group</div>
+                      <select value={medForm?.bloodGroup || ''} onChange={e => setMedForm(f => ({ ...f, bloodGroup: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+                        <option value="">— Select —</option>
+                        {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Gender</div>
+                      <select value={medForm?.gender || ''} onChange={e => setMedForm(f => ({ ...f, gender: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+                        <option value="">— Select —</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>
+                        Date of Birth {medForm?.dateOfBirth && <span style={{ color: 'var(--cyan)', fontWeight: 700 }}>· Age {calcAge(medForm.dateOfBirth)} yrs</span>}
+                      </div>
+                      <input type="date" value={medForm?.dateOfBirth || ''} onChange={e => setMedForm(f => ({ ...f, dateOfBirth: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13 }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>ABHA ID</div>
+                      <input value={medForm?.abhaId || ''} onChange={e => setMedForm(f => ({ ...f, abhaId: e.target.value }))}
+                        placeholder="12-3456-7890-1234"
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                </Section>
+
+                {/* Allergies */}
+                <Section title="Known Allergies">
+                  <TagInput
+                    values={medForm?.allergies || []}
+                    onChange={vals => setMedForm(f => ({ ...f, allergies: vals }))}
+                    suggestions={ALLERGY_SUGGESTIONS}
+                    placeholder="Type allergy and press Enter…"
+                  />
+                </Section>
+
+                {/* Chronic conditions */}
+                <Section title="Chronic Conditions">
+                  <TagInput
+                    values={medForm?.chronicConditions || []}
+                    onChange={vals => setMedForm(f => ({ ...f, chronicConditions: vals }))}
+                    suggestions={CONDITION_SUGGESTIONS}
+                    placeholder="Type condition and press Enter…"
+                  />
+                </Section>
+
+                {/* Emergency contact */}
+                <Section title="Emergency Contact">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Name</div>
+                      <input value={medForm?.emergencyContactName || ''} onChange={e => setMedForm(f => ({ ...f, emergencyContactName: e.target.value }))}
+                        placeholder="Relative name"
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Phone</div>
+                      <input value={medForm?.emergencyContactPhone || ''} onChange={e => setMedForm(f => ({ ...f, emergencyContactPhone: e.target.value }))}
+                        placeholder="10-digit mobile"
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                </Section>
+
+                {/* Referred by */}
+                <Section title="Referral">
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>Referred by</div>
+                  <input value={medForm?.referredBy || ''} onChange={e => setMedForm(f => ({ ...f, referredBy: e.target.value }))}
+                    placeholder="e.g. Dr. Mehta, Google, Word of mouth"
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+                </Section>
+
+                <button type="submit" disabled={medSaving}
+                  style={{ padding: '11px 0', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: medSaving ? 'not-allowed' : 'pointer', opacity: medSaving ? 0.7 : 1 }}>
+                  {medSaving ? 'Saving…' : 'Save Medical Profile'}
+                </button>
+              </form>
+
+              {/* Vitals History */}
+              {vitalsHistory.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <Section title={`Vitals History (last ${vitalsHistory.length})`}>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: '#F3F4F6' }}>
+                            {['Date', 'BP', 'Pulse', 'Temp', 'SpO₂', 'Wt'].map(h => (
+                              <th key={h} style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, color: '#6B7280', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vitalsHistory.map((v, i) => (
+                            <tr key={v.id} style={{ borderBottom: '1px solid var(--border)', background: v.abnormal ? '#FEF2F2' : i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
+                              <td style={{ padding: '6px 8px', color: '#6B7280', whiteSpace: 'nowrap' }}>
+                                {new Date(v.recordedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: (v.bpSystolic > 140 || v.bpDiastolic > 90) ? '#DC2626' : 'var(--navy)' }}>
+                                {v.bpSystolic && v.bpDiastolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: (v.pulse < 60 || v.pulse > 100) ? '#DC2626' : '#374151' }}>
+                                {v.pulse ?? '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: (v.temperature < 36 || v.temperature > 37.5) ? '#DC2626' : '#374151' }}>
+                                {v.temperature != null ? `${v.temperature}°C` : '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: v.spo2 < 95 ? '#DC2626' : '#374151' }}>
+                                {v.spo2 != null ? `${v.spo2}%` : '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', color: '#374151' }}>
+                                {v.weight != null ? `${v.weight}kg` : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Section>
+                </div>
+              )}
+              </>
 
             ) : null
           )}

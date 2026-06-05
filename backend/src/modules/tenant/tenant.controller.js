@@ -29,8 +29,16 @@ const toggleModule = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+const updateLabelConfig = async (req, res, next) => {
+  try { ok(res, await svc.updateLabelConfig(req.tenantId, req.body), 'Label config saved'); } catch (e) { next(e); }
+};
+
+const updateSidebarConfig = async (req, res, next) => {
+  try { ok(res, await svc.updateSidebarConfig(req.tenantId, req.body), 'Sidebar config saved'); } catch (e) { next(e); }
+};
+
 const getStats = async (req, res, next) => {
   try { ok(res, await svc.getStats(req.tenantId)); } catch (e) { next(e); }
 };
 
-module.exports = { getProfile, updateProfile, uploadLogo, getModules, toggleModule, getStats };
+module.exports = { getProfile, updateProfile, uploadLogo, getModules, toggleModule, updateSidebarConfig, updateLabelConfig, getStats };
