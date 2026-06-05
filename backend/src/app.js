@@ -41,6 +41,7 @@ const supportRoutes = require('./modules/support/support.routes');
 const complianceRoutes = require('./modules/compliance/compliance.routes');
 const announcementsRoutes = require('./modules/announcements/announcements.routes');
 const businessBuilderRoutes = require('./modules/businessbuilder/businessbuilder.routes');
+const transportRoutes       = require('./modules/transport/transport.routes');
 const b2bRoutes = require('./modules/b2b/b2b.routes');
 const membershipPlansRoutes = require('./modules/membership-plans/membership-plans.routes');
 const returnsRoutes = require('./modules/returns/returns.routes');
@@ -285,7 +286,8 @@ app.use('/api/platform/compliance', complianceRoutes);
 app.use('/api/v1/compliance', complianceRoutes);
 app.use('/api/platform/announcements', announcementsRoutes);
 app.use('/api/v1/announcements', announcementsRoutes);
-app.use('/api/platform/builder', businessBuilderRoutes);
+app.use('/api/platform/builder',    businessBuilderRoutes);
+app.use('/api/platform/transport',  transportRoutes);
 
 // Public maintenance check — no auth required, consumed by tenant app
 app.get('/api/v1/maintenance/active', async (req, res) => {

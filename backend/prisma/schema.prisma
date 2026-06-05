@@ -3314,3 +3314,121 @@ enum ClaimStatus {
   REJECTED
   SETTLED
 }
+
+// ─── Transport Request (TR) System ────────────────────────────────────────────
+
+enum TRStatus {
+  DEVELOPMENT
+  TESTING
+  IN_QUALITY
+  IN_PRODUCTION
+  ROLLED_BACK
+}
+
+enum TRCategory {
+  FEATURE
+  BUGFIX
+  ENHANCEMENT
+  CONFIG
+  HOTFIX
+}
+
+enum TRPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TRLogAction {
+  CREATED
+  STATUS_CHANGED
+  PROMOTED_TO_QUALITY
+  PROMOTED_TO_PRODUCTION
+  ROLLED_BACK
+  COMMENT_ADDED
+  SCOPE_LOCKED
+  SCOPE_UNLOCKED
+  TEST_RESULT_RECORDED
+}
+
+model TransportRequest {
+  id                  String       @id @default(uuid())
+  trCode              String       @unique
+  title               String
+  description         String?
+  category            TRCategory
+  businessTypeCode    String
+  modulesAffected     String[]
+  status              TRStatus     @default(DEVELOPMENT)
+  priority            TRPriority   @default(MEDIUM)
+  scopeLocked         Boolean      @default(false)
+  createdBy           String
+  assignedReviewer    String?
+  gitCommits          String[]
+  testPlanNotes       String?
+  preMergeQualitySha  String?
+  preMergeProdSha     String?
+  promotedToQualityAt DateTime?
+  promotedToProdAt    DateTime?
+  rolledBackAt        DateTime?
+  rolledBackReason    String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  logs          TransportLog[]
+  comments      TransportComment[]
+  testScenarios TransportTestScenario[]
+
+  @@index([status])
+  @@index([businessTypeCode])
+  @@index([createdAt])
+  @@map("transport_requests")
+}
+
+model TransportLog {
+  id          String       @id @default(uuid())
+  trId        String
+  action      TRLogAction
+  fromStatus  TRStatus?
+  toStatus    TRStatus?
+  performedBy String
+  notes       String?
+  createdAt   DateTime     @default(now())
+
+  tr TransportRequest @relation(fields: [trId], references: [id], onDelete: Cascade)
+
+  @@index([trId])
+  @@map("transport_logs")
+}
+
+model TransportComment {
+  id        String   @id @default(uuid())
+  trId      String
+  author    String
+  body      String
+  createdAt DateTime @default(now())
+
+  tr TransportRequest @relation(fields: [trId], references: [id], onDelete: Cascade)
+
+  @@index([trId])
+  @@map("transport_comments")
+}
+
+model TransportTestScenario {
+  id             String    @id @default(uuid())
+  trId           String
+  title          String
+  steps          String?
+  expectedResult String?
+  result         String    @default("PENDING")
+  testedBy       String?
+  testedAt       DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  tr TransportRequest @relation(fields: [trId], references: [id], onDelete: Cascade)
+
+  @@index([trId])
+  @@map("transport_test_scenarios")
+}
