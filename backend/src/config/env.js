@@ -64,6 +64,10 @@ const config = {
   razorpayKeyId: process.env.RAZORPAY_KEY_ID,
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET,
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET,
+
+  githubToken: process.env.GITHUB_ACCESS_TOKEN,
+  githubOwner: process.env.GITHUB_OWNER,
+  githubRepo:  process.env.GITHUB_REPO,
 };
 
 if (ENV !== 'test') {

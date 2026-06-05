@@ -99,6 +99,10 @@ import BusinessBuilder from './pages/platform/BusinessBuilder';
 import ApiKeys from './pages/platform/ApiKeys';
 import NerveRoles from './pages/platform/NerveRoles';
 import LandingMedia from './pages/platform/LandingMedia';
+import TransportManager from './pages/platform/TransportManager';
+import TransportNew from './pages/platform/TransportNew';
+import TransportDetail from './pages/platform/TransportDetail';
+import TransportEnvironments from './pages/platform/TransportEnvironments';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -158,7 +162,11 @@ export default function App() {
             <Route path="business-builder"  element={<BusinessBuilder />} />
             <Route path="api-keys"          element={<ApiKeys />} />
             <Route path="nerve-roles"       element={<NerveRoles />} />
-            <Route path="landing-media"     element={<LandingMedia />} />
+            <Route path="landing-media"         element={<LandingMedia />} />
+            <Route path="transport"             element={<TransportManager />} />
+            <Route path="transport/new"         element={<TransportNew />} />
+            <Route path="transport/environments" element={<TransportEnvironments />} />
+            <Route path="transport/:id"         element={<TransportDetail />} />
           </Route>
 
           {/* ── Tenant App ── */}

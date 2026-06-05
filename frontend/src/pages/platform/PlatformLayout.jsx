@@ -23,6 +23,8 @@ const NAV = [
   { to: '/platform/feature-catalog',  icon: '🎛', label: 'Feature Catalog' },
   { to: '/platform/feature-flags',    icon: '🚦', label: 'Feature Flags' },
   { to: '/platform/module-usage',     icon: '📊', label: 'Module Usage' },
+  { section: 'Release' },
+  { to: '/platform/transport',        icon: '🚦', label: 'Transport Manager' },
   { section: 'Operations' },
   { to: '/platform/support-console',  icon: '🐛', label: 'Bug Reports' },
   { to: '/platform/dev-queue',        icon: '⚙️', label: 'Dev Queue' },

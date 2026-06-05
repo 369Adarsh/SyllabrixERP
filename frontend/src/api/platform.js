@@ -195,3 +195,17 @@ export const assignNcRole            = (adminId, roleId) => api.patch(`/nc-roles
 export const getSASettings           = ()         => api.get('/settings');
 export const updateSASettings        = (data)     => api.put('/settings', data);
 export const testSAApiKey            = (provider, key) => api.post('/settings/test-key', { provider, key });
+
+// Transport Request (TR) System
+export const getTRStats              = ()           => api.get('/transport/stats');
+export const getTREnvironments       = ()           => api.get('/transport/environments');
+export const listTRs                 = (params)     => api.get('/transport', { params });
+export const getTR                   = (id)         => api.get(`/transport/${id}`);
+export const createTR                = (data)       => api.post('/transport', data);
+export const updateTR                = (id, data)   => api.patch(`/transport/${id}`, data);
+export const promoteTR               = (id, notes)  => api.post(`/transport/${id}/promote`, { notes });
+export const rollbackTR              = (id, reason) => api.post(`/transport/${id}/rollback`, { reason });
+export const toggleTRScopeLock       = (id)         => api.patch(`/transport/${id}/scope-lock`);
+export const addTRComment            = (id, body)   => api.post(`/transport/${id}/comments`, { body });
+export const addTRTestScenario       = (id, data)   => api.post(`/transport/${id}/test-scenarios`, data);
+export const updateTRTestResult      = (id, scenarioId, data) => api.patch(`/transport/${id}/test-scenarios/${scenarioId}`, data);
