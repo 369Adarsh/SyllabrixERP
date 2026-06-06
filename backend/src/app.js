@@ -75,6 +75,9 @@ const { verify: waVerify, webhook: waWebhook } = require('./modules/whatsapp/wha
 
 const app = express();
 
+// ─── Health check (before HTTPS redirect so Railway healthchecks work) ────────
+app.get('/health', (req, res) => res.json({ status: 'ok', service: 'Syllabrix API' }));
+
 // ─── HTTPS redirect in production ─────────────────────────────────────────────
 if (config.nodeEnv === 'production') {
   app.use((req, res, next) => {
@@ -160,9 +163,6 @@ app.post('/api/v1/whatsapp/webhook', express.raw({ type: 'application/json' }), 
 // ─── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// ─── Health check (no rate limit) ─────────────────────────────────────────────
-app.get('/health', (req, res) => res.json({ status: 'ok', service: 'Syllabrix API' }));
 
 // ─── Global API rate limiter ───────────────────────────────────────────────────
 app.use('/api/', apiLimiter);
