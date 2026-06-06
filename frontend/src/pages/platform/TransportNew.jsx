@@ -19,7 +19,10 @@ export default function TransportNew() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     title: '', description: '', category: 'FEATURE', priority: 'MEDIUM',
-    businessTypeCode: '', modulesAffected: '', gitCommits: '', testPlanNotes: '',
+    businessTypeCode: '', modulesAffected: '',
+    problem: '', solution: '', inScope: '', outOfScope: '',
+    crNumber: '', changesMadeFile: '',
+    gitCommits: '', testPlanNotes: '',
   });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -41,6 +44,12 @@ export default function TransportNew() {
         priority:         form.priority,
         businessTypeCode: form.businessTypeCode.trim().toUpperCase(),
         modulesAffected:  form.modulesAffected.split(',').map((s) => s.trim()).filter(Boolean),
+        problem:          form.problem.trim()     || null,
+        solution:         form.solution.trim()    || null,
+        inScope:          form.inScope.trim()     || null,
+        outOfScope:       form.outOfScope.trim()  || null,
+        crNumber:         form.crNumber.trim().toUpperCase() || null,
+        changesMadeFile:  form.changesMadeFile.trim() || null,
         gitCommits:       form.gitCommits.split(',').map((s) => s.trim()).filter(Boolean),
         testPlanNotes:    form.testPlanNotes.trim() || null,
       };
@@ -61,7 +70,7 @@ export default function TransportNew() {
         <button onClick={() => navigate('/platform/transport')} style={backBtn}>← Back</button>
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: '#F1F5F9' }}>New Transport Request</h1>
-          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Log a new change to track through Dev → Quality → Production</p>
+          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Create a CR/Enhancement document — must be approved before development begins</p>
         </div>
       </div>
 
@@ -127,9 +136,94 @@ export default function TransportNew() {
           <div>
             <label style={labelStyle}>Description</label>
             <textarea value={form.description} onChange={(e) => set('description', e.target.value)}
-              placeholder="Describe what was changed and why…"
-              rows={4}
+              placeholder="Brief summary of this change…"
+              rows={3}
               style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
+          </div>
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid #1E2D3D', paddingTop: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#1FB8D6', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Change Document — Required Before Approval
+            </div>
+          </div>
+
+          {/* Problem */}
+          <div>
+            <label style={labelStyle}>Problem Statement <span style={{ color: '#EF4444' }}>*</span></label>
+            <textarea value={form.problem} onChange={(e) => set('problem', e.target.value)}
+              placeholder="What is broken or missing, and why does it matter?"
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
+          </div>
+
+          {/* Solution */}
+          <div>
+            <label style={labelStyle}>Proposed Solution <span style={{ color: '#EF4444' }}>*</span></label>
+            <textarea value={form.solution} onChange={(e) => set('solution', e.target.value)}
+              placeholder="What exactly will be built to solve this problem?"
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
+          </div>
+
+          {/* In Scope / Out of Scope */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>In Scope <span style={{ color: '#EF4444' }}>*</span></label>
+              <textarea value={form.inScope} onChange={(e) => set('inScope', e.target.value)}
+                placeholder={"- Feature A\n- Feature B\n- Page X"}
+                rows={4}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
+              <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>One item per line</div>
+            </div>
+            <div>
+              <label style={labelStyle}>Out of Scope</label>
+              <textarea value={form.outOfScope} onChange={(e) => set('outOfScope', e.target.value)}
+                placeholder={"- Not touching X\n- No changes to Y"}
+                rows={4}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
+              <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>One item per line</div>
+            </div>
+          </div>
+
+          {/* Divider — TR Linkage */}
+          <div style={{ borderTop: '1px solid #1E2D3D', paddingTop: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#F97316', letterSpacing: '0.08em' }}>
+              TR LINKAGE — REQUIRED
+            </div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>A TR cannot be created without a linked CR/ENH document and a Changes Made file.</div>
+          </div>
+
+          {/* CR/ENH Number */}
+          <div>
+            <label style={labelStyle}>CR / Enhancement Number <span style={{ color: '#EF4444' }}>*</span></label>
+            <input value={form.crNumber} onChange={(e) => set('crNumber', e.target.value)}
+              placeholder="e.g. CR-2026-001 or ENH-2026-001"
+              style={{ ...inputStyle, fontFamily: 'var(--font-mono)', fontSize: 13 }} />
+            <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>Must match an approved CR or Enhancement in Change Requests</div>
+          </div>
+
+          {/* Changes Made File Upload */}
+          <div>
+            <label style={labelStyle}>Changes Made File <span style={{ color: '#EF4444' }}>*</span></label>
+            <input
+              type="file"
+              accept=".md,.txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => set('changesMadeFile', ev.target.result);
+                reader.readAsText(file);
+              }}
+              style={{ ...inputStyle, padding: '7px 12px', cursor: 'pointer' }}
+            />
+            <div style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>Upload the CHANGES-{form.crNumber || 'CR-YYYY-NNN'}.md file generated by Claude Code after development</div>
+            {form.changesMadeFile && (
+              <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 7, fontSize: 12, color: '#34D399' }}>
+                Changes Made file loaded — {form.changesMadeFile.split('\n').length} lines
+              </div>
+            )}
           </div>
 
           {/* Git Commits */}

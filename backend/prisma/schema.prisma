@@ -3316,9 +3316,80 @@ enum ClaimStatus {
   SETTLED
 }
 
+// ─── Change Request / Enhancement System ─────────────────────────────────────
+
+enum CRType {
+  CR
+  ENHANCEMENT
+}
+
+enum CRStatus {
+  DRAFT
+  APPROVED
+  IN_DEVELOPMENT
+  COMPLETED
+  REJECTED
+}
+
+enum CRLogAction {
+  CREATED
+  APPROVED
+  REJECTED
+  LINKED_TO_TR
+  STATUS_CHANGED
+}
+
+model ChangeRequest {
+  id               String     @id @default(uuid())
+  crCode           String     @unique
+  type             CRType
+  title            String
+  description      String?
+  problem          String?
+  solution         String?
+  inScope          String?
+  outOfScope       String?
+  businessTypeCode String
+  modulesAffected  String[]
+  priority         TRPriority @default(MEDIUM)
+  status           CRStatus   @default(DRAFT)
+  createdBy        String
+  approvedBy       String?
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  linkedTRId       String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  logs CRLog[]
+
+  @@index([status])
+  @@index([type])
+  @@index([businessTypeCode])
+  @@map("change_requests")
+}
+
+model CRLog {
+  id          String      @id @default(uuid())
+  crId        String
+  action      CRLogAction
+  performedBy String
+  notes       String?
+  createdAt   DateTime    @default(now())
+
+  cr ChangeRequest @relation(fields: [crId], references: [id], onDelete: Cascade)
+
+  @@index([crId])
+  @@map("cr_logs")
+}
+
 // ─── Transport Request (TR) System ────────────────────────────────────────────
 
 enum TRStatus {
+  DRAFT
+  APPROVED
   DEVELOPMENT
   TESTING
   IN_QUALITY
@@ -3343,6 +3414,7 @@ enum TRPriority {
 
 enum TRLogAction {
   CREATED
+  APPROVED
   STATUS_CHANGED
   PROMOTED_TO_QUALITY
   PROMOTED_TO_PRODUCTION
@@ -3361,11 +3433,17 @@ model TransportRequest {
   category            TRCategory
   businessTypeCode    String
   modulesAffected     String[]
-  status              TRStatus     @default(DEVELOPMENT)
+  status              TRStatus     @default(DRAFT)
   priority            TRPriority   @default(MEDIUM)
   scopeLocked         Boolean      @default(false)
   createdBy           String
   assignedReviewer    String?
+  problem             String?
+  solution            String?
+  inScope             String?
+  outOfScope          String?
+  approvedBy          String?
+  approvedAt          DateTime?
   gitCommits          String[]
   testPlanNotes       String?
   preMergeQualitySha  String?
@@ -3374,6 +3452,8 @@ model TransportRequest {
   promotedToProdAt    DateTime?
   rolledBackAt        DateTime?
   rolledBackReason    String?
+  crNumber            String?
+  changesMadeFile     String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 

@@ -196,6 +196,15 @@ export const getSASettings           = ()         => api.get('/settings');
 export const updateSASettings        = (data)     => api.put('/settings', data);
 export const testSAApiKey            = (provider, key) => api.post('/settings/test-key', { provider, key });
 
+// Change Request / Enhancement System
+export const getCRStats         = ()           => api.get('/changes/stats');
+export const listCRs            = (params)     => api.get('/changes', { params });
+export const getCR              = (id)         => api.get(`/changes/${id}`);
+export const createCR           = (data)       => api.post('/changes', data);
+export const approveCR          = (id)         => api.patch(`/changes/${id}/approve`);
+export const rejectCR           = (id, reason) => api.patch(`/changes/${id}/reject`, { reason });
+export const downloadCRDocument = (id)         => api.get(`/changes/${id}/document`, { responseType: 'blob' });
+
 // Transport Request (TR) System
 export const getTRStats              = ()           => api.get('/transport/stats');
 export const getTREnvironments       = ()           => api.get('/transport/environments');
@@ -203,6 +212,7 @@ export const listTRs                 = (params)     => api.get('/transport', { p
 export const getTR                   = (id)         => api.get(`/transport/${id}`);
 export const createTR                = (data)       => api.post('/transport', data);
 export const updateTR                = (id, data)   => api.patch(`/transport/${id}`, data);
+export const approveTR               = (id)         => api.patch(`/transport/${id}/approve`);
 export const promoteTR               = (id, notes)  => api.post(`/transport/${id}/promote`, { notes });
 export const rollbackTR              = (id, reason) => api.post(`/transport/${id}/rollback`, { reason });
 export const toggleTRScopeLock       = (id)         => api.patch(`/transport/${id}/scope-lock`);

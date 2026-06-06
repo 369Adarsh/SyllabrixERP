@@ -49,6 +49,8 @@ const getStats = async () => {
   const s = Object.fromEntries(byStatus.map((r) => [r.status, r._count.id]));
   return {
     total,
+    draft:        s.DRAFT         || 0,
+    approved:     s.APPROVED      || 0,
     development:  s.DEVELOPMENT   || 0,
     testing:      s.TESTING       || 0,
     inQuality:    s.IN_QUALITY    || 0,
@@ -104,15 +106,44 @@ const create = async (data, adminName) => {
       businessTypeCode: data.businessTypeCode,
       modulesAffected:  data.modulesAffected || [],
       priority:         data.priority       || 'MEDIUM',
+      problem:          data.problem        || null,
+      solution:         data.solution       || null,
+      inScope:          data.inScope        || null,
+      outOfScope:       data.outOfScope     || null,
       gitCommits:       data.gitCommits     || [],
       testPlanNotes:    data.testPlanNotes  || null,
       createdBy:        adminName,
       logs: {
         create: {
           action:      'CREATED',
-          toStatus:    'DEVELOPMENT',
+          toStatus:    'DRAFT',
           performedBy: adminName,
-          notes:       `TR ${trCode} created`,
+          notes:       `TR ${trCode} created — awaiting approval`,
+        },
+      },
+    },
+  });
+};
+
+// ── Approve ────────────────────────────────────────────────────────────────────
+const approve = async (id, adminName) => {
+  const tr = await prisma.transportRequest.findUnique({ where: { id } });
+  if (!tr) throw new Error('TR not found');
+  if (tr.status !== 'DRAFT') throw new Error('Only DRAFT TRs can be approved');
+
+  return prisma.transportRequest.update({
+    where: { id },
+    data: {
+      status:     'APPROVED',
+      approvedBy: adminName,
+      approvedAt: new Date(),
+      logs: {
+        create: {
+          action:      'APPROVED',
+          fromStatus:  'DRAFT',
+          toStatus:    'APPROVED',
+          performedBy: adminName,
+          notes:       'TR approved — ready for development',
         },
       },
     },
@@ -138,8 +169,9 @@ const update = async (id, data) =>
 
 // ── Promote ────────────────────────────────────────────────────────────────────
 const PROMOTE_MAP = {
-  DEVELOPMENT: { next: 'TESTING',       action: 'STATUS_CHANGED',        git: null },
-  TESTING:     { next: 'IN_QUALITY',    action: 'PROMOTED_TO_QUALITY',   git: { from: 'dev',     to: 'quality' } },
+  APPROVED:    { next: 'DEVELOPMENT',  action: 'STATUS_CHANGED',          git: null },
+  DEVELOPMENT: { next: 'TESTING',      action: 'STATUS_CHANGED',          git: null },
+  TESTING:     { next: 'IN_QUALITY',   action: 'PROMOTED_TO_QUALITY',     git: { from: 'dev',     to: 'quality' } },
   IN_QUALITY:  { next: 'IN_PRODUCTION', action: 'PROMOTED_TO_PRODUCTION', git: { from: 'quality', to: 'main'    } },
 };
 
@@ -297,7 +329,7 @@ const getEnvironments = async () => {
 };
 
 module.exports = {
-  getStats, list, get, create, update,
+  getStats, list, get, create, approve, update,
   promote, rollback, toggleScopeLock,
   addComment, addTestScenario, updateTestResult,
   getEnvironments,
