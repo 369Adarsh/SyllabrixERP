@@ -4,9 +4,11 @@ import { getTRStats, listTRs, promoteTR } from '../../api/platform';
 import toast from 'react-hot-toast';
 
 const STATUS_META = {
+  DRAFT:         { label: 'Draft',        color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' },
+  APPROVED:      { label: 'Approved',     color: '#1FB8D6', bg: 'rgba(31,184,214,0.12)'  },
   DEVELOPMENT:   { label: 'Development',  color: '#64748B', bg: 'rgba(100,116,139,0.12)' },
-  TESTING:       { label: 'Testing',       color: '#EAB308', bg: 'rgba(234,179,8,0.12)'   },
-  IN_QUALITY:    { label: 'Quality',       color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
+  TESTING:       { label: 'Testing',      color: '#EAB308', bg: 'rgba(234,179,8,0.12)'   },
+  IN_QUALITY:    { label: 'Quality',      color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
   IN_PRODUCTION: { label: 'Production',   color: '#34D399', bg: 'rgba(52,211,153,0.12)'  },
   ROLLED_BACK:   { label: 'Rolled Back',  color: '#F87171', bg: 'rgba(248,113,113,0.12)' },
 };
@@ -26,7 +28,7 @@ const PRIORITY_COLOR = {
   LOW:      '#64748B',
 };
 
-const COLUMNS = ['DEVELOPMENT', 'TESTING', 'IN_QUALITY', 'IN_PRODUCTION'];
+const COLUMNS = ['DRAFT', 'APPROVED', 'DEVELOPMENT', 'TESTING', 'IN_QUALITY', 'IN_PRODUCTION'];
 
 export default function TransportManager() {
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export default function TransportManager() {
   const byStatus = (status) => filtered.filter((tr) => tr.status === status);
 
   const handlePromote = async (tr) => {
-    const nextLabel = { DEVELOPMENT: 'Testing', TESTING: 'Quality', IN_QUALITY: 'Production' }[tr.status];
+    const nextLabel = { APPROVED: 'Development', DEVELOPMENT: 'Testing', TESTING: 'Quality', IN_QUALITY: 'Production' }[tr.status];
     if (!window.confirm(`Promote "${tr.trCode}: ${tr.title}" to ${nextLabel}?`)) return;
     setPromoting(tr.id);
     try {
@@ -92,9 +94,11 @@ export default function TransportManager() {
 
       {/* Stats Row */}
       {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
             { label: 'Total TRs',   value: stats.total,        color: '#94A3B8' },
+            { label: 'Draft',       value: stats.draft,        color: '#94A3B8' },
+            { label: 'Approved',    value: stats.approved,     color: '#1FB8D6' },
             { label: 'Development', value: stats.development,  color: '#64748B' },
             { label: 'Testing',     value: stats.testing,      color: '#EAB308' },
             { label: 'In Quality',  value: stats.inQuality,    color: '#A78BFA' },
@@ -180,7 +184,7 @@ export default function TransportManager() {
                       {/* Footer */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: 11, color: '#64748B' }}>{new Date(tr.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
-                        {['DEVELOPMENT', 'TESTING', 'IN_QUALITY'].includes(tr.status) && (
+                        {['APPROVED', 'DEVELOPMENT', 'TESTING', 'IN_QUALITY'].includes(tr.status) && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handlePromote(tr); }}
                             disabled={promoting === tr.id || tr.scopeLocked}

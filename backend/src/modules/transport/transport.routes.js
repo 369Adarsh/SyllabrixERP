@@ -10,6 +10,7 @@ router.get('/',                                           authorizeSA('SUPER', '
 router.get('/:id',                                        authorizeSA('SUPER', 'ADMIN', 'SUPPORT'), ctrl.getOne);
 router.post('/',                                          authorizeSA('SUPER', 'ADMIN'),             ctrl.create);
 router.patch('/:id',                                      authorizeSA('SUPER', 'ADMIN'),             ctrl.update);
+router.patch('/:id/approve',                              authorizeSA('SUPER', 'ADMIN'),             ctrl.approve);
 router.post('/:id/promote',                               authorizeSA('SUPER', 'ADMIN'),             ctrl.promote);
 router.post('/:id/rollback',                              authorizeSA('SUPER'),                      ctrl.rollback);
 router.patch('/:id/scope-lock',                           authorizeSA('SUPER', 'ADMIN'),             ctrl.toggleScopeLock);

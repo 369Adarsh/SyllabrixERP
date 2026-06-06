@@ -103,6 +103,9 @@ import TransportManager from './pages/platform/TransportManager';
 import TransportNew from './pages/platform/TransportNew';
 import TransportDetail from './pages/platform/TransportDetail';
 import TransportEnvironments from './pages/platform/TransportEnvironments';
+import ChangeList from './pages/platform/ChangeList';
+import ChangeNew from './pages/platform/ChangeNew';
+import ChangeDetail from './pages/platform/ChangeDetail';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -163,6 +166,9 @@ export default function App() {
             <Route path="api-keys"          element={<ApiKeys />} />
             <Route path="nerve-roles"       element={<NerveRoles />} />
             <Route path="landing-media"         element={<LandingMedia />} />
+            <Route path="changes"               element={<ChangeList />} />
+            <Route path="changes/new"           element={<ChangeNew />} />
+            <Route path="changes/:id"           element={<ChangeDetail />} />
             <Route path="transport"             element={<TransportManager />} />
             <Route path="transport/new"         element={<TransportNew />} />
             <Route path="transport/environments" element={<TransportEnvironments />} />

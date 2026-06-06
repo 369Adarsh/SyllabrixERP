@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getTR, promoteTR, rollbackTR, toggleTRScopeLock, addTRComment, addTRTestScenario, updateTRTestResult } from '../../api/platform';
+import { getTR, approveTR, promoteTR, rollbackTR, toggleTRScopeLock, addTRComment, addTRTestScenario, updateTRTestResult } from '../../api/platform';
 import toast from 'react-hot-toast';
 
 const STATUS_META = {
-  DEVELOPMENT:   { label: 'Development',  color: '#64748B' },
+  DRAFT:         { label: 'Draft',         color: '#94A3B8' },
+  APPROVED:      { label: 'Approved',      color: '#1FB8D6' },
+  DEVELOPMENT:   { label: 'Development',   color: '#64748B' },
   TESTING:       { label: 'Testing',       color: '#EAB308' },
   IN_QUALITY:    { label: 'In Quality',    color: '#A78BFA' },
   IN_PRODUCTION: { label: 'In Production', color: '#34D399' },
@@ -19,17 +21,18 @@ const PRIORITY_COLOR = { CRITICAL: '#EF4444', HIGH: '#F97316', MEDIUM: '#EAB308'
 
 const LOG_ICON = {
   CREATED:                '✦',
+  APPROVED:               '✔',
   STATUS_CHANGED:         '→',
   PROMOTED_TO_QUALITY:    '↑',
-  PROMOTED_TO_PRODUCTION: '🚀',
+  PROMOTED_TO_PRODUCTION: '▲',
   ROLLED_BACK:            '↩',
-  COMMENT_ADDED:          '💬',
-  SCOPE_LOCKED:           '🔒',
-  SCOPE_UNLOCKED:         '🔓',
+  COMMENT_ADDED:          '·',
+  SCOPE_LOCKED:           '⊘',
+  SCOPE_UNLOCKED:         '○',
   TEST_RESULT_RECORDED:   '✓',
 };
 
-const NEXT_LABEL = { DEVELOPMENT: 'Testing', TESTING: 'Quality', IN_QUALITY: 'Production' };
+const NEXT_LABEL = { APPROVED: 'Development', DEVELOPMENT: 'Testing', TESTING: 'Quality', IN_QUALITY: 'Production' };
 
 export default function TransportDetail() {
   const { id } = useParams();
@@ -93,6 +96,51 @@ export default function TransportDetail() {
     finally    { setWorking(false); }
   };
 
+  const handleApprove = async () => {
+    if (!window.confirm(`Approve "${tr.trCode}: ${tr.title}"? This will allow development to begin.`)) return;
+    setWorking(true);
+    try {
+      await approveTR(id);
+      toast.success(`${tr.trCode} approved — ready for development`);
+      load();
+    } catch (e) { toast.error(e.response?.data?.message || 'Approval failed'); }
+    finally    { setWorking(false); }
+  };
+
+  const copyWorkOrder = () => {
+    const lines = [
+      '╔══════════════════════════════════════════════════════╗',
+      '║              SYLLABRIX WORK ORDER                    ║',
+      '╠══════════════════════════════════════════════════════╣',
+      `║ TR Code      : ${tr.trCode}`,
+      `║ Type         : ${tr.category}`,
+      `║ Title        : ${tr.title}`,
+      `║ Business Type: ${tr.businessTypeCode}`,
+      `║ Modules      : ${(tr.modulesAffected || []).join(', ') || '—'}`,
+      `║ Priority     : ${tr.priority}`,
+      '╠══════════════════════════════════════════════════════╣',
+      '║ PROBLEM',
+      tr.problem || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ SOLUTION',
+      tr.solution || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ IN SCOPE',
+      tr.inScope || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ OUT OF SCOPE',
+      tr.outOfScope || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ TEST SCENARIOS',
+      ...(tr.testScenarios?.length
+        ? tr.testScenarios.map((s, i) => `${i + 1}. ${s.title}`)
+        : ['(no test scenarios added yet)']),
+      '╚══════════════════════════════════════════════════════╝',
+    ];
+    navigator.clipboard.writeText(lines.join('\n'));
+    toast.success('Work Order copied to clipboard');
+  };
+
   const handleComment = async () => {
     if (!comment.trim()) return;
     try {
@@ -122,8 +170,9 @@ export default function TransportDetail() {
   if (loading) return <div style={{ padding: 40, color: '#64748B', fontSize: 14 }}>Loading…</div>;
   if (!tr)     return <div style={{ padding: 40, color: '#F87171', fontSize: 14 }}>TR not found</div>;
 
-  const statusMeta = STATUS_META[tr.status];
-  const canPromote = NEXT_LABEL[tr.status] && !tr.scopeLocked;
+  const statusMeta = STATUS_META[tr.status] || STATUS_META.DEVELOPMENT;
+  const canApprove  = tr.status === 'DRAFT';
+  const canPromote  = !!NEXT_LABEL[tr.status] && !tr.scopeLocked;
   const canRollback = ['IN_QUALITY', 'IN_PRODUCTION'].includes(tr.status);
 
   return (
@@ -156,20 +205,30 @@ export default function TransportDetail() {
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button onClick={copyWorkOrder}
+            style={{ ...ghostBtn, color: '#1FB8D6', borderColor: 'rgba(31,184,214,0.3)' }}>
+            Copy Work Order
+          </button>
           <button onClick={handleScopeLock} disabled={working}
             style={{ ...ghostBtn, color: tr.scopeLocked ? '#F97316' : '#64748B', borderColor: tr.scopeLocked ? 'rgba(249,115,22,0.4)' : '#1E2D3D' }}>
-            {tr.scopeLocked ? '🔓 Unlock' : '🔒 Lock'}
+            {tr.scopeLocked ? 'Unlock' : 'Lock'}
           </button>
           {canRollback && (
             <button onClick={() => setRollbackModal(true)} disabled={working}
               style={{ ...ghostBtn, color: '#F87171', borderColor: 'rgba(248,113,113,0.3)' }}>
-              ↩ Rollback
+              Rollback
+            </button>
+          )}
+          {canApprove && (
+            <button onClick={handleApprove} disabled={working}
+              style={{ padding: '8px 20px', background: 'linear-gradient(135deg,#34D399,#10B981)', border: 'none', borderRadius: 8, color: '#0B131C', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+              {working ? '…' : 'Approve TR'}
             </button>
           )}
           {canPromote && (
             <button onClick={handlePromote} disabled={working}
               style={{ padding: '8px 20px', background: 'linear-gradient(135deg,#1FB8D6,#27DCFF)', border: 'none', borderRadius: 8, color: '#0B131C', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-              {working ? '…' : `Promote → ${NEXT_LABEL[tr.status]}`}
+              {working ? '…' : tr.status === 'APPROVED' ? 'Begin Development' : `Promote → ${NEXT_LABEL[tr.status]}`}
             </button>
           )}
         </div>
@@ -201,6 +260,38 @@ export default function TransportDetail() {
               <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.description}</p>
             </Section>
           )}
+          {(tr.problem || tr.solution) && (
+            <Section title="Change Document">
+              {tr.problem && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Problem</div>
+                  <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.problem}</p>
+                </div>
+              )}
+              {tr.solution && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Solution</div>
+                  <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.solution}</p>
+                </div>
+              )}
+              {(tr.inScope || tr.outOfScope) && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  {tr.inScope && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#34D399', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>In Scope</div>
+                      <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.inScope}</p>
+                    </div>
+                  )}
+                  {tr.outOfScope && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#F87171', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Out of Scope</div>
+                      <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.outOfScope}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Section>
+          )}
           {tr.testPlanNotes && (
             <Section title="Test Plan Notes">
               <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.testPlanNotes}</p>
@@ -211,6 +302,8 @@ export default function TransportDetail() {
               <Detail label="Created By" value={tr.createdBy} />
               <Detail label="Created At" value={new Date(tr.createdAt).toLocaleString('en-IN')} />
               {tr.assignedReviewer && <Detail label="Reviewer" value={tr.assignedReviewer} />}
+              {tr.approvedBy && <Detail label="Approved By" value={tr.approvedBy} />}
+              {tr.approvedAt && <Detail label="Approved At" value={new Date(tr.approvedAt).toLocaleString('en-IN')} />}
               {tr.promotedToQualityAt && <Detail label="Quality At" value={new Date(tr.promotedToQualityAt).toLocaleString('en-IN')} />}
               {tr.promotedToProdAt && <Detail label="Production At" value={new Date(tr.promotedToProdAt).toLocaleString('en-IN')} />}
               {tr.rolledBackAt && <Detail label="Rolled Back At" value={new Date(tr.rolledBackAt).toLocaleString('en-IN')} />}
@@ -386,8 +479,9 @@ const Detail = ({ label, value }) => (
 );
 
 const StatusPill = ({ status }) => {
-  const m = { DEVELOPMENT: '#64748B', TESTING: '#EAB308', IN_QUALITY: '#A78BFA', IN_PRODUCTION: '#34D399', ROLLED_BACK: '#F87171' };
-  return <span style={{ fontSize: 11, color: m[status] || '#64748B', background: `${m[status]}18`, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>{status.replace(/_/g, ' ')}</span>;
+  const m = { DRAFT: '#94A3B8', APPROVED: '#1FB8D6', DEVELOPMENT: '#64748B', TESTING: '#EAB308', IN_QUALITY: '#A78BFA', IN_PRODUCTION: '#34D399', ROLLED_BACK: '#F87171' };
+  const c = m[status] || '#64748B';
+  return <span style={{ fontSize: 11, color: c, background: `${c}18`, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>{status.replace(/_/g, ' ')}</span>;
 };
 
 const backBtn   = { padding: '7px 14px', background: 'transparent', border: '1px solid #1E2D3D', borderRadius: 7, color: '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer' };
