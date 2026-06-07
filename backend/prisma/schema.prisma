@@ -3339,9 +3339,19 @@ enum CRLogAction {
   STATUS_CHANGED
 }
 
+enum CRTarget {
+  BUSINESS_PLATFORM
+  NERVE_CENTER
+}
+
+enum CRRaisedFrom {
+  QUALITY
+  PRODUCTION
+}
+
 model ChangeRequest {
-  id               String     @id @default(uuid())
-  crCode           String     @unique
+  id               String        @id @default(uuid())
+  crCode           String        @unique
   type             CRType
   title            String
   description      String?
@@ -3351,8 +3361,10 @@ model ChangeRequest {
   outOfScope       String?
   businessTypeCode String
   modulesAffected  String[]
-  priority         TRPriority @default(MEDIUM)
-  status           CRStatus   @default(DRAFT)
+  priority         TRPriority    @default(MEDIUM)
+  status           CRStatus      @default(DRAFT)
+  crTarget         CRTarget      @default(BUSINESS_PLATFORM)
+  raisedFrom       CRRaisedFrom?
   createdBy        String
   approvedBy       String?
   approvedAt       DateTime?
@@ -3360,8 +3372,8 @@ model ChangeRequest {
   rejectedAt       DateTime?
   rejectionReason  String?
   linkedTRId       String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   logs CRLog[]
 

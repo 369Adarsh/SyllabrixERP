@@ -18,6 +18,8 @@ export default function ChangeNew() {
     businessTypeCode: '',
     modulesAffected:  '',
     priority:         'MEDIUM',
+    crTarget:         'BUSINESS_PLATFORM',
+    raisedFrom:       '',
     problem:          '',
     solution:         '',
     inScope:          '',
@@ -33,6 +35,8 @@ export default function ChangeNew() {
     if (!form.problem.trim())          return toast.error('Problem statement is required');
     if (!form.solution.trim())         return toast.error('Proposed solution is required');
     if (!form.inScope.trim())          return toast.error('In Scope is required');
+    if (form.crTarget === 'BUSINESS_PLATFORM' && !form.raisedFrom)
+      return toast.error('Raised From is required for Business Platform CRs');
 
     setSaving(true);
     try {
@@ -43,6 +47,8 @@ export default function ChangeNew() {
         businessTypeCode: form.businessTypeCode.trim().toUpperCase(),
         modulesAffected:  form.modulesAffected.split(',').map((s) => s.trim()).filter(Boolean),
         priority:         form.priority,
+        crTarget:         form.crTarget,
+        raisedFrom:       form.raisedFrom              || null,
         problem:          form.problem.trim(),
         solution:         form.solution.trim(),
         inScope:          form.inScope.trim(),
@@ -75,7 +81,7 @@ export default function ChangeNew() {
       </div>
 
       {/* Type Toggle */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: '#192533', border: '1px solid #1E2D3D', borderRadius: 8, padding: 4, width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 16, background: '#192533', border: '1px solid #1E2D3D', borderRadius: 8, padding: 4, width: 'fit-content' }}>
         {[{ val: 'CR', label: 'Change Request' }, { val: 'ENHANCEMENT', label: 'Enhancement' }].map(({ val, label }) => (
           <button key={val} onClick={() => set('type', val)}
             style={{
@@ -86,6 +92,44 @@ export default function ChangeNew() {
             {label}
           </button>
         ))}
+      </div>
+
+      {/* CR Target + Raised From */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'flex-end' }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 6, letterSpacing: '0.04em' }}>CR TARGET <span style={{ color: '#EF4444' }}>*</span></div>
+          <div style={{ display: 'flex', gap: 0, background: '#192533', border: '1px solid #1E2D3D', borderRadius: 8, padding: 3 }}>
+            {[{ val: 'BUSINESS_PLATFORM', label: 'Business Platform' }, { val: 'NERVE_CENTER', label: 'Nerve Center' }].map(({ val, label }) => (
+              <button key={val} onClick={() => { set('crTarget', val); if (val === 'NERVE_CENTER') set('raisedFrom', ''); }}
+                style={{ padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
+                  background: form.crTarget === val ? (val === 'BUSINESS_PLATFORM' ? 'rgba(31,184,214,0.2)' : 'rgba(167,139,250,0.2)') : 'transparent',
+                  color: form.crTarget === val ? (val === 'BUSINESS_PLATFORM' ? '#1FB8D6' : '#A78BFA') : '#64748B' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {form.crTarget === 'BUSINESS_PLATFORM' && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 6, letterSpacing: '0.04em' }}>RAISED FROM <span style={{ color: '#EF4444' }}>*</span></div>
+            <div style={{ display: 'flex', gap: 0, background: '#192533', border: `1px solid ${!form.raisedFrom ? 'rgba(249,115,22,0.4)' : '#1E2D3D'}`, borderRadius: 8, padding: 3 }}>
+              {[{ val: 'QUALITY', label: '🟣 Quality', color: '#A78BFA' }, { val: 'PRODUCTION', label: '🟢 Production', color: '#34D399' }].map(({ val, label, color }) => (
+                <button key={val} onClick={() => set('raisedFrom', val)}
+                  style={{ padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
+                    background: form.raisedFrom === val ? `${color}22` : 'transparent',
+                    color: form.raisedFrom === val ? color : '#64748B' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {!form.raisedFrom && <div style={{ fontSize: 10, color: '#F97316', marginTop: 4 }}>Select where this issue was observed</div>}
+          </div>
+        )}
+        {form.crTarget === 'NERVE_CENTER' && (
+          <div style={{ fontSize: 12, color: '#64748B', padding: '8px 14px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 8 }}>
+            Nerve Center CRs are raised by the platform team — no environment context needed
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
