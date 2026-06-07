@@ -8,8 +8,12 @@ const list            = async (req, res, next) => { try { ok(res, await svc.list
 const getOne          = async (req, res, next) => { try { ok(res, await svc.get(req.params.id)); } catch (e) { next(e); } };
 const create          = async (req, res, next) => { try { ok(res, await svc.create(req.body, adminName(req))); } catch (e) { next(e); } };
 const update          = async (req, res, next) => { try { ok(res, await svc.update(req.params.id, req.body)); } catch (e) { next(e); } };
+const approve         = async (req, res, next) => { try { ok(res, await svc.approve(req.params.id, adminName(req))); } catch (e) { next(e); } };
 const promote         = async (req, res, next) => { try { ok(res, await svc.promote(req.params.id, adminName(req), req.body.notes)); } catch (e) { next(e); } };
+const implement       = async (req, res, next) => { try { ok(res, await svc.implement(req.params.id, adminName(req))); } catch (e) { next(e); } };
 const rollback        = async (req, res, next) => { try { ok(res, await svc.rollback(req.params.id, req.body.reason, adminName(req))); } catch (e) { next(e); } };
+const getSettings     = async (req, res, next) => { try { ok(res, await svc.getSettings()); } catch (e) { next(e); } };
+const updateSettings  = async (req, res, next) => { try { ok(res, await svc.updateSettings(req.body)); } catch (e) { next(e); } };
 const toggleScopeLock = async (req, res, next) => { try { ok(res, await svc.toggleScopeLock(req.params.id, adminName(req))); } catch (e) { next(e); } };
 const addComment      = async (req, res, next) => { try { ok(res, await svc.addComment(req.params.id, req.body.body, adminName(req))); } catch (e) { next(e); } };
 const addTestScenario = async (req, res, next) => { try { ok(res, await svc.addTestScenario(req.params.id, req.body)); } catch (e) { next(e); } };
@@ -17,8 +21,8 @@ const updateTestResult= async (req, res, next) => { try { ok(res, await svc.upda
 const getEnvironments = async (req, res, next) => { try { ok(res, await svc.getEnvironments()); } catch (e) { next(e); } };
 
 module.exports = {
-  getStats, list, getOne, create, update,
-  promote, rollback, toggleScopeLock,
+  getStats, list, getOne, create, approve, update,
+  promote, implement, rollback, toggleScopeLock,
   addComment, addTestScenario, updateTestResult,
-  getEnvironments,
+  getEnvironments, getSettings, updateSettings,
 };
