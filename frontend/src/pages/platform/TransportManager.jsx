@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { getTRStats, listTRs, promoteTR, implementTR, getTRSettings, updateTRSettings } from '../../api/platform';
 import toast from 'react-hot-toast';
 
+// Detect which environment this Nerve Center instance is running in
+const detectEnv = () => {
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return 'DEV';
+  if (host.includes('quality') || host.includes('render.com')) return 'QUALITY';
+  return 'PRODUCTION';
+};
+
+const CURRENT_ENV = detectEnv();
+
 const STATUS_META = {
   DRAFT:                  { label: 'Draft',              color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' },
   APPROVED:               { label: 'Approved',           color: '#1FB8D6', bg: 'rgba(31,184,214,0.12)'  },
@@ -32,7 +42,7 @@ export default function TransportManager() {
   const [search, setSearch]       = useState('');
   const [promoting, setPromoting] = useState(null);
   const [implementing, setImplementing] = useState(null);
-  const [activeEnv, setActiveEnv] = useState('DEV');
+  const [activeEnv, setActiveEnv] = useState(CURRENT_ENV);
   const [settings, setSettings]   = useState({ autoImplementQuality: false, autoImplementProduction: false });
   const [pushBanner, setPushBanner] = useState(null); // 'quality' | 'production' | null
 
@@ -208,24 +218,29 @@ export default function TransportManager() {
         </div>
       )}
 
-      {/* Environment Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: '#192533', border: '1px solid #1E2D3D', borderRadius: 10, padding: 4, width: 'fit-content' }}>
-        {[
-          { key: 'DEV',        label: 'DEV',        branch: 'dev',     color: '#64748B' },
-          { key: 'QUALITY',    label: 'Quality',    branch: 'quality', color: '#A78BFA' },
-          { key: 'PRODUCTION', label: 'Production', branch: 'main',    color: '#34D399' },
-          { key: 'ALL',        label: 'All',        branch: null,      color: '#94A3B8' },
-        ].map(({ key, label, branch, color }) => (
-          <button key={key} onClick={() => setActiveEnv(key)}
-            style={{
-              padding: '8px 20px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
-              background: activeEnv === key ? `${color}20` : 'transparent',
-              color: activeEnv === key ? color : '#64748B',
-            }}>
-            {label}
-            {branch && <span style={{ marginLeft: 6, fontSize: 10, color: activeEnv === key ? `${color}99` : '#334155', fontFamily: 'var(--font-mono)' }}>:{branch}</span>}
-          </button>
-        ))}
+      {/* Environment Badge — shows current environment only */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        {CURRENT_ENV === 'DEV' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(100,116,139,0.12)', border: '1px solid #334155', borderRadius: 8, padding: '8px 16px' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748B' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>DEV ENVIRONMENT</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#334155' }}>branch: dev · localhost</span>
+          </div>
+        )}
+        {CURRENT_ENV === 'QUALITY' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 8, padding: '8px 16px' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#A78BFA' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#A78BFA' }}>QUALITY ENVIRONMENT</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#A78BFA99' }}>branch: quality · Render + Vercel</span>
+          </div>
+        )}
+        {CURRENT_ENV === 'PRODUCTION' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 8, padding: '8px 16px' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34D399' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#34D399' }}>PRODUCTION ENVIRONMENT</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#34D39999' }}>branch: main · Railway</span>
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -243,6 +258,7 @@ export default function TransportManager() {
           {/* DEV view */}
           {(activeEnv === 'DEV' || activeEnv === 'ALL') && (
             <EnvBlock label="DEV" branch="dev" color="#64748B" borderColor="#1E2D3D">
+              {/* Intake */}
               {(byStatus('DRAFT').length > 0 || byStatus('APPROVED').length > 0) && (
                 <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px dashed #1E2D3D' }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#334155', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Intake — Awaiting Development</div>
@@ -252,10 +268,41 @@ export default function TransportManager() {
                   </div>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: 16 }}>
-                <KanbanCol status="DEVELOPMENT" />
-                <KanbanCol status="TESTING" />
+              {/* Active in DEV */}
+              <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px dashed #1E2D3D' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#334155', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Active in DEV</div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <KanbanCol status="DEVELOPMENT" />
+                  <KanbanCol status="TESTING" />
+                </div>
               </div>
+              {/* Pushed to Quality */}
+              {(byStatus('IN_QUALITY_RECEIVED').length > 0 || byStatus('IN_QUALITY').length > 0) && (
+                <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px dashed #1E2D3D' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#A78BFA', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Pushed to Quality</div>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <KanbanCol status="IN_QUALITY_RECEIVED" />
+                    <KanbanCol status="IN_QUALITY" />
+                  </div>
+                </div>
+              )}
+              {/* In Production */}
+              {(byStatus('IN_PRODUCTION_RECEIVED').length > 0 || byStatus('IN_PRODUCTION').length > 0) && (
+                <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px dashed #1E2D3D' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#34D399', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>In Production</div>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <KanbanCol status="IN_PRODUCTION_RECEIVED" />
+                    <KanbanCol status="IN_PRODUCTION" />
+                  </div>
+                </div>
+              )}
+              {/* Rolled Back */}
+              {byStatus('ROLLED_BACK').length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#F87171', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Rolled Back</div>
+                  <KanbanCol status="ROLLED_BACK" />
+                </div>
+              )}
             </EnvBlock>
           )}
 
