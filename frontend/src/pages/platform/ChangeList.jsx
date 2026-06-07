@@ -120,7 +120,7 @@ export default function ChangeList() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #1E2D3D' }}>
-                {['Code', 'Type', 'Title', 'Business Type', 'Priority', 'Status', 'Created'].map((h) => (
+                {['Code', 'Type', 'Target', 'Title', 'Business Type', 'Priority', 'Status', 'Created'].map((h) => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
                 ))}
               </tr>
@@ -140,6 +140,18 @@ export default function ChangeList() {
                       <span style={{ fontSize: 11, fontWeight: 700, color: item.type === 'CR' ? '#A78BFA' : '#1FB8D6', background: item.type === 'CR' ? 'rgba(167,139,250,0.12)' : 'rgba(31,184,214,0.12)', padding: '2px 8px', borderRadius: 99 }}>
                         {item.type === 'CR' ? 'CR' : 'ENH'}
                       </span>
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: item.crTarget === 'NERVE_CENTER' ? '#A78BFA' : '#1FB8D6', background: item.crTarget === 'NERVE_CENTER' ? 'rgba(167,139,250,0.12)' : 'rgba(31,184,214,0.08)', padding: '2px 7px', borderRadius: 99, width: 'fit-content' }}>
+                          {item.crTarget === 'NERVE_CENTER' ? 'Nerve Center' : 'Business'}
+                        </span>
+                        {item.raisedFrom && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: item.raisedFrom === 'PRODUCTION' ? '#34D399' : '#A78BFA', background: item.raisedFrom === 'PRODUCTION' ? 'rgba(52,211,153,0.1)' : 'rgba(167,139,250,0.1)', padding: '2px 7px', borderRadius: 99, width: 'fit-content' }}>
+                            from {item.raisedFrom}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: 13, color: '#E2E8F0', fontWeight: 500, maxWidth: 280 }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>

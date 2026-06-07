@@ -138,6 +138,16 @@ export default function ChangeDetail() {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
         <Chip color={PRIORITY_COLOR[cr.priority]} label={`${cr.priority} PRIORITY`} />
         <Chip color="#64748B" label={cr.businessTypeCode} mono />
+        <Chip
+          color={cr.crTarget === 'NERVE_CENTER' ? '#A78BFA' : '#1FB8D6'}
+          label={cr.crTarget === 'NERVE_CENTER' ? 'NERVE CENTER' : 'BUSINESS PLATFORM'}
+        />
+        {cr.raisedFrom && (
+          <Chip
+            color={cr.raisedFrom === 'PRODUCTION' ? '#34D399' : '#A78BFA'}
+            label={`FROM ${cr.raisedFrom}`}
+          />
+        )}
         {(cr.modulesAffected || []).map((m) => <Chip key={m} color="#334155" label={m} />)}
       </div>
 
@@ -194,6 +204,8 @@ export default function ChangeDetail() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Detail label="Created By"  value={cr.createdBy} />
               <Detail label="Created At"  value={new Date(cr.createdAt).toLocaleString('en-IN')} />
+              <Detail label="CR Target"   value={cr.crTarget === 'NERVE_CENTER' ? 'Nerve Center' : 'Business Platform'} />
+              {cr.raisedFrom && <Detail label="Raised From" value={cr.raisedFrom} />}
               {cr.approvedBy && <Detail label="Approved By" value={cr.approvedBy} />}
               {cr.approvedAt && <Detail label="Approved At" value={new Date(cr.approvedAt).toLocaleString('en-IN')} />}
               {cr.linkedTRId && <Detail label="Linked TR"   value={cr.linkedTRId} />}
