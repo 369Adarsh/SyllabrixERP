@@ -52,7 +52,7 @@ export default function TransportManager() {
       const [trRes, statsRes, settingsRes] = await Promise.all([listTRs(), getTRStats(), getTRSettings()]);
       setTrs(trRes.data.data || []);
       setStats(statsRes.data.data);
-      setSettings(settingsRes.data.data);
+      setSettings(settingsRes.data.data || { autoImplementQuality: false, autoImplementProduction: false });
     } catch { toast.error('Failed to load transport requests'); }
     finally  { setLoading(false); }
   };
