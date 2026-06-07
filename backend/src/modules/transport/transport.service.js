@@ -1,6 +1,25 @@
 const prisma = require('../../config/prisma');
 const config = require('../../config/env');
 
+// ── Test scenario parser (from Changes Made file) ─────────────────────────────
+const parseTestScenarios = (changesMadeFile) => {
+  if (!changesMadeFile) return { dev: [], quality: [] };
+  const lines = changesMadeFile.split('\n');
+  const dev = [], quality = [];
+  let section = null;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === '## TEST SCENARIOS (DEV)')     { section = 'DEV';     continue; }
+    if (trimmed === '## TEST SCENARIOS (QUALITY)') { section = 'QUALITY'; continue; }
+    if (trimmed.startsWith('## ') && section)      { section = null;      continue; }
+    if (section) {
+      const match = trimmed.match(/^\d+\.\s+(.+)$/) || trimmed.match(/^[-*]\s+(.+)$/);
+      if (match) (section === 'DEV' ? dev : quality).push(match[1].trim());
+    }
+  }
+  return { dev, quality };
+};
+
 // ── TR Code generator ──────────────────────────────────────────────────────────
 const generateTRCode = async () => {
   const year = new Date().getFullYear();
@@ -49,13 +68,15 @@ const getStats = async () => {
   const s = Object.fromEntries(byStatus.map((r) => [r.status, r._count.id]));
   return {
     total,
-    draft:        s.DRAFT         || 0,
-    approved:     s.APPROVED      || 0,
-    development:  s.DEVELOPMENT   || 0,
-    testing:      s.TESTING       || 0,
-    inQuality:    s.IN_QUALITY    || 0,
-    inProduction: s.IN_PRODUCTION || 0,
-    rolledBack:   s.ROLLED_BACK   || 0,
+    draft:                s.DRAFT                  || 0,
+    approved:             s.APPROVED               || 0,
+    development:          s.DEVELOPMENT            || 0,
+    testing:              s.TESTING                || 0,
+    inQualityReceived:    s.IN_QUALITY_RECEIVED    || 0,
+    inQuality:            s.IN_QUALITY             || 0,
+    inProductionReceived: s.IN_PRODUCTION_RECEIVED || 0,
+    inProduction:         s.IN_PRODUCTION          || 0,
+    rolledBack:           s.ROLLED_BACK            || 0,
     recent,
   };
 };
@@ -123,6 +144,18 @@ const create = async (data, adminName) => {
       },
     },
   });
+
+  // Auto-import test scenarios from Changes Made file
+  const parsed = parseTestScenarios(data.changesMadeFile);
+  const scenariosToCreate = [
+    ...parsed.dev.map((title) => ({ trId: tr.id, title, layer: 'DEV' })),
+    ...parsed.quality.map((title) => ({ trId: tr.id, title, layer: 'QUALITY' })),
+  ];
+  if (scenariosToCreate.length > 0) {
+    await prisma.transportTestScenario.createMany({ data: scenariosToCreate });
+  }
+
+  return tr;
 };
 
 // ── Approve ────────────────────────────────────────────────────────────────────
@@ -168,11 +201,13 @@ const update = async (id, data) =>
   });
 
 // ── Promote ────────────────────────────────────────────────────────────────────
+// Strict one-way pipeline: DEV → QUALITY → PRODUCTION only. No skipping.
+// Promotion lands in RECEIVED state first. Admin must implement (or auto-implement is on).
 const PROMOTE_MAP = {
-  APPROVED:    { next: 'DEVELOPMENT',  action: 'STATUS_CHANGED',          git: null },
-  DEVELOPMENT: { next: 'TESTING',      action: 'STATUS_CHANGED',          git: null },
-  TESTING:     { next: 'IN_QUALITY',   action: 'PROMOTED_TO_QUALITY',     git: { from: 'dev',     to: 'quality' } },
-  IN_QUALITY:  { next: 'IN_PRODUCTION', action: 'PROMOTED_TO_PRODUCTION', git: { from: 'quality', to: 'main'    } },
+  APPROVED:    { next: 'DEVELOPMENT',           action: 'STATUS_CHANGED',        git: null },
+  DEVELOPMENT: { next: 'TESTING',               action: 'STATUS_CHANGED',        git: null },
+  TESTING:     { next: 'IN_QUALITY_RECEIVED',   action: 'RECEIVED_IN_QUALITY',   git: { from: 'dev',     to: 'quality' } },
+  IN_QUALITY:  { next: 'IN_PRODUCTION_RECEIVED', action: 'RECEIVED_IN_PRODUCTION', git: { from: 'quality', to: 'main' } },
 };
 
 const promote = async (id, adminName, notes) => {
@@ -182,6 +217,22 @@ const promote = async (id, adminName, notes) => {
   const step = PROMOTE_MAP[tr.status];
   if (!step) throw new Error(`Cannot promote TR with status ${tr.status}`);
   if (tr.scopeLocked) throw new Error(`TR is scope-locked (${tr.businessTypeCode}). Unlock before promoting.`);
+
+  // Test gate — TESTING → IN_QUALITY requires all DEV scenarios PASSED
+  if (tr.status === 'TESTING') {
+    const devScenarios = await prisma.transportTestScenario.findMany({ where: { trId: id, layer: 'DEV' } });
+    if (devScenarios.length === 0) throw new Error('Add at least one DEV test scenario before promoting to Quality.');
+    const notPassed = devScenarios.filter((s) => s.result !== 'PASSED');
+    if (notPassed.length > 0) throw new Error(`${notPassed.length} DEV test scenario(s) not passed. All must be PASSED before promoting to Quality.`);
+  }
+
+  // Test gate — IN_QUALITY → IN_PRODUCTION requires all QUALITY scenarios PASSED
+  if (tr.status === 'IN_QUALITY') {
+    const qualityScenarios = await prisma.transportTestScenario.findMany({ where: { trId: id, layer: 'QUALITY' } });
+    if (qualityScenarios.length === 0) throw new Error('Add at least one QUALITY test scenario before promoting to Production.');
+    const notPassed = qualityScenarios.filter((s) => s.result !== 'PASSED');
+    if (notPassed.length > 0) throw new Error(`${notPassed.length} QUALITY test scenario(s) not passed. All must be PASSED before promoting to Production.`);
+  }
 
   let mergeData = {};
 
@@ -202,10 +253,10 @@ const promote = async (id, adminName, notes) => {
 
   const now = new Date();
   const timeField =
-    step.next === 'IN_QUALITY'    ? { promotedToQualityAt: now } :
-    step.next === 'IN_PRODUCTION' ? { promotedToProdAt: now }    : {};
+    step.next === 'IN_QUALITY_RECEIVED'   ? { promotedToQualityAt: now } :
+    step.next === 'IN_PRODUCTION_RECEIVED' ? { promotedToProdAt: now }    : {};
 
-  return prisma.transportRequest.update({
+  const updated = await prisma.transportRequest.update({
     where: { id },
     data: {
       status: step.next,
@@ -222,6 +273,17 @@ const promote = async (id, adminName, notes) => {
       },
     },
   });
+
+  // Auto-implement if setting is enabled
+  const settings = await prisma.tRSettings.findFirst();
+  if (step.next === 'IN_QUALITY_RECEIVED' && settings?.autoImplementQuality) {
+    return implement(updated.id, 'System (Auto-Implement)');
+  }
+  if (step.next === 'IN_PRODUCTION_RECEIVED' && settings?.autoImplementProduction) {
+    return implement(updated.id, 'System (Auto-Implement)');
+  }
+
+  return updated;
 };
 
 // ── Rollback ───────────────────────────────────────────────────────────────────
@@ -288,7 +350,7 @@ const addComment = async (trId, body, adminName) => {
 // ── Test scenarios ─────────────────────────────────────────────────────────────
 const addTestScenario = async (trId, data) =>
   prisma.transportTestScenario.create({
-    data: { trId, title: data.title, steps: data.steps || null, expectedResult: data.expectedResult || null },
+    data: { trId, layer: data.layer || 'DEV', title: data.title, steps: data.steps || null, expectedResult: data.expectedResult || null },
   });
 
 const updateTestResult = async (scenarioId, data, adminName) => {
@@ -302,13 +364,79 @@ const updateTestResult = async (scenarioId, data, adminName) => {
   return scenario;
 };
 
+// ── Implement (RECEIVED → active) ─────────────────────────────────────────────
+const implement = async (id, adminName) => {
+  const tr = await prisma.transportRequest.findUnique({ where: { id } });
+  if (!tr) throw new Error('TR not found');
+
+  if (tr.status === 'IN_QUALITY_RECEIVED') {
+    return prisma.transportRequest.update({
+      where: { id },
+      data: {
+        status: 'IN_QUALITY',
+        logs: {
+          create: {
+            action:      'IMPLEMENTED_IN_QUALITY',
+            fromStatus:  'IN_QUALITY_RECEIVED',
+            toStatus:    'IN_QUALITY',
+            performedBy: adminName,
+            notes:       'TR implemented in Quality — quality testing now active',
+          },
+        },
+      },
+    });
+  }
+
+  if (tr.status === 'IN_PRODUCTION_RECEIVED') {
+    return prisma.transportRequest.update({
+      where: { id },
+      data: {
+        status: 'IN_PRODUCTION',
+        logs: {
+          create: {
+            action:      'IMPLEMENTED_IN_PRODUCTION',
+            fromStatus:  'IN_PRODUCTION_RECEIVED',
+            toStatus:    'IN_PRODUCTION',
+            performedBy: adminName,
+            notes:       'TR implemented in Production — now LIVE',
+          },
+        },
+      },
+    });
+  }
+
+  throw new Error('TR is not in a received state');
+};
+
+// ── TR Settings ────────────────────────────────────────────────────────────────
+const getSettings = async () => {
+  let settings = await prisma.tRSettings.findFirst();
+  if (!settings) {
+    settings = await prisma.tRSettings.create({
+      data: { autoImplementQuality: false, autoImplementProduction: false },
+    });
+  }
+  return settings;
+};
+
+const updateSettings = async (data) => {
+  const settings = await getSettings();
+  return prisma.tRSettings.update({
+    where: { id: settings.id },
+    data: {
+      autoImplementQuality:    data.autoImplementQuality    ?? settings.autoImplementQuality,
+      autoImplementProduction: data.autoImplementProduction ?? settings.autoImplementProduction,
+    },
+  });
+};
+
 // ── Environment status ─────────────────────────────────────────────────────────
 const getEnvironments = async () => {
   const [devCount, qualityTRs, prodTRs, rollbacks] = await Promise.all([
-    prisma.transportRequest.count({ where: { status: 'DEVELOPMENT' } }),
-    prisma.transportRequest.findMany({ where: { status: 'IN_QUALITY' },    orderBy: { promotedToQualityAt: 'desc' }, take: 10 }),
-    prisma.transportRequest.findMany({ where: { status: 'IN_PRODUCTION' }, orderBy: { promotedToProdAt: 'desc'    }, take: 10 }),
-    prisma.transportRequest.findMany({ where: { status: 'ROLLED_BACK' },   orderBy: { rolledBackAt: 'desc'        }, take: 5  }),
+    prisma.transportRequest.count({ where: { status: { in: ['DEVELOPMENT', 'TESTING'] } } }),
+    prisma.transportRequest.findMany({ where: { status: { in: ['IN_QUALITY_RECEIVED', 'IN_QUALITY'] } },    orderBy: { promotedToQualityAt: 'desc' }, take: 10 }),
+    prisma.transportRequest.findMany({ where: { status: { in: ['IN_PRODUCTION_RECEIVED', 'IN_PRODUCTION'] } }, orderBy: { promotedToProdAt: 'desc' }, take: 10 }),
+    prisma.transportRequest.findMany({ where: { status: 'ROLLED_BACK' },   orderBy: { rolledBackAt: 'desc' }, take: 5 }),
   ]);
 
   let branches = null;
@@ -330,7 +458,7 @@ const getEnvironments = async () => {
 
 module.exports = {
   getStats, list, get, create, approve, update,
-  promote, rollback, toggleScopeLock,
+  promote, implement, rollback, toggleScopeLock,
   addComment, addTestScenario, updateTestResult,
-  getEnvironments,
+  getEnvironments, getSettings, updateSettings,
 };

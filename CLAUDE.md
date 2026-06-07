@@ -57,6 +57,19 @@ Contents must include:
 - **Business Type IDs:** Always SYL-BC-* format. Confirm before touching any module.
 - **Color palette:** Slate + Teal (#1FB8D6 / #27DCFF). Never deviate.
 
+### Three Environments — NEVER FORGET
+
+| Environment | Platform | Branch |
+|---|---|---|
+| DEV | **Localhost** | `dev` |
+| QUALITY | **Render** | `quality` |
+| PRODUCTION | **Railway** | `main` |
+
+- DEV = localhost only. No public URL.
+- QUALITY = Render deployment, auto-deploys when `quality` branch changes
+- PRODUCTION = Railway deployment, auto-deploys when `main` branch changes
+- Nerve Center (localhost) controls all promotions via GitHub API
+
 ### Reference Files
 
 - `docs/DEVELOPMENT_PROCESS.md` — full process detail

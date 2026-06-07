@@ -3392,7 +3392,9 @@ enum TRStatus {
   APPROVED
   DEVELOPMENT
   TESTING
+  IN_QUALITY_RECEIVED
   IN_QUALITY
+  IN_PRODUCTION_RECEIVED
   IN_PRODUCTION
   ROLLED_BACK
 }
@@ -3416,6 +3418,10 @@ enum TRLogAction {
   CREATED
   APPROVED
   STATUS_CHANGED
+  RECEIVED_IN_QUALITY
+  IMPLEMENTED_IN_QUALITY
+  RECEIVED_IN_PRODUCTION
+  IMPLEMENTED_IN_PRODUCTION
   PROMOTED_TO_QUALITY
   PROMOTED_TO_PRODUCTION
   ROLLED_BACK
@@ -3499,6 +3505,7 @@ model TransportComment {
 model TransportTestScenario {
   id             String    @id @default(uuid())
   trId           String
+  layer          String    @default("DEV")
   title          String
   steps          String?
   expectedResult String?
@@ -3512,4 +3519,14 @@ model TransportTestScenario {
 
   @@index([trId])
   @@map("transport_test_scenarios")
+}
+
+model TRSettings {
+  id                      String   @id @default(uuid())
+  autoImplementQuality    Boolean  @default(false)
+  autoImplementProduction Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("tr_settings")
 }

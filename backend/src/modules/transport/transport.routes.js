@@ -12,7 +12,10 @@ router.post('/',                                          authorizeSA('SUPER', '
 router.patch('/:id',                                      authorizeSA('SUPER', 'ADMIN'),             ctrl.update);
 router.patch('/:id/approve',                              authorizeSA('SUPER', 'ADMIN'),             ctrl.approve);
 router.post('/:id/promote',                               authorizeSA('SUPER', 'ADMIN'),             ctrl.promote);
+router.post('/:id/implement',                             authorizeSA('SUPER', 'ADMIN'),             ctrl.implement);
 router.post('/:id/rollback',                              authorizeSA('SUPER'),                      ctrl.rollback);
+router.get('/settings',                                   authorizeSA('SUPER', 'ADMIN', 'SUPPORT'), ctrl.getSettings);
+router.patch('/settings',                                 authorizeSA('SUPER', 'ADMIN'),             ctrl.updateSettings);
 router.patch('/:id/scope-lock',                           authorizeSA('SUPER', 'ADMIN'),             ctrl.toggleScopeLock);
 router.post('/:id/comments',                              authorizeSA('SUPER', 'ADMIN', 'SUPPORT'), ctrl.addComment);
 router.post('/:id/test-scenarios',                        authorizeSA('SUPER', 'ADMIN'),             ctrl.addTestScenario);

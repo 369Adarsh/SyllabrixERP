@@ -214,7 +214,10 @@ export const createTR                = (data)       => api.post('/transport', da
 export const updateTR                = (id, data)   => api.patch(`/transport/${id}`, data);
 export const approveTR               = (id)         => api.patch(`/transport/${id}/approve`);
 export const promoteTR               = (id, notes)  => api.post(`/transport/${id}/promote`, { notes });
+export const implementTR             = (id)         => api.post(`/transport/${id}/implement`);
 export const rollbackTR              = (id, reason) => api.post(`/transport/${id}/rollback`, { reason });
+export const getTRSettings           = ()           => api.get('/transport/settings');
+export const updateTRSettings        = (data)       => api.patch('/transport/settings', data);
 export const toggleTRScopeLock       = (id)         => api.patch(`/transport/${id}/scope-lock`);
 export const addTRComment            = (id, body)   => api.post(`/transport/${id}/comments`, { body });
 export const addTRTestScenario       = (id, data)   => api.post(`/transport/${id}/test-scenarios`, data);
