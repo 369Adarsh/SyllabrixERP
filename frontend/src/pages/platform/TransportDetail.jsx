@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getTR, promoteTR, rollbackTR, toggleTRScopeLock, addTRComment, addTRTestScenario, updateTRTestResult } from '../../api/platform';
+import { getTR, approveTR, promoteTR, implementTR, rollbackTR, toggleTRScopeLock, addTRComment, addTRTestScenario, updateTRTestResult } from '../../api/platform';
 import toast from 'react-hot-toast';
 
 const STATUS_META = {
-  DEVELOPMENT:   { label: 'Development',  color: '#64748B' },
-  TESTING:       { label: 'Testing',       color: '#EAB308' },
-  IN_QUALITY:    { label: 'In Quality',    color: '#A78BFA' },
-  IN_PRODUCTION: { label: 'In Production', color: '#34D399' },
-  ROLLED_BACK:   { label: 'Rolled Back',   color: '#F87171' },
+  DRAFT:                  { label: 'Draft',                  color: '#94A3B8' },
+  APPROVED:               { label: 'Approved',               color: '#1FB8D6' },
+  DEVELOPMENT:            { label: 'Development',            color: '#64748B' },
+  TESTING:                { label: 'Testing',                color: '#EAB308' },
+  IN_QUALITY_RECEIVED:    { label: 'Received in Quality',    color: '#F97316' },
+  IN_QUALITY:             { label: 'In Quality',             color: '#A78BFA' },
+  IN_PRODUCTION_RECEIVED: { label: 'Received in Production', color: '#F97316' },
+  IN_PRODUCTION:          { label: 'In Production',          color: '#34D399' },
+  ROLLED_BACK:            { label: 'Rolled Back',            color: '#F87171' },
 };
 
 const CATEGORY_COLOR = {
@@ -19,17 +23,19 @@ const PRIORITY_COLOR = { CRITICAL: '#EF4444', HIGH: '#F97316', MEDIUM: '#EAB308'
 
 const LOG_ICON = {
   CREATED:                '✦',
+  APPROVED:               '✔',
   STATUS_CHANGED:         '→',
   PROMOTED_TO_QUALITY:    '↑',
-  PROMOTED_TO_PRODUCTION: '🚀',
+  PROMOTED_TO_PRODUCTION: '▲',
   ROLLED_BACK:            '↩',
-  COMMENT_ADDED:          '💬',
-  SCOPE_LOCKED:           '🔒',
-  SCOPE_UNLOCKED:         '🔓',
+  COMMENT_ADDED:          '·',
+  SCOPE_LOCKED:           '⊘',
+  SCOPE_UNLOCKED:         '○',
   TEST_RESULT_RECORDED:   '✓',
 };
 
-const NEXT_LABEL = { DEVELOPMENT: 'Testing', TESTING: 'Quality', IN_QUALITY: 'Production' };
+const NEXT_LABEL = { APPROVED: 'Development', DEVELOPMENT: 'Testing', TESTING: 'Quality', IN_QUALITY: 'Production' };
+const RECEIVED_LABEL = { IN_QUALITY_RECEIVED: 'Quality', IN_PRODUCTION_RECEIVED: 'Production' };
 
 export default function TransportDetail() {
   const { id } = useParams();
@@ -44,7 +50,7 @@ export default function TransportDetail() {
   const [comment, setComment] = useState('');
   // Test scenario form
   const [newScenario, setNewScenario] = useState({ title: '', steps: '', expectedResult: '' });
-  const [addingScenario, setAddingScenario] = useState(false);
+  const [addingScenario, setAddingScenario] = useState(null); // 'DEV' | 'QUALITY' | null
   // Rollback reason modal
   const [rollbackModal, setRollbackModal] = useState(false);
   const [rollbackReason, setRollbackReason] = useState('');
@@ -93,6 +99,63 @@ export default function TransportDetail() {
     finally    { setWorking(false); }
   };
 
+  const handleImplement = async () => {
+    const env = RECEIVED_LABEL[tr.status];
+    if (!window.confirm(`Implement "${tr.trCode}" in ${env}? This will activate it for testing.`)) return;
+    setWorking(true);
+    try {
+      await implementTR(id);
+      toast.success(`${tr.trCode} implemented in ${env}`);
+      load();
+    } catch (e) { toast.error(e.response?.data?.message || 'Implement failed'); }
+    finally    { setWorking(false); }
+  };
+
+  const handleApprove = async () => {
+    if (!window.confirm(`Approve "${tr.trCode}: ${tr.title}"? This will allow development to begin.`)) return;
+    setWorking(true);
+    try {
+      await approveTR(id);
+      toast.success(`${tr.trCode} approved — ready for development`);
+      load();
+    } catch (e) { toast.error(e.response?.data?.message || 'Approval failed'); }
+    finally    { setWorking(false); }
+  };
+
+  const copyWorkOrder = () => {
+    const lines = [
+      '╔══════════════════════════════════════════════════════╗',
+      '║              SYLLABRIX WORK ORDER                    ║',
+      '╠══════════════════════════════════════════════════════╣',
+      `║ TR Code      : ${tr.trCode}`,
+      `║ Type         : ${tr.category}`,
+      `║ Title        : ${tr.title}`,
+      `║ Business Type: ${tr.businessTypeCode}`,
+      `║ Modules      : ${(tr.modulesAffected || []).join(', ') || '—'}`,
+      `║ Priority     : ${tr.priority}`,
+      '╠══════════════════════════════════════════════════════╣',
+      '║ PROBLEM',
+      tr.problem || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ SOLUTION',
+      tr.solution || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ IN SCOPE',
+      tr.inScope || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ OUT OF SCOPE',
+      tr.outOfScope || '(not specified)',
+      '╠══════════════════════════════════════════════════════╣',
+      '║ TEST SCENARIOS',
+      ...(tr.testScenarios?.length
+        ? tr.testScenarios.map((s, i) => `${i + 1}. ${s.title}`)
+        : ['(no test scenarios added yet)']),
+      '╚══════════════════════════════════════════════════════╝',
+    ];
+    navigator.clipboard.writeText(lines.join('\n'));
+    toast.success('Work Order copied to clipboard');
+  };
+
   const handleComment = async () => {
     if (!comment.trim()) return;
     try {
@@ -102,12 +165,12 @@ export default function TransportDetail() {
     } catch { toast.error('Failed to add comment'); }
   };
 
-  const handleAddScenario = async () => {
+  const handleAddScenario = async (layer) => {
     if (!newScenario.title.trim()) return toast.error('Scenario title required');
     try {
-      await addTRTestScenario(id, newScenario);
+      await addTRTestScenario(id, { ...newScenario, layer });
       setNewScenario({ title: '', steps: '', expectedResult: '' });
-      setAddingScenario(false);
+      setAddingScenario(null);
       load();
     } catch { toast.error('Failed to add test scenario'); }
   };
@@ -122,8 +185,10 @@ export default function TransportDetail() {
   if (loading) return <div style={{ padding: 40, color: '#64748B', fontSize: 14 }}>Loading…</div>;
   if (!tr)     return <div style={{ padding: 40, color: '#F87171', fontSize: 14 }}>TR not found</div>;
 
-  const statusMeta = STATUS_META[tr.status];
-  const canPromote = NEXT_LABEL[tr.status] && !tr.scopeLocked;
+  const statusMeta  = STATUS_META[tr.status] || STATUS_META.DEVELOPMENT;
+  const canApprove  = tr.status === 'DRAFT';
+  const isReceived  = tr.status === 'IN_QUALITY_RECEIVED' || tr.status === 'IN_PRODUCTION_RECEIVED';
+  const canPromote  = !!NEXT_LABEL[tr.status] && !tr.scopeLocked && !isReceived;
   const canRollback = ['IN_QUALITY', 'IN_PRODUCTION'].includes(tr.status);
 
   return (
@@ -156,20 +221,36 @@ export default function TransportDetail() {
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button onClick={copyWorkOrder}
+            style={{ ...ghostBtn, color: '#1FB8D6', borderColor: 'rgba(31,184,214,0.3)' }}>
+            Copy Work Order
+          </button>
           <button onClick={handleScopeLock} disabled={working}
             style={{ ...ghostBtn, color: tr.scopeLocked ? '#F97316' : '#64748B', borderColor: tr.scopeLocked ? 'rgba(249,115,22,0.4)' : '#1E2D3D' }}>
-            {tr.scopeLocked ? '🔓 Unlock' : '🔒 Lock'}
+            {tr.scopeLocked ? 'Unlock' : 'Lock'}
           </button>
           {canRollback && (
             <button onClick={() => setRollbackModal(true)} disabled={working}
               style={{ ...ghostBtn, color: '#F87171', borderColor: 'rgba(248,113,113,0.3)' }}>
-              ↩ Rollback
+              Rollback
+            </button>
+          )}
+          {isReceived && (
+            <button onClick={handleImplement} disabled={working}
+              style={{ padding: '8px 20px', background: 'linear-gradient(135deg,#F97316,#FB923C)', border: 'none', borderRadius: 8, color: '#0B131C', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+              {working ? '…' : `Implement in ${RECEIVED_LABEL[tr.status]}`}
+            </button>
+          )}
+          {canApprove && (
+            <button onClick={handleApprove} disabled={working}
+              style={{ padding: '8px 20px', background: 'linear-gradient(135deg,#34D399,#10B981)', border: 'none', borderRadius: 8, color: '#0B131C', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+              {working ? '…' : 'Approve TR'}
             </button>
           )}
           {canPromote && (
             <button onClick={handlePromote} disabled={working}
               style={{ padding: '8px 20px', background: 'linear-gradient(135deg,#1FB8D6,#27DCFF)', border: 'none', borderRadius: 8, color: '#0B131C', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-              {working ? '…' : `Promote → ${NEXT_LABEL[tr.status]}`}
+              {working ? '…' : tr.status === 'APPROVED' ? 'Begin Development' : `Promote → ${NEXT_LABEL[tr.status]}`}
             </button>
           )}
         </div>
@@ -201,6 +282,38 @@ export default function TransportDetail() {
               <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.description}</p>
             </Section>
           )}
+          {(tr.problem || tr.solution) && (
+            <Section title="Change Document">
+              {tr.problem && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Problem</div>
+                  <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.problem}</p>
+                </div>
+              )}
+              {tr.solution && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Solution</div>
+                  <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.solution}</p>
+                </div>
+              )}
+              {(tr.inScope || tr.outOfScope) && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  {tr.inScope && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#34D399', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>In Scope</div>
+                      <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.inScope}</p>
+                    </div>
+                  )}
+                  {tr.outOfScope && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#F87171', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Out of Scope</div>
+                      <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.outOfScope}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Section>
+          )}
           {tr.testPlanNotes && (
             <Section title="Test Plan Notes">
               <p style={{ color: '#94A3B8', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{tr.testPlanNotes}</p>
@@ -211,6 +324,8 @@ export default function TransportDetail() {
               <Detail label="Created By" value={tr.createdBy} />
               <Detail label="Created At" value={new Date(tr.createdAt).toLocaleString('en-IN')} />
               {tr.assignedReviewer && <Detail label="Reviewer" value={tr.assignedReviewer} />}
+              {tr.approvedBy && <Detail label="Approved By" value={tr.approvedBy} />}
+              {tr.approvedAt && <Detail label="Approved At" value={new Date(tr.approvedAt).toLocaleString('en-IN')} />}
               {tr.promotedToQualityAt && <Detail label="Quality At" value={new Date(tr.promotedToQualityAt).toLocaleString('en-IN')} />}
               {tr.promotedToProdAt && <Detail label="Production At" value={new Date(tr.promotedToProdAt).toLocaleString('en-IN')} />}
               {tr.rolledBackAt && <Detail label="Rolled Back At" value={new Date(tr.rolledBackAt).toLocaleString('en-IN')} />}
@@ -232,53 +347,39 @@ export default function TransportDetail() {
       {/* Tab: Tests */}
       {tab === 'tests' && (
         <div>
-          {tr.testScenarios?.map((s) => (
-            <div key={s.id} style={{ background: '#192533', border: '1px solid #1E2D3D', borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#E2E8F0' }}>{s.title}</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {['PASSED', 'FAILED'].map((r) => (
-                    <button key={r} onClick={() => handleTestResult(s.id, r)}
-                      style={{ padding: '3px 12px', fontSize: 11, fontWeight: 700, borderRadius: 6, cursor: 'pointer', border: 'none',
-                        background: s.result === r ? (r === 'PASSED' ? '#34D399' : '#F87171') : '#1E2D3D',
-                        color:      s.result === r ? '#0B131C' : '#64748B',
-                      }}>
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {s.steps && <p style={{ fontSize: 12, color: '#64748B', marginBottom: 4, whiteSpace: 'pre-wrap' }}><strong style={{ color: '#94A3B8' }}>Steps:</strong> {s.steps}</p>}
-              {s.expectedResult && <p style={{ fontSize: 12, color: '#64748B', whiteSpace: 'pre-wrap' }}><strong style={{ color: '#94A3B8' }}>Expected:</strong> {s.expectedResult}</p>}
-              {s.testedBy && <p style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>Tested by {s.testedBy} · {s.testedAt ? new Date(s.testedAt).toLocaleDateString('en-IN') : ''}</p>}
-            </div>
-          ))}
+          {/* DEV Test Scenarios */}
+          <ScenarioLayer
+            label="DEV Test Scenarios"
+            sublabel="branch: dev — run during TESTING stage"
+            color="#64748B"
+            scenarios={(tr.testScenarios || []).filter((s) => s.layer === 'DEV' || !s.layer)}
+            onResult={handleTestResult}
+            canAdd={['DEVELOPMENT', 'TESTING', 'APPROVED'].includes(tr.status)}
+            addingScenario={addingScenario === 'DEV'}
+            onStartAdd={() => setAddingScenario('DEV')}
+            onCancelAdd={() => setAddingScenario(null)}
+            newScenario={newScenario}
+            setNewScenario={setNewScenario}
+            onAdd={() => handleAddScenario('DEV')}
+          />
 
-          {!addingScenario ? (
-            <button onClick={() => setAddingScenario(true)}
-              style={{ padding: '8px 16px', background: 'rgba(31,184,214,0.08)', border: '1px dashed #1FB8D6', borderRadius: 8, color: '#1FB8D6', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%', marginTop: 8 }}>
-              + Add Test Scenario
-            </button>
-          ) : (
-            <div style={{ background: '#192533', border: '1px solid #1E2D3D', borderRadius: 10, padding: 16, marginTop: 8 }}>
-              <input value={newScenario.title} onChange={(e) => setNewScenario((s) => ({ ...s, title: e.target.value }))}
-                placeholder="Scenario title *" style={{ ...miniInput, marginBottom: 8 }} />
-              <textarea value={newScenario.steps} onChange={(e) => setNewScenario((s) => ({ ...s, steps: e.target.value }))}
-                placeholder="Steps to reproduce / test…" rows={2} style={{ ...miniInput, resize: 'vertical', marginBottom: 8 }} />
-              <textarea value={newScenario.expectedResult} onChange={(e) => setNewScenario((s) => ({ ...s, expectedResult: e.target.value }))}
-                placeholder="Expected result…" rows={2} style={{ ...miniInput, resize: 'vertical', marginBottom: 12 }} />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handleAddScenario}
-                  style={{ padding: '7px 16px', background: 'linear-gradient(135deg,#1FB8D6,#27DCFF)', border: 'none', borderRadius: 7, color: '#0B131C', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                  Add
-                </button>
-                <button onClick={() => setAddingScenario(false)}
-                  style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #1E2D3D', borderRadius: 7, color: '#64748B', fontSize: 12, cursor: 'pointer' }}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
+          <div style={{ margin: '20px 0', borderTop: '1px solid #1E2D3D' }} />
+
+          {/* QUALITY Test Scenarios */}
+          <ScenarioLayer
+            label="QUALITY Test Scenarios"
+            sublabel="branch: quality — run during IN_QUALITY stage"
+            color="#A78BFA"
+            scenarios={(tr.testScenarios || []).filter((s) => s.layer === 'QUALITY')}
+            onResult={handleTestResult}
+            canAdd={tr.status === 'IN_QUALITY'}
+            addingScenario={addingScenario === 'QUALITY'}
+            onStartAdd={() => setAddingScenario('QUALITY')}
+            onCancelAdd={() => setAddingScenario(null)}
+            newScenario={newScenario}
+            setNewScenario={setNewScenario}
+            onAdd={() => handleAddScenario('QUALITY')}
+          />
         </div>
       )}
 
@@ -386,9 +487,69 @@ const Detail = ({ label, value }) => (
 );
 
 const StatusPill = ({ status }) => {
-  const m = { DEVELOPMENT: '#64748B', TESTING: '#EAB308', IN_QUALITY: '#A78BFA', IN_PRODUCTION: '#34D399', ROLLED_BACK: '#F87171' };
-  return <span style={{ fontSize: 11, color: m[status] || '#64748B', background: `${m[status]}18`, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>{status.replace(/_/g, ' ')}</span>;
+  const m = { DRAFT: '#94A3B8', APPROVED: '#1FB8D6', DEVELOPMENT: '#64748B', TESTING: '#EAB308', IN_QUALITY_RECEIVED: '#F97316', IN_QUALITY: '#A78BFA', IN_PRODUCTION_RECEIVED: '#F97316', IN_PRODUCTION: '#34D399', ROLLED_BACK: '#F87171' };
+  const c = m[status] || '#64748B';
+  return <span style={{ fontSize: 11, color: c, background: `${c}18`, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>{status.replace(/_/g, ' ')}</span>;
 };
+
+const ScenarioLayer = ({ label, sublabel, color, scenarios, onResult, canAdd, addingScenario, onStartAdd, onCancelAdd, newScenario, setNewScenario, onAdd }) => (
+  <div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+      <span style={{ fontSize: 12, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</span>
+      <span style={{ fontSize: 11, color: '#334155' }}>{sublabel}</span>
+      <span style={{ marginLeft: 'auto', background: `${color}18`, color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{scenarios.length}</span>
+    </div>
+
+    {scenarios.map((s) => (
+      <div key={s.id} style={{ background: '#192533', border: '1px solid #1E2D3D', borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', flex: 1, paddingRight: 12 }}>{s.title}</span>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            {['PASSED', 'FAILED'].map((r) => (
+              <button key={r} onClick={() => onResult(s.id, r)}
+                style={{ padding: '3px 12px', fontSize: 11, fontWeight: 700, borderRadius: 6, cursor: 'pointer', border: 'none',
+                  background: s.result === r ? (r === 'PASSED' ? '#34D399' : '#F87171') : '#1E2D3D',
+                  color: s.result === r ? '#0B131C' : '#64748B',
+                }}>
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        {s.steps && <p style={{ fontSize: 12, color: '#64748B', marginBottom: 4, whiteSpace: 'pre-wrap' }}><strong style={{ color: '#94A3B8' }}>Steps:</strong> {s.steps}</p>}
+        {s.expectedResult && <p style={{ fontSize: 12, color: '#64748B', whiteSpace: 'pre-wrap' }}><strong style={{ color: '#94A3B8' }}>Expected:</strong> {s.expectedResult}</p>}
+        {s.testedBy && <p style={{ fontSize: 11, color: '#334155', marginTop: 6 }}>Tested by {s.testedBy} · {s.testedAt ? new Date(s.testedAt).toLocaleDateString('en-IN') : ''}</p>}
+      </div>
+    ))}
+
+    {canAdd && !addingScenario && (
+      <button onClick={onStartAdd}
+        style={{ padding: '8px 16px', background: `${color}10`, border: `1px dashed ${color}`, borderRadius: 8, color, fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%' }}>
+        + Add {label.split(' ')[0]} Scenario
+      </button>
+    )}
+    {canAdd && addingScenario && (
+      <div style={{ background: '#192533', border: '1px solid #1E2D3D', borderRadius: 10, padding: 16 }}>
+        <input value={newScenario.title} onChange={(e) => setNewScenario((s) => ({ ...s, title: e.target.value }))}
+          placeholder="Scenario title *" style={{ ...miniInput, marginBottom: 8 }} />
+        <textarea value={newScenario.steps} onChange={(e) => setNewScenario((s) => ({ ...s, steps: e.target.value }))}
+          placeholder="Location + steps to test…" rows={2} style={{ ...miniInput, resize: 'vertical', marginBottom: 8 }} />
+        <textarea value={newScenario.expectedResult} onChange={(e) => setNewScenario((s) => ({ ...s, expectedResult: e.target.value }))}
+          placeholder="Expected result…" rows={2} style={{ ...miniInput, resize: 'vertical', marginBottom: 12 }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onAdd} style={{ padding: '7px 16px', background: 'linear-gradient(135deg,#1FB8D6,#27DCFF)', border: 'none', borderRadius: 7, color: '#0B131C', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Add</button>
+          <button onClick={onCancelAdd} style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #1E2D3D', borderRadius: 7, color: '#64748B', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+        </div>
+      </div>
+    )}
+    {!canAdd && scenarios.length === 0 && (
+      <div style={{ border: '1px dashed #1E2D3D', borderRadius: 8, padding: '14px', textAlign: 'center', color: '#334155', fontSize: 12 }}>
+        Scenarios will be added when TR reaches the {label.includes('QUALITY') ? 'IN_QUALITY' : 'TESTING'} stage
+      </div>
+    )}
+  </div>
+);
 
 const backBtn   = { padding: '7px 14px', background: 'transparent', border: '1px solid #1E2D3D', borderRadius: 7, color: '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer' };
 const ghostBtn  = { padding: '8px 14px', background: 'transparent', border: '1px solid #1E2D3D', borderRadius: 8, color: '#64748B', fontSize: 13, fontWeight: 600, cursor: 'pointer' };
