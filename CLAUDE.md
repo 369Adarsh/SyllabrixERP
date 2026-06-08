@@ -1,52 +1,36 @@
 # Syllabrix — Claude Code Instructions
 
-## MANDATORY DEVELOPMENT PROCESS
+## ⚠️ TEMPORARY MODE — In effect until TR system v3.0 is fully built
 
-These rules apply to every single conversation in this project without exception.
+**The mandatory CR/ENH gate is SUSPENDED.**
 
-### The Hard Gate
+Build whatever the user asks directly. No CR document required. No CHANGES file required. No TR creation required.
 
-**No code is written without an approved CR or Enhancement document uploaded to the chat.**
-
-If the user asks me to build, fix, change, or modify anything:
-1. Ask: "Please upload the approved CR or ENH document from Nerve Center."
-2. Wait for the `.md` file to be uploaded.
-3. Only after reading the file — confirm scope and begin.
-
-### Full Process (in order)
-
+After every build, push manually:
 ```
-1. User creates CR or ENH at /platform/changes in Nerve Center
-2. User approves it — downloads CR-YYYY-NNN.md or ENH-YYYY-NNN.md
-3. User uploads the file to this chat
-4. Claude reads it → confirms scope → builds ONLY what In Scope says
-5. Claude generates CHANGES-{crCode}.md after build is complete
-6. User creates TR at /platform/transport/new with:
-      - CR/ENH Number (e.g. CR-2026-001)
-      - Changes Made file upload (CHANGES-CR-2026-001.md)
-7. TR promotes: DRAFT → APPROVED → DEVELOPMENT → TESTING → IN_QUALITY → IN_PRODUCTION
+git checkout quality && git merge dev --no-edit && git push origin quality && git checkout main && git merge quality --no-edit && git push origin main && git checkout dev
 ```
 
-### Rules I Must Follow
+### TEMPORARY MODE ends when:
+1. TR + CR system (docs/TR_CODING_PLAN.md) is fully built
+2. All 3 environments have correct env-aware Nerve Center behavior
+3. CR import, TR creation from CR, Push to Dev, correction flow, completion check all work
 
-- No CR/ENH file in chat = zero code written, no exceptions
-- Build only what the **In Scope** section says — nothing more
-- Never touch files outside the declared scope
-- Always generate the Changes Made file after every completed build
-- Never merge or promote across branches manually — Nerve Center handles that via GitHub API
+### After TEMPORARY MODE — Full Process Resumes
+
+```
+1. CR/ENH raised from Quality or Production Nerve Center
+2. Approved → MD downloaded → uploaded to this chat
+3. Claude builds only what In Scope says
+4. CHANGES file generated after every build
+5. Manual push: dev → quality → main
+```
+
+### Rules That Always Apply (never suspended)
+
 - Clinic module (SYL-BC-HLC-CL07) stays on dev only — never promote without explicit instruction
-
-### Changes Made File Format
-
-After every build I generate: `CHANGES-{crCode}.md`
-
-Contents must include:
-- CR/ENH reference number and title
-- Every file modified (full path + what changed)
-- New files created
-- Files deleted
-- Database/schema changes
-- API endpoints added or modified
+- Color palette: Slate + Teal (#1FB8D6 / #27DCFF) — never deviate
+- Business Type IDs always SYL-BC-* format
 
 ### Project Context
 

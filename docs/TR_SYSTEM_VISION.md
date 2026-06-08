@@ -1,326 +1,572 @@
 # Syllabrix Transport Request (TR) System
-## Vision & Build Specification
+## Vision & Build Specification — v3.0
 
-**Document Owner:** Adarsh Singh  
-**Created:** 05 June 2026  
-**Status:** Approved — Ready to Build  
-**Location:** Syllabrix Nerve Center → Transport Wing
+**Document Owner:** Adarsh Singh
+**Created:** 05 June 2026
+**Revised:** 07 June 2026 (v3.0 — complete redesign with all gaps resolved)
+**Status:** Approved — Ready to Build
 
 ---
 
 ## 1. The One-Paragraph Vision
 
-The Syllabrix Transport Request (TR) System is a built-in release management platform inside the Syllabrix Nerve Center. It gives every code change — a new feature, a bug fix, a configuration update — a tracked identity from the moment it is created to the moment it reaches production. Developers log a TR, test it, and promote it across environments (Development → Quality → Production) entirely from inside the Nerve Center with a single button click, with no manual git commands needed after the initial code push. Every action is permanently recorded, every promotion is audited, every rollback is traceable. Over time, the TR system becomes the living memory of how Syllabrix was built — a complete, searchable, visual history of the platform's evolution.
+The Syllabrix TR System is a complete change management platform built inside the Syllabrix Nerve Center. Every code change starts with a Change Request (CR) raised from where the business runs — Quality or Production. That CR travels to DEV where it is built, tested, and promoted through environments via a strict one-way pipeline. Every promotion is tracked, every correction is recorded, and when code reaches Production the CR document is uploaded and matched against what was delivered — completing the full audit loop. The result is an institutional memory of every change ever made to the Syllabrix platform — traceable, auditable, and permanent.
 
 ---
 
-## 2. The Problem We Are Solving
+## 2. The Three Environments — Each Plays a Different Role
 
-| Problem Today | How TR System Solves It |
+### DEV (localhost) — The Builder
+**Responsibilities:**
+- Receive CRs via MD file upload (imported from Quality or Production)
+- Create Nerve Center CRs directly (developer found bug on localhost)
+- Create TR from CR — all CR information auto-populates the TR
+- Developer writes code in VS Code + Claude
+- Click "Push to Dev" in Nerve Center → backend runs git push + captures commit hash
+- Promote TR → Quality via GitHub API
+- Host the master archive of ALL CRs ever created
+- Run completion check when TR reaches IN_PRODUCTION
+
+**Cannot:**
+- Create Business Platform CRs (those come from Quality/Production)
+- Push directly to Production (Quality is mandatory checkpoint)
+- Skip the Quality environment under any circumstance
+
+---
+
+### QUALITY (Render) — The Validator
+**Responsibilities:**
+- Create Business Platform CRs (raisedFrom: QUALITY)
+- Create Nerve Center CRs
+- Receive TR promoted from DEV
+- Test code against original CR scope
+- Record test results (pass / fail) per scenario
+- If testing fails → generate Correction file (CR-YYYY-NNN-Q-C1)
+- If testing passes → authorised role promotes TR to Production via GitHub API
+
+**Cannot:**
+- Create TRs (TR creation is DEV's responsibility)
+- Accept code that bypasses the TR promote flow
+- Push to Production without testing passing first
+
+---
+
+### PRODUCTION (Railway) — The Final Destination
+**Responsibilities:**
+- Create Business Platform CRs (raisedFrom: PRODUCTION)
+- Create Nerve Center CRs
+- Download CR document (MD file) and send to developer
+- Receive code from Quality branch only — never from DEV directly
+- Upload CR document at deployment → system matches and runs completion check
+- Store completion check result permanently in CR record
+- Rollback via GitHub API if something breaks (no DB needed — uses git history)
+
+**Cannot:**
+- Accept code from DEV directly
+- Push anywhere further — Production is the end of the line
+- Manage TRs (TR management is DEV/Quality's responsibility)
+
+---
+
+## 3. CR Code System — Environment Identity Built Into the Code
+
+Every CR code carries its origin environment. No conflicts possible across databases.
+
+### Format
+```
+[Type]-[Year]-[Sequence]-[Environment]
+[Type]-[Year]-[Sequence]-[Environment]-C[N]  ← correction
+```
+
+### Examples
+```
+CR-2026-001-Q    Change Request, created in Quality
+CR-2026-001-P    Change Request, created in Production
+CR-2026-001-D    Change Request, created in DEV (Nerve Center type only)
+
+ENH-2026-001-Q   Enhancement, created in Quality
+ENH-2026-001-P   Enhancement, created in Production
+
+CR-2026-001-Q-C1  First correction of CR-2026-001-Q
+CR-2026-001-P-C2  Second correction of CR-2026-001-P
+```
+
+### Code Generator Rule
+```
+Quality backend   → always appends -Q
+Production backend → always appends -P
+DEV backend       → always appends -D (Nerve Center CRs only)
+```
+
+When a CR is imported from Production to DEV, the code stays exactly as-is (e.g. `CR-2026-001-P`). No renaming. No conflict with `CR-2026-001-Q`.
+
+---
+
+## 4. The Full CR Lifecycle
+
+```
+STEP 1 — RAISE (Quality or Production Nerve Center)
+  Business user or admin notices a bug or missing feature
+  CR created: title, problem, solution, in scope, out of scope
+  CR Target: BUSINESS_PLATFORM or NERVE_CENTER
+  Raised From: QUALITY or PRODUCTION (required for Business Platform CRs)
+  CR Code auto-generated with environment suffix (-Q or -P)
+  CR Status → DRAFT
+
+STEP 2 — APPROVE (Quality or Production Nerve Center)
+  Authorised role approves the CR
+  CR document generated: CR-YYYY-NNN-Q.md or CR-YYYY-NNN-P.md
+  CR Status → APPROVED
+  [Future — Gap 4] Notification fires to developer via WhatsApp/email
+
+STEP 3 — IMPORT TO DEV
+  Developer downloads CR document from Quality/Production Nerve Center
+  Uploads MD file to DEV Nerve Center
+  DEV backend parses the MD → creates same CR in DEV/Quality DB
+  CR arrives as APPROVED (already approved upstream — no re-review needed)
+  CR code stays unchanged (e.g. CR-2026-001-P remains CR-2026-001-P)
+  CR added to DEV master archive
+
+STEP 4 — CREATE TR (DEV Nerve Center)
+  Developer creates TR linked to imported CR
+  All CR fields auto-populate the TR:
+    title, problem, solution, in scope, out of scope,
+    business type, modules affected, priority, raisedFrom, crTarget
+  Developer adds only operational fields: git commits, test scenarios
+  TR Status → DRAFT
+
+STEP 5 — DEVELOP (localhost)
+  Developer writes code in VS Code with Claude
+  Developer stages and commits in VS Code (unchanged workflow)
+  Developer clicks "Push to Dev" in Nerve Center
+  DEV backend runs: git push origin dev (via child_process)
+  DEV backend captures commit hash: git rev-parse HEAD
+  Commit hash stored in TR record
+  TR Status → DEVELOPMENT
+
+STEP 6 — TEST ON DEV (DEV Nerve Center)
+  Developer runs test scenarios on localhost
+  Test results recorded against each scenario (PASS / FAIL)
+  TR Status → TESTING
+
+STEP 7 — PROMOTE TO QUALITY (DEV Nerve Center)
+  All DEV test scenarios must be recorded (not necessarily all passed)
+  Developer clicks "Push to Quality"
+  DEV backend calls GitHub API → merges dev into quality branch
+  Quality environment (Render) auto-deploys
+  TR Status → IN_QUALITY
+
+STEP 8A — QUALITY TESTING PASSES
+  Authorised role tests in Quality against CR inScope
+  All scenarios recorded as PASSED
+  Authorised role clicks "Push to Production"
+  Quality backend calls GitHub API → merges quality into main branch
+  Production environment (Railway) auto-deploys
+  TR Status → IN_PRODUCTION
+
+STEP 8B — QUALITY TESTING FAILS → CORRECTION CYCLE
+  Testing reveals a bug or mismatch with CR scope
+  Quality records what failed and exact reason per scenario
+  System generates Correction file: CR-YYYY-NNN-Q-C1.md
+  Developer downloads correction file → uploads to VS Code / Claude
+  Developer makes ONLY the corrections stated in C1
+  Pushes fix to dev → promotes to Quality again
+  Quality sees: original scope + C1 corrections highlighted (3-column view)
+  If fails again → CR-YYYY-NNN-Q-C2 generated
+  Cycle repeats until all scenarios pass
+
+STEP 9 — PRODUCTION DEPLOYMENT + COMPLETION CHECK
+  TR reaches IN_PRODUCTION
+  Admin uploads the CR document (final MD — including any corrections) to Production Nerve Center
+  Production backend parses the uploaded MD:
+    — What was decided (inScope from CR)
+    — What corrections were made (C1, C2... if any)
+  System matches against what TR delivered
+  Comparison: CR inScope ←→ TR scope + corrections
+  Result stored permanently in CR record:
+    MATCHED   → CR Status = COMPLETED ✓
+    MISMATCHED → CR Status = INCOMPLETE ✗ (flagged for review)
+
+STEP 10 — PERMANENT RECORD
+  CR record in DEV master archive updated with completion result
+  TR permanently archived — cannot be deleted
+  Full history preserved: original CR + corrections + TR journey + completion check
+```
+
+---
+
+## 5. CR Types and Where They Can Be Created
+
+| CR Type | DEV | QUALITY | PRODUCTION |
+|---|---|---|---|
+| Business Platform | ✗ | ✓ | ✓ |
+| Nerve Center | ✓ | ✓ | ✓ |
+
+- **Business Platform CRs** → raised where the business runs (Quality/Production). `raisedFrom` field mandatory.
+- **Nerve Center CRs** → raised from any environment. Developer may find the bug on localhost. `raisedFrom` not required.
+
+---
+
+## 6. CR Correction System
+
+### When Generated
+Quality testing fails on any scenario → correction file auto-generated.
+
+### Correction Code Format
+```
+Original:      CR-2026-001-Q
+Correction 1:  CR-2026-001-Q-C1
+Correction 2:  CR-2026-001-Q-C2
+Correction 3:  CR-2026-001-Q-C3
+```
+
+### Correction File Structure (CR-YYYY-NNN-Q-C1.md)
+```markdown
+# CR-2026-001-Q-C1 — Correction 1
+## [Original Title] — Quality Correction
+
+| Field             | Value                     |
+|-------------------|---------------------------|
+| Correction Code   | CR-2026-001-Q-C1          |
+| Original CR       | CR-2026-001-Q             |
+| Correction Number | 1                         |
+| Failed In         | QUALITY                   |
+| Raised By         | [tester name]             |
+| Date              | [date]                    |
+
+## What Was Originally Decided
+[Exact copy of original CR inScope]
+- Item 1
+- Item 2
+- Item 3
+
+## What Was Built (From TR)
+- Item 1 ✓ correct
+- Item 2 ✓ correct
+- Item 3 ✗ missing / wrong
+
+## What Failed in Quality Testing
+- Scenario 1: [what was tested] → [what happened] → FAILED
+- Scenario 2: [what was tested] → [what happened] → FAILED
+
+## The Gap (Decided vs Built)
+- Item 3 was in scope but not built correctly because [reason]
+- Scenario 1 failed because [specific reason]
+
+## Correction Required (New In Scope)
+[Only what needs to be fixed — nothing more]
+- Fix Item 3 — specifically [what exactly]
+- Resolve Scenario 1 — specifically [what exactly]
+
+## Do Not Touch
+[Already correct — developer must not change these]
+- Item 1 — correct ✓
+- Item 2 — correct ✓
+
+## How to Verify This Correction
+[Exact steps Quality will use to re-test]
+- Step 1: [exact test]
+- Step 2: [exact test]
+```
+
+### How Quality Sees the Correction (3-Column View)
+```
+ORIGINAL SCOPE      │  WHAT WAS BUILT    │  CORRECTION C1
+──────────────────  │  ──────────────── │  ──────────────────
+Item 1 ✓            │  Item 1 ✓          │  — (already correct)
+Item 2 ✓            │  Item 2 ✓          │  — (already correct)
+Item 3 ✗            │  Item 3 ✗ wrong    │  → FIXED ← highlighted
+```
+Only corrected items highlighted. Quality re-tests only the highlighted items.
+
+---
+
+## 7. Push to Dev — Technical Implementation
+
+The "Push to Dev" button in DEV Nerve Center works because the DEV backend (localhost Express server) runs on the same machine as the git repository.
+
+```
+Developer commits code in VS Code (unchanged workflow)
+        ↓
+Developer clicks "Push to Dev" in Nerve Center TR page
+        ↓
+POST /api/platform/transport/:id/push-to-dev
+        ↓
+DEV backend runs via child_process:
+  git push origin dev    → pushes to GitHub
+  git rev-parse HEAD     → captures commit hash
+        ↓
+Commit hash stored in TR record (devPushCommit)
+TR status → DEVELOPMENT
+```
+
+**Config required in `.env.development`:**
+```
+GIT_REPO_PATH=D:/new project
+```
+
+Developer habit change: instead of `git push` in terminal → click "Push to Dev" in Nerve Center. Everything else unchanged.
+
+---
+
+## 8. Rollback from Production
+
+Rollback does not need the Quality DB. GitHub is the source of truth.
+
+```
+Admin clicks Rollback in Production Nerve Center
+        ↓
+Production backend calls GitHub API:
+  GET /repos/{owner}/{repo}/commits?sha=main&per_page=2
+        ↓
+GitHub returns:
+  Commit 1 (latest)   = the broken deployment
+  Commit 2 (previous) = the good state
+        ↓
+Production backend force resets main to Commit 2:
+  PATCH /git/refs/heads/main  { sha: previousSha, force: true }
+        ↓
+Railway detects main branch change → auto-deploys previous good state
+Done ✓
+```
+
+No cross-database access. No TR record needed. GitHub history is the rollback source.
+
+---
+
+## 9. Production Deployed View — Completion Check via MD Upload
+
+When code arrives in Production, the admin uploads the final CR document (MD file). The system matches it against the TR and runs the completion check.
+
+```
+TR promoted to Production
+        ↓
+Admin uploads CR-2026-001-Q.md (or C1/C2 if corrections happened)
+        ↓
+Production backend parses MD:
+  — Original inScope (what was decided)
+  — Corrections made (C1, C2...)
+        ↓
+System matches: CR inScope ←→ TR scope + corrections
+        ↓
+Result stored in CR record:
+  MATCHED   → CR COMPLETED ✓
+  MISMATCHED → CR INCOMPLETE ✗
+```
+
+**Same MD upload mechanism as DEV import — different purpose:**
+```
+DEV    → upload MD → CREATE new CR
+PROD   → upload MD → MATCH + COMPLETE existing CR
+```
+
+---
+
+## 10. Role-Based Promotion Rights
+
+Permissions assigned by Syllabrix — not hardcoded. Any Nerve Center role can be granted any permission.
+
+| Action | Permission |
 |---|---|
-| Code moves between environments manually via VS Code git push — error-prone and undocumented | Promotions happen via one button click from Nerve Center; GitHub API handles the merge |
-| No record of what changed, when, or why | Every change is logged as a TR with full description, module tag, and audit trail |
-| "Clinic stays on dev" is a verbal rule — easy to forget | Scope Lock enforces SYL-BC-* rules automatically; promotion is blocked until unlocked |
-| Rollback means manually reverting commits under pressure | Rollback button triggers a clean revert via GitHub API; history preserved |
-| No visibility into the platform's growth over time | Development History page shows the full timeline of every change ever shipped |
-| Deployments feel chaotic and risky | Pre-promotion checklists, dry run mode, and auto-block rules create a safe, predictable process |
+| Push code to dev branch | TR_PUSH_DEV |
+| Promote TR → Quality | TR_PROMOTE_QUALITY |
+| Promote TR → Production | TR_PROMOTE_PRODUCTION |
+| Create Business Platform CR | TR_CREATE_CR |
+| Approve CR | TR_APPROVE_CR |
+| Generate Correction file | TR_GENERATE_CORRECTION |
+| Run Completion Check | TR_COMPLETION_CHECK |
 
 ---
 
-## 3. Core Concept — The TR Lifecycle
-
-Every single change to the Syllabrix platform — no matter how small — follows this journey:
+## 11. Strict Pipeline Rules
 
 ```
-STEP 1 — LOG
-Developer makes a code change in VS Code and pushes to dev branch.
-A TR is created in Nerve Center: title, description, module, SYL-BC-* code, category.
-TR Status → [ DEVELOPMENT ]
-
-STEP 2 — TEST
-Developer or QA runs test scenarios attached to the TR.
-Results are recorded inside the TR (pass / fail / notes).
-TR Status → [ TESTING ]
-
-STEP 3 — PROMOTE TO QUALITY
-All tests pass. Pre-promotion checklist is ticked.
-Developer clicks "Promote to Quality" in Nerve Center.
-Nerve Center calls GitHub API → merges dev into quality branch.
-Deployment triggers automatically on the quality environment.
-TR Status → [ IN QUALITY ]
-
-STEP 4 — PROMOTE TO PRODUCTION
-Quality sign-off given. Reviewer approves (if required).
-Developer clicks "Promote to Production".
-Nerve Center calls GitHub API → merges quality into main branch.
-Production environment deploys automatically.
-TR Status → [ IN PRODUCTION ]
-
-STEP 5a — SUCCESS
-TR is marked complete. Version history updated. Changelog entry generated.
-TR lives permanently in Development History.
-
-STEP 5b — ROLLBACK (if something breaks)
-Developer clicks "Rollback" with a reason.
-Nerve Center calls GitHub API → creates a clean revert commit.
-Environment is restored to previous state.
-TR Status → [ ROLLED BACK ]
-History records the rollback permanently — it is never hidden.
+✓ DEV → QUALITY           Developer promotes (TR_PROMOTE_QUALITY)
+✓ QUALITY → PRODUCTION    Authorised role promotes (TR_PROMOTE_PRODUCTION)
+✗ DEV → PRODUCTION        Permanently blocked — no exceptions
+✗ PRODUCTION → anywhere   Code sits here — rollback only
 ```
 
 ---
 
-## 4. The Six Pillars
+## 12. The CR Archive — DEV as Master Record
 
-The TR system is organized into six functional pillars. Each pillar is a group of features that serve a specific purpose.
+DEV/Quality DB holds the permanent record of every CR ever created:
 
-### Pillar 1 — Core Engine
-The foundation. Without this, nothing else works.
-- TR creation with auto-generated TR Code (TR-YYYY-NNN)
-- TR Kanban board (Development / Testing / Quality / Production columns)
-- TR Detail page (full info, audit log, actions)
-- Promote button (dev → quality → production via GitHub API)
-- Rollback button (reverts via GitHub API)
-- TR Dependencies (TR-005 blocked until TR-003 is in production)
+| Source | How it arrives in DEV |
+|---|---|
+| Quality CR | Already in shared DB (DEV + Quality share same Supabase) |
+| Production CR | MD file downloaded → uploaded to DEV Nerve Center |
+| DEV Nerve Center CR | Created directly |
 
-### Pillar 2 — Safety & Quality Gates
-These features make promotions safe and prevent mistakes.
-- Pre-Promotion Checklist (mandatory tick-off before promote button activates)
-- Scope Lock (SYL-BC-* enforcement — clinic TR cannot promote until explicitly unlocked)
-- Auto-Block Rules (never promote to prod on Friday; billing requires 2 approvals)
-- Production Freeze (disable all production promotions for a date range)
-- Dry Run Mode (simulate a promotion without executing it)
-- Test Scenario Attachment (link test cases to a TR; record pass/fail per scenario)
+**Every CR record contains:**
+- Original CR document (what was decided)
+- Environment that raised it (raisedFrom)
+- CR target (Business Platform / Nerve Center)
+- Linked TR reference
+- All corrections (C1, C2...) with full detail
+- Completion check result (MATCHED / MISMATCHED)
+- Final status (COMPLETED / INCOMPLETE / IN_DEVELOPMENT)
 
-### Pillar 3 — Intelligence & Analytics
-These features show how well the development process is working.
-- DORA Metrics Dashboard (Deployment Frequency, Lead Time, Change Failure Rate, Recovery Time)
-- Module Heat Map (which modules are changed most often — visual grid)
-- Bottleneck Detector (flags TRs that are stuck beyond average time in any stage)
-- Deployment Forecast (estimated production date based on historical data)
-- Statistics Summary (total TRs, features shipped, bug fixes, rollbacks, avg lead time)
-
-### Pillar 4 — Planning & Management
-These features help plan and organize releases.
-- Release Bundles (group multiple TRs into a named release — "June Release v1.2")
-- Release Calendar (schedule when TRs will be promoted; visual date-based pipeline view)
-- Sprint Grouping (group TRs by sprint or iteration)
-- Priority Levels (Critical / High / Medium / Low with visual indicators)
-- TR Templates (pre-filled forms for common change types; log a TR in 30 seconds)
-
-### Pillar 5 — Notifications & Alerts
-These features ensure nothing is missed.
-- WhatsApp Notifications (TR promoted, rollback triggered, TR stuck — all via WhatsApp)
-- Weekly Digest (Monday morning summary of what shipped, what is in progress)
-- Customer Impact Alert (warns before production promotion which tenants are affected)
-- Reviewer Notifications (notifies assigned reviewer that a TR is waiting for approval)
-
-### Pillar 6 — History & Audit
-These features create the permanent record of Syllabrix's evolution.
-- Development Timeline (chronological log of every TR ever — filterable by date, module, BT)
-- Version Milestones (every production bundle creates a version snapshot — v1.0, v1.1, v2.0)
-- Module Evolution View (filter history to one module — see its entire growth from day one)
-- Milestone Markers (manual gold pins on timeline — "First customer", "500 users", etc.)
-- Immutable Audit Log (every action on every TR is permanently recorded — cannot be edited or deleted)
-- Export (download full TR history as PDF or CSV for compliance or reference)
+**Searchable by:** environment, business type, CR target, date, status, correction count.
 
 ---
 
-## 5. Complete Page List
+## 13. Notification System (Deferred — Future CR)
 
-| Page | Route | Description |
-|---|---|---|
-| TR Dashboard | `/nerve-center/transport` | Main landing — Kanban board, stats summary, quick actions |
-| New TR Form | `/nerve-center/transport/new` | Create a TR with template options |
-| TR Detail | `/nerve-center/transport/[trId]` | Full TR view — info, test results, promote, rollback, comments, audit log |
-| Release Bundles | `/nerve-center/transport/bundles` | Create and manage release bundles |
-| Release Calendar | `/nerve-center/transport/calendar` | Date-based view of planned and completed releases |
-| Environment Status | `/nerve-center/transport/environments` | Live view — what is currently in dev / quality / production |
-| Analytics | `/nerve-center/transport/analytics` | DORA metrics, heat map, bottleneck detector, forecasts |
-| Development History | `/nerve-center/transport/history` | Full timeline, version milestones, module evolution, export |
-| Settings | `/nerve-center/transport/settings` | Auto-block rules, freeze periods, reviewer config, notification settings |
-
-**Total: 9 pages**
+Gap 4 is parked. When WhatsApp/email integration is ready:
+- CR approved in Quality/Production → notification fires to developer
+- Message contains: CR code, title, environment, download link
 
 ---
 
-## 6. Database Models Required
+## 14. Coding Plan — Build Phases
 
+### Phase 1 — Foundation
+- `frontend/src/config/env.js` — central `ENV_FEATURES` object
+- All Nerve Center pages read from ENV_FEATURES before rendering
+- Replace all hostname-based detection
+
+### Phase 2 — Schema Changes
 ```
-TransportRequest
-  - id, trCode (TR-YYYY-NNN), title, description
-  - category (FEATURE | BUGFIX | ENHANCEMENT | CONFIG | HOTFIX)
-  - businessTypeCode (SYL-BC-HLC-CL07, SYL-BC-GYM-001, SYL-BC-ALL, etc.)
-  - modulesAffected (array)
-  - status (DEVELOPMENT | TESTING | IN_QUALITY | IN_PRODUCTION | ROLLED_BACK)
-  - priority (CRITICAL | HIGH | MEDIUM | LOW)
-  - scopeLocked (boolean — blocks promotion if true)
-  - createdBy, assignedReviewer
-  - gitCommits (array of commit hashes)
-  - testPlanNotes
-  - promotedToQualityAt, promotedToProdAt, rolledBackAt, rolledBackReason
-  - bundleId (optional — links to a release bundle)
-  - sprintId (optional — links to a sprint)
-  - dependsOnTRs (array of TR IDs that must be in production first)
-  - createdAt, updatedAt
+ChangeRequest model:
+  + correctionParentId    (links C1 back to original CR)
+  + correctionNumber      (1, 2, 3...)
+  + importedFrom          (QUALITY / PRODUCTION)
+  + completionStatus      (MATCHED / MISMATCHED / PENDING)
+  + completionCheckedAt
+  + completionCheckedBy
+  + correctionScope       (what needs fixing — for correction CRs)
+  + doNotTouch            (what is already correct — for correction CRs)
+  + verificationSteps     (how to re-test — for correction CRs)
 
-TRLog (Audit Trail — immutable)
-  - id, trId
-  - action (CREATED | STATUS_CHANGED | PROMOTED | ROLLED_BACK | COMMENT | REVIEWER_ASSIGNED | etc.)
-  - fromStatus, toStatus
-  - performedBy
-  - notes
-  - createdAt
+TransportRequest model:
+  - Remove IN_QUALITY_RECEIVED status
+  - Remove IN_PRODUCTION_RECEIVED status
+  + linkedCRId            (hard link to CR)
+  + devPushCommit         (commit hash from Push to Dev)
 
-TRComment
-  - id, trId, authorId, body, createdAt
-
-TRTestScenario
-  - id, trId, title, steps, expectedResult
-  - result (PENDING | PASSED | FAILED)
-  - testedBy, testedAt, notes
-
-TRBundle (Release Package)
-  - id, name (e.g. "June Release v1.2"), version, description
-  - status (PLANNING | IN_QUALITY | IN_PRODUCTION | ROLLED_BACK)
-  - plannedProductionDate
-  - createdBy, createdAt
-
-TRSprint
-  - id, name, startDate, endDate, goal
-
-TRMilestone (History page pins)
-  - id, title, description, date, icon, createdBy
-
-TRSettings (one record per platform)
-  - productionFreezeStart, productionFreezeEnd
-  - autoBlockFridays (boolean)
-  - billingRequiresTwoApprovals (boolean)
-  - whatsappNotificationsEnabled (boolean)
-  - weeklyDigestEnabled (boolean)
+Permissions:
+  + TRPermission model (TR_PUSH_DEV, TR_PROMOTE_QUALITY, etc.)
 ```
 
+### Phase 3 — DEV/Quality Backend
+```
+changes/
+  + importCR()              — parse MD, create CR as APPROVED
+  + generateCorrection()    — create CR-YYYY-NNN-Q-C1
+  + runCompletionCheck()    — decided vs built comparison
+  + matchProductionUpload() — match uploaded MD to existing CR
+
+transport/
+  + createFromCR()          — TR auto-populated from CR
+  + pushToDev()             — git push via child_process + capture hash
+  ~ promote()               — simplified, no RECEIVED state
+  ~ rollback()              — unchanged
+```
+
+### Phase 4 — Production Backend
+```
+changes/
+  create()                  — Business Platform CR (-P suffix) only
+  list()                    — Production CRs only
+  generateDocument()        — download MD
+  uploadForCompletion()     — match + complete CR
+
+transport/
+  — Remove all TR management endpoints
+  + rollback()              — GitHub API, get last 2 commits on main
+```
+
+### Phase 5 — DEV Nerve Center Frontend
+```
+/platform/changes
+  + Import CR button (MD upload → createFromCR)
+  + New Nerve Center CR button
+  Full archive view (all CRs)
+
+/platform/changes/new
+  Nerve Center CR form only (-D suffix)
+
+/platform/transport
+  Full pipeline view
+  Push to Dev button
+  Promote to Quality button
+  Completion check results panel
+
+/platform/transport/new
+  Create TR from CR (auto-populate all fields)
+```
+
+### Phase 6 — Quality Nerve Center Frontend
+```
+/platform/changes
+  New Business Platform CR (raisedFrom: QUALITY, -Q suffix)
+  New Nerve Center CR (-Q suffix)
+
+/platform/transport
+  Incoming TRs view
+  Test scenario recording (pass / fail per scenario)
+  3-column correction view (original | built | correction)
+  Generate Correction file button (on failure)
+  Promote to Production button (authorised role)
+```
+
+### Phase 7 — Production Nerve Center Frontend
+```
+/platform/changes
+  New Business Platform CR (raisedFrom: PRODUCTION, -P suffix)
+  New Nerve Center CR (-P suffix)
+  Upload CR for completion check
+
+/platform/transport
+  Live deployment view (latest commit on main via GitHub API)
+  Rollback button only
+  Completion check results
+```
+
+### Phase 8 — Correction System
+- Correction file generator (backend)
+- Correction file parser (when imported to DEV)
+- 3-column comparison view (Quality frontend)
+- Correction highlighting logic
+
+### Phase 9 — Completion Check
+- MD parser in Production backend
+- Scope comparison engine (CR inScope vs TR corrections)
+- Result storage in CR record
+- COMPLETED / INCOMPLETE status update
+
+### Phase 10 — Notification System
+- Deferred — future CR
+
 ---
 
-## 7. Technical Architecture
+## 15. What is NOT in Scope
 
-### GitHub API Integration
-- Stored: `GITHUB_ACCESS_TOKEN` in `.env` (Personal Access Token with repo write scope)
-- Promote dev → quality: `POST /repos/{owner}/{repo}/merges` (base: quality, head: dev)
-- Promote quality → main: `POST /repos/{owner}/{repo}/merges` (base: main, head: quality)
-- Rollback: `POST /repos/{owner}/{repo}/git/refs` + revert commit creation
-- Branch mapping: `dev` = Development, `quality` = Quality, `main` = Production
-
-### Deployment Hooks
-- After any merge, Vercel/Railway deployment triggers automatically via connected GitHub repo
-- No additional webhook setup needed if Vercel is already watching the branches
-
-### Notification Integration
-- WhatsApp: uses existing Syllabrix WhatsApp integration credentials
-- Message templates to be created for: promotion, rollback, stuck TR, weekly digest
-
-### Frontend
-- Kanban board: drag-and-drop using `@hello-pangea/dnd` (already used or add as dep)
-- Charts (DORA, heat map): `recharts` (already likely in project)
-- Timeline (History page): custom vertical timeline component, Slate+Teal palette
-- Calendar: `react-big-calendar` or custom grid
+- Automated CI/CD pipelines or test runners
+- Code diff viewer inside Nerve Center (stays in GitHub/VS Code)
+- Per-tenant rollback
+- Public-facing changelog
+- Notification system (deferred to Phase 10)
+- Release bundles, calendars, DORA metrics (future phases)
 
 ---
 
-## 8. Build Phases
-
-### Phase 1 — Core Engine (Build First)
-Everything else depends on this being solid.
-1. Prisma schema — all models
-2. TR creation API + form
-3. TR Kanban board page (status columns, drag or button-based status change)
-4. TR Detail page (info + audit log)
-5. Promote endpoint (GitHub API merge — dev→quality, quality→main)
-6. Rollback endpoint (GitHub API revert)
-7. Environment Status page (live view of what is in each branch)
-
-### Phase 2 — Safety Layer
-Makes the system trustworthy before anyone relies on it.
-1. Pre-promotion checklist engine
-2. Scope Lock enforcement (SYL-BC-* check before promote button activates)
-3. TR Dependencies (block promotion if dependency not in production)
-4. Production Freeze setting + enforcement
-5. Test Scenario attachment + pass/fail recording
-
-### Phase 3 — Planning & Management
-Organizes the work.
-1. Release Bundles (create, add TRs, promote bundle as a unit)
-2. Sprint Grouping
-3. Priority levels + visual indicators
-4. TR Templates
-5. Release Calendar page
-
-### Phase 4 — History & Audit
-The permanent record.
-1. Development History timeline page
-2. Version Milestones (auto-create on every production promotion)
-3. Milestone Markers (manual pins)
-4. Module Evolution filter view
-5. Export (PDF / CSV)
-
-### Phase 5 — Intelligence & Notifications
-The smart layer.
-1. DORA Metrics Dashboard
-2. Module Heat Map
-3. Bottleneck Detector
-4. Deployment Forecast
-5. WhatsApp Notifications
-6. Weekly Digest
-7. Customer Impact Alert
-
----
-
-## 9. What We Are NOT Building
-
-These are explicitly out of scope to keep the build focused:
-
-- We are NOT building a full CI/CD pipeline — GitHub Actions, automated test runners, linting pipelines. The TR system records and promotes; it does not run automated code quality checks.
-- We are NOT building a code diff viewer inside Nerve Center. Git history and code review stay in GitHub/VS Code.
-- We are NOT replacing VS Code for writing code. Developers still write and push to dev branch as normal. The TR system takes over after that.
-- We are NOT building per-tenant rollback in Phase 1–4. This is a Phase 5+ advanced feature that requires significant additional architecture.
-- We are NOT building a public-facing changelog or status page for customers. The history is internal to Nerve Center only.
-
----
-
-## 10. Definition of Done
+## 16. Definition of Done
 
 The TR system is complete when:
 
-1. A developer can create a TR, attach test scenarios, tick the pre-promotion checklist, and promote code from dev to quality to production — entirely from Nerve Center, without opening a terminal.
-2. Every promotion and rollback is permanently recorded in the audit log.
-3. The Development History page shows a complete, readable timeline of every change ever shipped to production.
-4. Scope Lock prevents clinic (or any locked business type) from being promoted without explicit unlock.
-5. DORA metrics dashboard shows real data from actual TR history.
-6. WhatsApp notifications fire on promotion, rollback, and stuck TR events.
-7. A rollback from production can be triggered and completed within 2 minutes from Nerve Center.
+1. A Business Platform CR raised from Production → imported to DEV → built → tested → promoted to Quality → tested → promoted to Production — entirely from Nerve Center, no terminal commands needed after commit
+2. Quality testing failure generates a Correction file with 3-column comparison view
+3. Production upload of CR document triggers automatic completion check — CR marked COMPLETED or INCOMPLETE
+4. Rollback from Production works via GitHub API in one click — no DB access needed
+5. DEV master archive holds every CR ever created with full history
+6. All three environments show only what belongs to them — no feature bleed
+7. CR code uniquely identifies its origin environment (-Q, -P, -D)
+8. Push to Dev captures git commit hash automatically — no manual entry
 
 ---
 
-## 11. Naming Conventions
-
-| Term | Meaning |
-|---|---|
-| TR | Transport Request — one unit of tracked change |
-| TR Code | Auto-generated unique ID in format `TR-YYYY-NNN` (e.g. TR-2026-001) |
-| Promote | Move a TR from one environment to the next |
-| Rollback | Revert a TR from its current environment to the previous state |
-| Bundle | A named group of TRs promoted together as one release |
-| Sprint | A time-boxed group of TRs (development iteration) |
-| Milestone | A manually-pinned significant moment in the platform's history |
-| Scope Lock | A flag on a TR that blocks promotion based on SYL-BC-* business type rules |
-| Environment | One of: Development (dev branch), Quality (quality branch), Production (main branch) |
-
----
-
-## 12. Vision Statement (One Line)
-
-> **The Syllabrix TR System turns every code change into a traceable, promotable, rollback-safe journey — and turns the history of those journeys into the living story of how Syllabrix was built.**
-
----
-
-*This document is the source of truth for the TR System build. Any feature not listed here requires a vision update before it is built. Any feature listed here should not be skipped or redesigned without updating this document first.*
+*This document is the source of truth for the TR System v3.0.*
+*v1.0 and v2.0 are fully superseded. Do not reference previous versions.*
