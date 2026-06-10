@@ -78,7 +78,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)', padding: 16 }}>
+    <div className="auth-page">
       <div style={{ width: '100%', maxWidth: 420 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
@@ -86,7 +86,7 @@ export default function Login() {
           <p style={{ color: '#6B7280', marginTop: 4, fontSize: 14 }}>Sign in to your business</p>
         </div>
 
-        <div style={{ background: '#fff', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-md)', padding: 32 }}>
+        <div className="auth-card">
           {/* Mode tabs */}
           <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 4, marginBottom: 24 }}>
             {['owner', 'staff'].map((m) => (
