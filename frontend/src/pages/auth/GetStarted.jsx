@@ -60,7 +60,8 @@ export default function GetStarted() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (import.meta.env.VITE_ENV !== 'production') navigate('/login', { replace: true });
+    const host = window.location.hostname;
+    if (host !== 'syllabrix.com' && host !== 'localhost') navigate('/login', { replace: true });
   }, []);
 
   const [plans, setPlans] = useState([]);
