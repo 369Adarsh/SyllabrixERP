@@ -343,6 +343,8 @@
     }
     @media(max-width:768px){
       .nav-links,.btn-ghost{display:none;} .hamburger{display:flex;}
+      .btn-nav-cta{padding:8px 14px; font-size:13px; gap:5px;}
+      .hero{padding:90px 20px 56px;}
       .bento .s4,.bento .s3,.bento .s6,.bento .s8,.bento .s5,.bento .s7{grid-column:span 12;}
       .steps{grid-template-columns:1fr; gap:28px;} .steps::before{display:none;}
       .testi-grid{grid-template-columns:1fr;}
@@ -351,23 +353,65 @@
       .footer-top{grid-template-columns:1fr 1fr; gap:32px;}
       .footer-brand{grid-column:1/-1;}
       section{padding:72px 20px;}
+      .bc.wide .mfeats{flex-direction:column;}
+      .india-feat{gap:14px;}
+      .if-ico{width:42px; height:42px; font-size:20px; flex-shrink:0;}
     }
     @media(max-width:560px){
+      nav{padding:0 16px;}
+      .hero{padding:78px 16px 44px;}
+      .hero-badge{font-size:11px; padding:5px 12px; margin-bottom:20px;}
+      .hero-h1{font-size:clamp(34px,9.5vw,54px);}
+      .hero-sub{font-size:15px; margin-bottom:36px;}
+      .hero-ctas{flex-direction:column; align-items:stretch; gap:10px; max-width:360px; margin-left:auto; margin-right:auto; margin-bottom:44px;}
+      .hero-ctas .btn-hero{justify-content:center; width:100%;}
       .hero-chips{flex-direction:row; flex-wrap:wrap;}
-      .hero-chip{flex:1; min-width:145px;}
+      .hero-chip{flex:1 1 140px; min-width:140px; padding:10px 14px; gap:10px;}
+      .chip-ico{width:36px; height:36px; font-size:18px;}
+      .chip-val{font-size:17px;}
       .stats-grid{grid-template-columns:repeat(2,1fr);}
+      .stat-card{padding:28px 14px;}
       .cmp-table{font-size:11px;}
       .cmp-table th,.cmp-table td{padding:10px 8px;}
       .cmp-table th:first-child,.cmp-table td:first-child{padding:10px 8px; font-size:11px;}
       .cmp-section .inner{padding:0 4px;}
       .footer-top{grid-template-columns:1fr;}
       .footer-btm{flex-direction:column; align-items:flex-start;}
+      .footer-badges{flex-wrap:wrap;}
+      .fbadge{font-size:11px; padding:4px 9px;}
       section{padding:52px 16px;}
       .photo-card{width:260px; height:175px;}
       .btn-hero{padding:14px 24px; font-size:15px; min-height:48px;}
       .photo-mods{font-size:12px;}
-      .hero-h1{font-size:clamp(36px,10vw,56px);}
       .price-grid{max-width:100%;}
+      .bc{padding:20px;}
+      .bc .mname{font-size:17px;}
+      .bc .mdesc{font-size:13px;}
+      .pc{padding:28px 20px;}
+      .pc-price{font-size:44px;}
+      .india-dash{padding:18px 14px;}
+      .dash-row{padding:11px 12px; flex-wrap:wrap; gap:4px;}
+      .dash-val{font-size:13px;}
+      .faq-q{font-size:14px; padding:16px 18px;}
+      .faq-a{font-size:13px; padding:0 18px;}
+      .faq-item.open .faq-a{padding:0 18px 16px;}
+      .cta-section{padding:80px 16px;}
+      .cta-actions{flex-direction:column; align-items:center; gap:10px;}
+      .cta-actions .btn-hero{width:100%; max-width:340px; justify-content:center; font-size:15px!important; padding:14px 20px!important;}
+      .sec-h2{font-size:clamp(26px,7vw,44px);}
+      .step-title{font-size:18px;}
+      .step-desc{font-size:14px;}
+      .testi-card{padding:22px 18px;}
+      .t-quote{font-size:14px;}
+      .hero-badge span{display:none;}
+    }
+    @media(max-width:400px){
+      .hero-h1{font-size:clamp(28px,9vw,46px);}
+      .nav-logo{padding:4px 10px 4px 8px;}
+      .nav-logo img{height:32px;}
+      .btn-nav-cta{font-size:12px; padding:7px 11px;}
+      .hero-chip{min-width:125px;}
+      .stat-num{font-size:clamp(36px,10vw,52px);}
     }
   </style>
 </head>
