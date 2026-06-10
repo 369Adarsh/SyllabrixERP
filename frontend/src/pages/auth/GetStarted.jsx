@@ -61,6 +61,10 @@ export default function GetStarted() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (import.meta.env.VITE_ENV !== 'production') navigate('/login', { replace: true });
+  }, []);
+
   const [plans, setPlans] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
