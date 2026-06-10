@@ -138,7 +138,7 @@ export default function GetStarted() {
   if (submitted) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', padding: 16 }}>
       <div style={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: 48 }}>
+        <div className="gs-success">
           <div style={{ width: 72, height: 72, background: 'linear-gradient(135deg,#DCFCE7,#BBF7D0)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: 32 }}>✉️</div>
           <h2 style={{ fontFamily: 'var(--font-display,sans-serif)', fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Application Submitted!</h2>
           <p style={{ color: '#6B7280', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>
@@ -172,7 +172,7 @@ export default function GetStarted() {
         {/* Plans */}
         {plans.length > 0 && (
           <div style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A' }}>Choose Your Plan</h2>
               <div style={{ display: 'flex', background: '#E5E7EB', borderRadius: 8, padding: 3, gap: 2 }}>
                 {['monthly', 'yearly'].map(c => (
@@ -184,7 +184,7 @@ export default function GetStarted() {
               </div>
             </div>
             {errors.plan && <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{errors.plan}</p>}
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${plans.length}, 1fr)`, gap: 16 }}>
+            <div className="gs-plans" style={{ gridTemplateColumns: `repeat(${plans.length}, 1fr)` }}>
               {plans.map(plan => {
                 const price = billingCycle === 'yearly' && plan.yearlyPrice ? plan.yearlyPrice / 12 : plan.monthlyPrice;
                 const isSelected = selectedPlan === plan.key;
@@ -221,10 +221,10 @@ export default function GetStarted() {
 
         {/* Form */}
         <form onSubmit={submit}>
-          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', padding: 32, marginBottom: 20 }}>
+          <div className="gs-card">
             <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid #F3F4F6' }}>Business Details</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="auth-grid-2">
                 <Field label="Business name" placeholder="Adarsh Kirana Store" value={form.businessName} onChange={set('businessName')} error={errors.businessName} required />
                 <Field label="Business type" error={errors.businessType} required>
                   <select value={form.businessType} onChange={set('businessType')}
@@ -238,12 +238,12 @@ export default function GetStarted() {
                   </select>
                 </Field>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="auth-grid-2">
                 <Field label="GSTIN" placeholder="22AAAAA0000A1Z5" value={form.gstin} onChange={set('gstin')} />
                 <Field label="PAN" placeholder="ABCDE1234F" value={form.pan} onChange={set('pan')} />
               </div>
               <Field label="Business address" placeholder="Shop No. 12, MG Road" value={form.address} onChange={set('address')} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div className="auth-grid-3">
                 <Field label="City" placeholder="Bhopal" value={form.city} onChange={set('city')} />
                 <Field label="State" error={errors.state}>
                   <select value={form.state} onChange={set('state')}
@@ -257,15 +257,15 @@ export default function GetStarted() {
             </div>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', padding: 32, marginBottom: 20 }}>
+          <div className="gs-card">
             <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid #F3F4F6' }}>Owner Details</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="auth-grid-2">
                 <Field label="Your name" placeholder="Adarsh Singh" value={form.name} onChange={set('name')} error={errors.name} required />
                 <Field label="Phone" type="tel" placeholder="9876543210" value={form.phone} onChange={set('phone')} error={errors.phone} required />
               </div>
               <Field label="Email address" type="email" placeholder="you@business.com" value={form.email} onChange={set('email')} error={errors.email} required />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="auth-grid-2">
                 <PasswordInput label="Password *" placeholder="Min 8 chars, A–Z, a–z, 0–9" value={form.password} onChange={set('password')} error={errors.password} autoComplete="new-password" />
                 <PasswordInput label="Confirm password *" placeholder="Re-enter your password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} autoComplete="new-password" />
               </div>
