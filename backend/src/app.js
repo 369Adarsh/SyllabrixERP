@@ -131,6 +131,8 @@ app.use(cors({
     // On quality/staging, accept any Vercel preview URL and the trial subdomain
     if (config.nodeEnv === 'quality' && /^https:\/\/[a-z0-9-]+-369adarshs-projects\.vercel\.app$/.test(origin)) return cb(null, true);
     if (config.nodeEnv === 'quality' && origin === 'https://trial.syllabrix.com') return cb(null, true);
+    // Allow trial subdomain to fetch public data (plans) from production
+    if (config.nodeEnv === 'production' && origin === 'https://trial.syllabrix.com') return cb(null, true);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
