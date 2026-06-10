@@ -178,12 +178,70 @@
     .footer-links a { font-size: 13px; color: rgba(255,255,255,0.3); transition: color 0.15s; }
     .footer-links a:hover { color: rgba(255,255,255,0.6); }
 
+    /* ─── HAMBURGER NAV (mobile) ───────────────────────────────────────── */
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; flex-shrink: 0; }
+    .hamburger span { width: 22px; height: 2px; background: #fff; border-radius: 2px; display: block; }
+    .mob-nav { position: fixed; inset: 0; z-index: 999; background: rgba(6,12,20,0.99); padding: 88px 24px 32px; display: none; flex-direction: column; gap: 8px; }
+    .mob-nav.open { display: flex; }
+    .mob-nav-btn { display: block; text-align: center; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; border: none; font-family: var(--ff-b); width: 100%; transition: all 0.15s; }
+    .mob-nav-login { background: transparent; color: rgba(255,255,255,0.75); border: 1.5px solid rgba(255,255,255,0.14)!important; }
+    .mob-nav-trial { background: var(--cyan); color: #fff; }
+    .mob-nav-live  { background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1)!important; font-size: 14px!important; margin-top: 4px; }
+
     @media (max-width: 768px) {
+      nav { padding: 0 16px; }
+      .btn-ghost, .btn-upgrade { display: none; }
+      .btn-cta { padding: 8px 14px; font-size: 13px; }
+      .hamburger { display: flex; }
       .stats-grid { grid-template-columns: repeat(2,1fr); }
       .features-grid { grid-template-columns: 1fr; }
       .plans-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
       footer { flex-direction: column; gap: 16px; text-align: center; }
+      .partner-form { padding: 24px; max-width: 100%; }
+      .market h2 { font-size: clamp(24px,6vw,40px); }
+    }
+    @media (max-width: 560px) {
+      nav { height: 58px; }
+      .nav-logo img { height: 24px; }
+      .trial-badge { font-size: 9px; padding: 2px 7px; }
+      .btn-cta { font-size: 12px; padding: 7px 12px; }
+      .hero { padding: 64px 16px 48px; min-height: 75vh; }
+      .hero h1 { font-size: clamp(28px,8vw,52px); }
+      .hero p { font-size: 15px; margin-bottom: 28px; }
+      .hero-ctas { flex-direction: column; align-items: stretch; gap: 10px; max-width: 320px; margin-left: auto; margin-right: auto; }
+      .hero-ctas .btn-hero-primary,
+      .hero-ctas .btn-hero-secondary { width: 100%; justify-content: center; padding: 13px 20px; font-size: 15px; }
+      .hero-badge { font-size: 12px; padding: 5px 12px; }
+      .market { padding: 52px 16px; }
+      .market p { font-size: 15px; }
+      .made-india { font-size: 13px; }
+      .stats { padding: 0 16px 52px; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); gap: 0; }
+      .stat-card { padding: 22px 16px; }
+      .stat-num { font-size: 32px; }
+      .features { padding: 52px 16px; }
+      .feature-card { padding: 20px; }
+      .biz-types { padding: 52px 16px; }
+      .comparison { padding: 52px 16px; }
+      .comp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .comp-table { min-width: 460px; font-size: 12px; }
+      .comp-table th, .comp-table td { padding: 10px 12px; }
+      .plans { padding: 52px 16px; }
+      .billing-toggle { width: 100%; }
+      .billing-btn { flex: 1; text-align: center; padding: 8px 12px; font-size: 12px; }
+      .plan-card { padding: 24px; }
+      .partner { padding: 52px 16px; }
+      .partner-form { padding: 20px; }
+      .upgrade-cta { padding: 52px 16px; }
+      .upgrade-btn { padding: 14px 24px; font-size: 15px; }
+      .section-header h2 { font-size: clamp(22px,6vw,36px); }
+      footer { padding: 28px 16px; }
+    }
+    @media (max-width: 400px) {
+      .hero h1 { font-size: clamp(24px,8vw,44px); }
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .stat-num { font-size: 28px; }
     }
   </style>
 </head>
@@ -194,9 +252,19 @@
   ⚠ TRIAL ENVIRONMENT &nbsp;<span>— Data is not permanent. Not for real business operations.</span>
 </div>
 
+<!-- MOBILE NAV OVERLAY -->
+<div class="mob-nav" id="mobNav">
+  <button class="mob-nav-btn mob-nav-login" onclick="location.href='/login';closeMobNav()">Log in to Trial</button>
+  <button class="mob-nav-btn mob-nav-trial" onclick="location.href='/register';closeMobNav()">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    Start Free Trial
+  </button>
+  <button class="mob-nav-btn mob-nav-live" onclick="location.href='https://syllabrix.com/get-started';closeMobNav()">Go Live on Production ↗</button>
+</div>
+
 <!-- NAV -->
 <nav>
-  <div style="display:flex;align-items:center;gap:14px;">
+  <div style="display:flex;align-items:center;gap:12px;">
     <div class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
       <img src="/logo.png" alt="Syllabrix" style="height:28px;" />
     </div>
@@ -206,6 +274,9 @@
     <button class="btn-ghost" onclick="location.href='/login'">Log in</button>
     <button class="btn-cta" onclick="location.href='/register'">Start Free Trial</button>
     <button class="btn-upgrade" onclick="location.href='https://syllabrix.com/get-started'">Go Live ↗</button>
+    <div class="hamburger" id="hamburger" onclick="toggleMobNav()">
+      <span></span><span></span><span></span>
+    </div>
   </div>
 </nav>
 
@@ -346,6 +417,7 @@
       <p class="section-label">Why Syllabrix</p>
       <h2>The smarter choice for Indian businesses</h2>
     </div>
+    <div class="comp-table-wrap">
     <table class="comp-table">
       <thead>
         <tr>
@@ -367,6 +439,7 @@
         <tr><td>Starting Price</td><td class="highlight" style="color:var(--cyanb);font-weight:700;">₹999/mo</td><td style="color:rgba(255,255,255,0.5);">₹18,000/yr</td><td style="color:rgba(255,255,255,0.5);">₹3,599/yr</td><td style="color:rgba(255,255,255,0.5);">₹12,000/yr</td></tr>
       </tbody>
     </table>
+    </div>
   </div>
 </section>
 
@@ -453,6 +526,19 @@
 </footer>
 
 <script>
+  function toggleMobNav() {
+    const nav = document.getElementById('mobNav');
+    const hb  = document.getElementById('hamburger');
+    const open = nav.classList.toggle('open');
+    hb.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+  function closeMobNav() {
+    document.getElementById('mobNav').classList.remove('open');
+    document.getElementById('hamburger').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
   const API = 'https://syllabrixerp-production.up.railway.app/api/v1';
   let allPlans = [];
   let billing = 'monthly';
