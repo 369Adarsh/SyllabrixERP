@@ -112,7 +112,6 @@ function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/dashboard" replace />;
-  if (window.location.hostname === 'trial.syllabrix.com') return <Navigate to="/login" replace />;
   return (
     <iframe
       src="/landing.html"
