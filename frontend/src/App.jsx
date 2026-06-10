@@ -22,6 +22,7 @@ import BusinessCatalog from './pages/platform/BusinessCatalog';
 import RolesMatrix from './pages/platform/RolesMatrix';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import GetStarted from './pages/auth/GetStarted';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
@@ -180,6 +181,7 @@ export default function App() {
           <Route path="/pay" element={<PaymentRedirect />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/get-started" element={<GetStarted />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />

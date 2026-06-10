@@ -9,6 +9,7 @@ const {
 } = require('./auth.schema');
 
 router.get('/business-types',                                                             ctrl.getPublicBusinessTypes);
+router.get('/plans',                                                                      ctrl.getPublicPlans);
 router.get('/verify-email',                                                               ctrl.verifyEmail);
 router.post('/resend-verification', authLimiter,                                          ctrl.resendVerification);
 router.post('/register',         registerLimiter,       validate(registerSchema),       ctrl.register);

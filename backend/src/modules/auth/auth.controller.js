@@ -70,6 +70,13 @@ const me = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const getPublicPlans = async (req, res, next) => {
+  try {
+    const plans = await authService.getPublicPlans();
+    ok(res, plans);
+  } catch (err) { next(err); }
+};
+
 const getPublicBusinessTypes = async (req, res, next) => {
   try {
     const result = await authService.getPublicBusinessTypes();
@@ -91,4 +98,4 @@ const resendVerification = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { register, login, staffLogin, refresh, logout, forgotPassword, resetPassword, me, getPublicBusinessTypes, verifyEmail, resendVerification };
+module.exports = { register, login, staffLogin, refresh, logout, forgotPassword, resetPassword, me, getPublicBusinessTypes, getPublicPlans, verifyEmail, resendVerification };
