@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -56,6 +56,8 @@ function Field({ label, type = 'text', placeholder, value, onChange, error, requ
 }
 
 export default function GetStarted() {
+  if (import.meta.env.VITE_ENV !== 'production') return <Navigate to="/login" replace />;
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
