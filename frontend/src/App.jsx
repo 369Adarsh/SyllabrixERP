@@ -112,9 +112,10 @@ function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/dashboard" replace />;
+  const isTrial = window.location.hostname === 'trial.syllabrix.com';
   return (
     <iframe
-      src="/landing.html"
+      src={isTrial ? '/trial-landing.html' : '/landing.html'}
       title="Syllabrix"
       style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', border: 'none', margin: 0, padding: 0 }}
     />
