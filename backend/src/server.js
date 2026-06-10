@@ -3,6 +3,7 @@ const config = require('./config/env');
 const prisma = require('./config/prisma');
 const { startAutomation } = require('./modules/automation/automation.service');
 const { seedDefaultAdmin, seedDefaultPlans } = require('./modules/superadmin/superadmin.service');
+
 const start = async () => {
   try {
     await prisma.$connect();
