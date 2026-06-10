@@ -1,5 +1,4 @@
 {
-  "buildCommand": "npm run build:quality",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
