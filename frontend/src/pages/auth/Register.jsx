@@ -257,9 +257,9 @@ export default function Register() {
   };
 
   if (verified) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)', padding: 16 }}>
+    <div className="auth-page">
       <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
-        <div style={{ background: '#fff', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-md)', padding: 40 }}>
+        <div className="auth-success">
           <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg,#DCFCE7,#BBF7D0)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>
             ✉️
           </div>
@@ -280,7 +280,7 @@ export default function Register() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cream)', padding: 16 }}>
+    <div className="auth-page">
       <div style={{ width: '100%', maxWidth: 480 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <img src="/logo.png" alt="Syllabrix" style={{ height: 48, marginBottom: 12, objectFit: 'contain' }} />
@@ -288,9 +288,9 @@ export default function Register() {
           <p style={{ color: '#6B7280', marginTop: 4, fontSize: 14 }}>It takes less than 2 minutes</p>
         </div>
 
-        <div style={{ background: '#fff', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-md)', padding: 32 }}>
+        <div className="auth-card">
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="auth-grid-2">
               <Input label="Your name" placeholder="Adarsh Singh" value={form.name} onChange={set('name')} error={errors.name} />
               <Input label="Phone" type="tel" placeholder="9876543210" value={form.phone} onChange={set('phone')} error={errors.phone} />
             </div>

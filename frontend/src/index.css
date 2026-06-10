@@ -142,3 +142,30 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   z-index: 99; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 @media (max-width: 767px) { .mobile-topbar { display: flex; } }
+
+/* ── Auth pages (Login / Register / GetStarted) ───────────────────────────── */
+.auth-page    { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--cream); padding: 16px; }
+.auth-card    { background: #fff; border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 32px; }
+.auth-success { background: #fff; border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 40px; text-align: center; }
+.gs-card      { background: #fff; border-radius: 16px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); padding: 32px; margin-bottom: 20px; }
+.gs-success   { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 48px; }
+.auth-grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.auth-grid-3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.gs-plans     { display: grid; gap: 16px; }
+
+@media (max-width: 560px) {
+  .auth-card    { padding: 20px; }
+  .auth-success { padding: 24px; }
+  .gs-card      { padding: 20px; }
+  .gs-success   { padding: 28px; }
+  .auth-grid-2  { grid-template-columns: 1fr; }
+  .auth-grid-3  { grid-template-columns: 1fr 1fr; }
+  .gs-plans     { grid-template-columns: 1fr !important; }
+  /* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+  .auth-card input,  .auth-card select,  .auth-card textarea,
+  .gs-card input,    .gs-card select,    .gs-card textarea { font-size: 16px !important; }
+}
+
+@media (max-width: 380px) {
+  .auth-grid-3 { grid-template-columns: 1fr; }
+}
