@@ -10,6 +10,13 @@ const registerSchema = z.object({
   phone:        z.string().min(10).max(15).regex(/^\d+$/, 'Phone must contain only digits'),
   businessName: z.string().min(2).max(150).trim(),
   businessType: z.string().min(2).max(50),
+  gstin:        z.string().max(15).optional(),
+  pan:          z.string().max(10).optional(),
+  address:      z.string().max(300).optional(),
+  city:         z.string().max(100).optional(),
+  state:        z.string().max(100).optional(),
+  pincode:      z.string().max(10).optional(),
+  planKey:      z.string().optional(),
 });
 
 // Login schema intentionally does not validate password complexity —

@@ -45,7 +45,15 @@ const getPublicBusinessTypes = async () => {
   return categories.filter(c => c.businessTypes.length > 0);
 };
 
-const register = async ({ name, email: rawEmail, password, phone, businessName, businessType }) => {
+const getPublicPlans = async () => {
+  return prisma.platformPlan.findMany({
+    where: { isActive: true, isPublic: true },
+    select: { id: true, key: true, name: true, tagline: true, description: true, monthlyPrice: true, yearlyPrice: true, color: true, trialDays: true, maxUsers: true, maxBranches: true, modules: true, sortOrder: true },
+    orderBy: { sortOrder: 'asc' },
+  });
+};
+
+const register = async ({ name, email: rawEmail, password, phone, businessName, businessType, gstin, pan, address, city, state, pincode, planKey }) => {
   const email = rawEmail.trim().toLowerCase();
   const [byEmail, byPhone] = await Promise.all([
     prisma.tenant.findUnique({ where: { email } }),
@@ -70,6 +78,12 @@ const register = async ({ name, email: rawEmail, password, phone, businessName, 
       phone,
       modules,
       syllabrixId: tenantSyllabrixId,
+      ...(gstin && { gstin: gstin.toUpperCase().trim() }),
+      ...(pan && { pan: pan.toUpperCase().trim() }),
+      ...(address && { address }),
+      ...(city && { city }),
+      ...(state && { state }),
+      ...(pincode && { pincode }),
       users: {
         create: {
           name,
@@ -84,6 +98,15 @@ const register = async ({ name, email: rawEmail, password, phone, businessName, 
     },
     include: { users: true },
   });
+
+  // Auto-submit KYC if business details provided
+  if (gstin || pan) {
+    prisma.complianceRecord.upsert({
+      where: { tenantId: tenant.id },
+      create: { tenantId: tenant.id, kycStatus: 'SUBMITTED', kycDocuments: {} },
+      update: { kycStatus: 'SUBMITTED' },
+    }).catch(() => {});
+  }
 
   // Seed standard categories + default roles (non-blocking)
   seedStandardCategories(tenant.id).catch(() => {});
@@ -316,4 +339,4 @@ const sanitizeTenant = ({ ...t }) => {
   return t;
 };
 
-module.exports = { register, login, staffLogin, refresh, logout, forgotPassword, resetPassword, me, getPublicBusinessTypes, verifyEmail, resendVerification };
+module.exports = { register, login, staffLogin, refresh, logout, forgotPassword, resetPassword, me, getPublicBusinessTypes, getPublicPlans, verifyEmail, resendVerification };
