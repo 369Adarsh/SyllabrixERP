@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BranchProvider } from './context/BranchContext';
@@ -130,6 +131,13 @@ const Placeholder = ({ name }) => (
 );
 
 export default function App() {
+  useEffect(() => {
+    if (window.location.hostname === 'trial.syllabrix.com') {
+      const link = document.querySelector("link[rel='icon']");
+      if (link) link.href = '/trial-favicon.svg';
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <PlatformAuthProvider>
