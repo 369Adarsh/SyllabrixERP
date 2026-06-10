@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syllabrix Trial — Experience India's Complete Business Platform</title>
+  <meta name="description" content="Try Syllabrix free for 14 days. GST-ready, WhatsApp-native, AI-powered ERP for every Indian business. 83+ business types supported." />
+  <link rel="icon" href="/favicon.svg" />
+  <base target="_top" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#080F18; --navy2:#0C1822; --navy3:#111E2C; --navy4:#162535;
+      --cyan:#1FB8D6; --cyanb:#27DCFF; --green:#0E9F6E; --amber:#D97706;
+      --purple:#7C3AED; --bd:rgba(255,255,255,0.07);
+      --ff-d:'Bricolage Grotesque','Space Grotesk',sans-serif;
+      --ff-b:'Plus Jakarta Sans','Space Grotesk',sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--ff-b); background: var(--navy); color: #fff; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { text-decoration: none; color: inherit; }
+
+    /* TRIAL BANNER */
+    .trial-banner {
+      background: linear-gradient(90deg, rgba(217,119,6,0.15), rgba(217,119,6,0.08), rgba(217,119,6,0.15));
+      border-bottom: 1px solid rgba(217,119,6,0.3);
+      padding: 9px 20px; text-align: center;
+      font-size: 13px; font-weight: 600; color: #FCD34D;
+      letter-spacing: 0.01em;
+    }
+    .trial-banner span { color: rgba(252,211,77,0.6); font-weight: 400; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      height: 64px; padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(8,15,24,0.9); backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255,255,255,0.055);
+    }
+    .nav-logo { background: #fff; border-radius: 10px; padding: 5px 14px 5px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .nav-logo img { height: 28px; }
+    .trial-badge { font-size: 10px; font-weight: 700; background: rgba(217,119,6,0.2); color: #FCD34D; border: 1px solid rgba(217,119,6,0.3); padding: 3px 8px; border-radius: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-ghost { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.12); background: transparent; cursor: pointer; transition: all 0.15s; font-family: var(--ff-b); }
+    .btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.28); }
+    .btn-cta { padding: 9px 20px; border-radius: 9px; font-size: 14px; font-weight: 700; background: var(--cyan); color: #fff; border: none; cursor: pointer; box-shadow: 0 0 20px rgba(31,184,214,0.3); transition: all 0.2s; font-family: var(--ff-b); }
+    .btn-cta:hover { background: var(--cyanb); transform: translateY(-1px); }
+    .btn-upgrade { padding: 9px 20px; border-radius: 9px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, #7C3AED, #5B21B6); color: #fff; border: none; cursor: pointer; transition: all 0.2s; font-family: var(--ff-b); }
+    .btn-upgrade:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(124,58,237,0.4); }
+
+    /* HERO */
+    .hero { min-height: 85vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 80px 24px 60px; position: relative; overflow: hidden; }
+    .aurora { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(31,184,214,0.18) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.12) 0%, transparent 50%); }
+    .hero-inner { position: relative; max-width: 780px; margin: 0 auto; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(31,184,214,0.1); border: 1px solid rgba(31,184,214,0.25); border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 600; color: var(--cyanb); margin-bottom: 28px; }
+    .hero-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cyanb); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+    .hero h1 { font-family: var(--ff-d); font-size: clamp(36px,6vw,68px); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .hero h1 .accent { color: var(--cyanb); }
+    .hero p { font-size: 18px; color: rgba(255,255,255,0.55); line-height: 1.7; max-width: 560px; margin: 0 auto 36px; }
+    .hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .btn-hero-primary { display: inline-flex; align-items: center; gap: 8px; padding: 15px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; background: var(--cyan); color: #fff; border: none; cursor: pointer; box-shadow: 0 0 40px rgba(31,184,214,0.4); transition: all 0.2s; font-family: var(--ff-b); }
+    .btn-hero-primary:hover { background: var(--cyanb); transform: translateY(-2px); }
+    .btn-hero-secondary { display: inline-flex; align-items: center; gap: 8px; padding: 15px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.12); cursor: pointer; transition: all 0.2s; font-family: var(--ff-b); }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+    .hero-notice { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+    /* MARKET STATEMENT */
+    .market { padding: 80px 24px; text-align: center; border-top: 1px solid var(--bd); }
+    .market-inner { max-width: 900px; margin: 0 auto; }
+    .section-label { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); margin-bottom: 16px; }
+    .market h2 { font-family: var(--ff-d); font-size: clamp(28px,4vw,48px); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .market h2 em { color: var(--cyanb); font-style: normal; }
+    .market p { font-size: 17px; color: rgba(255,255,255,0.5); max-width: 600px; margin: 0 auto 48px; line-height: 1.7; }
+    .made-india { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 20px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+    /* STATS */
+    .stats { padding: 0 24px 80px; }
+    .stats-grid { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--bd); border-radius: 16px; overflow: hidden; border: 1px solid var(--bd); }
+    .stat-card { background: var(--navy2); padding: 32px 24px; text-align: center; }
+    .stat-num { font-family: var(--ff-d); font-size: 40px; font-weight: 800; color: var(--cyanb); letter-spacing: -0.03em; }
+    .stat-label { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 6px; font-weight: 500; }
+
+    /* FEATURES */
+    .features { padding: 80px 24px; border-top: 1px solid var(--bd); }
+    .features-inner { max-width: 1100px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 56px; }
+    .section-header h2 { font-family: var(--ff-d); font-size: clamp(26px,3.5vw,40px); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 12px; }
+    .section-header p { font-size: 16px; color: rgba(255,255,255,0.45); }
+    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .feature-card { background: var(--navy2); border: 1px solid var(--bd); border-radius: 16px; padding: 28px; transition: border-color 0.2s; }
+    .feature-card:hover { border-color: rgba(31,184,214,0.3); }
+    .feature-icon { font-size: 28px; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+    .india-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyanb); background: rgba(31,184,214,0.1); border: 1px solid rgba(31,184,214,0.2); padding: 2px 8px; border-radius: 20px; margin-top: 10px; }
+
+    /* BUSINESS TYPES */
+    .biz-types { padding: 80px 24px; border-top: 1px solid var(--bd); overflow: hidden; }
+    .biz-types-inner { max-width: 1100px; margin: 0 auto; }
+    .biz-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; -ms-overflow-style: none; margin-top: 32px; }
+    .biz-scroll::-webkit-scrollbar { display: none; }
+    .biz-chip { flex-shrink: 0; background: var(--navy3); border: 1px solid var(--bd); border-radius: 20px; padding: 7px 16px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.65); white-space: nowrap; }
+
+    /* COMPARISON */
+    .comparison { padding: 80px 24px; border-top: 1px solid var(--bd); }
+    .comparison-inner { max-width: 860px; margin: 0 auto; }
+    .comp-table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+    .comp-table th { padding: 14px 20px; font-size: 14px; font-weight: 700; text-align: center; background: var(--navy2); }
+    .comp-table th:first-child { text-align: left; }
+    .comp-table th.highlight { color: var(--cyanb); background: rgba(31,184,214,0.08); border-top: 2px solid var(--cyan); }
+    .comp-table td { padding: 13px 20px; font-size: 13px; border-bottom: 1px solid var(--bd); color: rgba(255,255,255,0.65); text-align: center; }
+    .comp-table td:first-child { text-align: left; font-weight: 500; color: rgba(255,255,255,0.85); }
+    .comp-table td.highlight { background: rgba(31,184,214,0.04); }
+    .check { color: var(--green); font-size: 16px; }
+    .cross { color: rgba(255,255,255,0.2); font-size: 16px; }
+    .partial { color: var(--amber); font-size: 13px; }
+
+    /* PLANS */
+    .plans { padding: 80px 24px; border-top: 1px solid var(--bd); }
+    .plans-inner { max-width: 1000px; margin: 0 auto; }
+    .billing-toggle { display: flex; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 4px; gap: 4px; width: fit-content; margin: 0 auto 40px; }
+    .billing-btn { padding: 8px 20px; border-radius: 7px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: var(--ff-b); background: transparent; color: rgba(255,255,255,0.5); }
+    .billing-btn.active { background: var(--navy); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+    .plans-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .plan-card { background: var(--navy2); border: 1px solid var(--bd); border-radius: 18px; padding: 28px; position: relative; transition: all 0.2s; }
+    .plan-card.popular { border-color: var(--cyan); box-shadow: 0 0 40px rgba(31,184,214,0.12); }
+    .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+    .plan-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .plan-name { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .plan-tagline { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 20px; }
+    .plan-price { margin-bottom: 6px; }
+    .plan-price .amount { font-family: var(--ff-d); font-size: 36px; font-weight: 800; }
+    .plan-price .period { font-size: 14px; color: rgba(255,255,255,0.4); }
+    .plan-price .yearly { font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 16px; }
+    .plan-limits { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 20px; line-height: 1.7; }
+    .plan-btn { width: 100%; padding: 11px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: var(--ff-b); background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8); }
+    .plan-btn:hover { background: rgba(255,255,255,0.12); }
+    .plan-btn.primary { background: var(--cyan); color: #fff; }
+    .plan-btn.primary:hover { background: var(--cyanb); }
+    .plans-note { text-align: center; margin-top: 24px; font-size: 13px; color: rgba(255,255,255,0.35); }
+
+    /* INVESTOR / PARTNER */
+    .partner { padding: 80px 24px; border-top: 1px solid var(--bd); }
+    .partner-inner { max-width: 760px; margin: 0 auto; text-align: center; }
+    .partner h2 { font-family: var(--ff-d); font-size: clamp(26px,3.5vw,40px); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+    .partner p { font-size: 16px; color: rgba(255,255,255,0.45); line-height: 1.7; margin-bottom: 36px; }
+    .partner-form { background: var(--navy2); border: 1px solid var(--bd); border-radius: 20px; padding: 36px; text-align: left; max-width: 560px; margin: 0 auto; }
+    .partner-form h3 { font-size: 17px; font-weight: 700; margin-bottom: 24px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-field label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; text-transform: uppercase; }
+    .form-field input, .form-field select, .form-field textarea { background: var(--navy3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #fff; font-family: var(--ff-b); outline: none; transition: border-color 0.15s; resize: none; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--cyan); }
+    .form-field select option { background: var(--navy2); }
+    .submit-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; background: var(--cyan); color: #fff; font-family: var(--ff-b); transition: all 0.2s; }
+    .submit-btn:hover { background: var(--cyanb); }
+    .submit-success { text-align: center; padding: 24px; }
+    .submit-success .check-icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* UPGRADE CTA */
+    .upgrade-cta { padding: 80px 24px; text-align: center; border-top: 1px solid var(--bd); background: linear-gradient(180deg, transparent, rgba(124,58,237,0.06)); }
+    .upgrade-cta-inner { max-width: 680px; margin: 0 auto; }
+    .upgrade-cta h2 { font-family: var(--ff-d); font-size: clamp(28px,4vw,44px); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+    .upgrade-cta h2 em { color: var(--cyanb); font-style: normal; }
+    .upgrade-cta p { font-size: 16px; color: rgba(255,255,255,0.45); margin-bottom: 36px; line-height: 1.7; }
+    .upgrade-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; border-radius: 14px; font-size: 17px; font-weight: 700; background: linear-gradient(135deg, #7C3AED, var(--cyan)); color: #fff; border: none; cursor: pointer; box-shadow: 0 0 60px rgba(124,58,237,0.3); transition: all 0.2s; font-family: var(--ff-b); }
+    .upgrade-btn:hover { transform: translateY(-2px); box-shadow: 0 0 80px rgba(124,58,237,0.45); }
+
+    /* FOOTER */
+    footer { padding: 40px 24px; border-top: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
+    footer p { font-size: 13px; color: rgba(255,255,255,0.3); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 13px; color: rgba(255,255,255,0.3); transition: color 0.15s; }
+    .footer-links a:hover { color: rgba(255,255,255,0.6); }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .features-grid { grid-template-columns: 1fr; }
+      .plans-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TRIAL BANNER -->
+<div class="trial-banner">
+  ⚠ TRIAL ENVIRONMENT &nbsp;<span>— Data is not permanent. Not for real business operations.</span>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="nav-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+      <img src="/logo.png" alt="Syllabrix" style="height:28px;" />
+    </div>
+    <span class="trial-badge">Trial</span>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-ghost" onclick="location.href='/login'">Log in</button>
+    <button class="btn-cta" onclick="location.href='/register'">Start Free Trial</button>
+    <button class="btn-upgrade" onclick="location.href='https://syllabrix.com/get-started'">Go Live ↗</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="aurora"></div>
+  <div class="hero-inner">
+    <div class="hero-badge">14-Day Free Trial · Full Platform · No Credit Card</div>
+    <h1>Experience India's<br/><span class="accent">Complete Business</span><br/>Platform</h1>
+    <p>Explore every feature — invoicing, inventory, GST, staff, AI copilot, WhatsApp and more. See why thousands of Indian businesses choose Syllabrix.</p>
+    <div class="hero-ctas">
+      <button class="btn-hero-primary" onclick="location.href='/register'">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Start Free Trial — 14 Days
+      </button>
+      <button class="btn-hero-secondary" onclick="location.href='/login'">
+        Already have a trial account? Log in →
+      </button>
+    </div>
+    <p class="hero-notice">⚠ This is a sandbox environment. Do not use for real business operations.</p>
+  </div>
+</section>
+
+<!-- MARKET STATEMENT -->
+<section class="market">
+  <div class="market-inner">
+    <p class="section-label">The Opportunity</p>
+    <h2>India has <em>63 million SMBs.</em><br/>Only 3% use ERP software.</h2>
+    <p>Syllabrix is purpose-built for the other 97% — every kirana, clinic, gym, coaching centre, and restaurant across India.</p>
+    <div class="made-india">
+      <span style="font-size:18px;">🇮🇳</span>
+      Proudly Made in India · GST-Native · WhatsApp-Native · UPI-Ready
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num">83+</div>
+      <div class="stat-label">Business Types</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">20+</div>
+      <div class="stat-label">Integrated Modules</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">14</div>
+      <div class="stat-label">Days Free Trial</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">₹0</div>
+      <div class="stat-label">Setup Cost</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-inner">
+    <div class="section-header">
+      <p class="section-label">What You Can Explore</p>
+      <h2>Everything your business needs — in one place</h2>
+      <p>Every module is available during your trial. No limitations.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🧾</div>
+        <h3>GST Invoicing & Billing</h3>
+        <p>Create GST-compliant invoices, credit notes, quotations and receipts in seconds. Auto HSN/SAC codes.</p>
+        <span class="india-tag">GST-Native</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>Inventory Management</h3>
+        <p>Track stock in real-time across branches. Low stock alerts, purchase orders, supplier management.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <h3>Point of Sale (POS)</h3>
+        <p>Fast, touch-friendly POS for retail and food businesses. UPI, cash, card — all payment modes.</p>
+        <span class="india-tag">UPI-Ready</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>CRM & Customers</h3>
+        <p>Complete customer profiles, purchase history, loyalty tracking, and follow-up reminders.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👔</div>
+        <h3>Staff & Payroll</h3>
+        <p>Attendance, leave management, salary processing, roles and permissions for your entire team.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>WhatsApp Business</h3>
+        <p>Send invoices, payment reminders, and campaigns directly via WhatsApp from the platform.</p>
+        <span class="india-tag">WhatsApp-Native</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI Copilot</h3>
+        <p>Get business insights, answer queries, and automate tasks with your built-in AI assistant.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Reports & Analytics</h3>
+        <p>P&L, GST reports, sales trends, staff performance — all at a glance with exportable reports.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏥</div>
+        <h3>Industry-Specific Modules</h3>
+        <p>Appointment booking for clinics, membership plans for gyms, fee collection for coaching — built-in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BUSINESS TYPES -->
+<section class="biz-types">
+  <div class="biz-types-inner">
+    <div class="section-header">
+      <p class="section-label">Who It's Built For</p>
+      <h2>83+ Business Types — One Platform</h2>
+      <p>From a kirana store in Bhopal to a hospital in Mumbai — Syllabrix adapts to your business.</p>
+    </div>
+    <div class="biz-scroll">
+      <span class="biz-chip">🛒 Kirana Store</span><span class="biz-chip">🏥 Clinic</span><span class="biz-chip">💪 Gym</span><span class="biz-chip">📚 Coaching Institute</span><span class="biz-chip">🍽️ Restaurant</span><span class="biz-chip">💈 Salon</span><span class="biz-chip">💊 Medical Store</span><span class="biz-chip">🏗️ Hardware Store</span><span class="biz-chip">👗 Clothing Store</span><span class="biz-chip">🦷 Dental Clinic</span><span class="biz-chip">🎵 Music School</span><span class="biz-chip">🚗 Driving School</span><span class="biz-chip">⚡ Electrical Store</span><span class="biz-chip">📱 Mobile Repair</span><span class="biz-chip">🏨 Hotel</span><span class="biz-chip">🧘 Yoga Studio</span><span class="biz-chip">🍰 Bakery</span><span class="biz-chip">🚚 Transport</span><span class="biz-chip">🏠 Real Estate</span><span class="biz-chip">📖 Bookstore</span><span class="biz-chip">💍 Jewellery</span><span class="biz-chip">🔬 Diagnostic Lab</span><span class="biz-chip">🥗 Dhaba</span><span class="biz-chip">👟 Footwear</span><span class="biz-chip">🖥️ Computer Training</span><span class="biz-chip">+ 57 more</span>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison">
+  <div class="comparison-inner">
+    <div class="section-header">
+      <p class="section-label">Why Syllabrix</p>
+      <h2>The smarter choice for Indian businesses</h2>
+    </div>
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th class="highlight">Syllabrix</th>
+          <th>Tally</th>
+          <th>Vyapar</th>
+          <th>Busy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>GST Invoicing</td><td class="highlight"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        <tr><td>WhatsApp Integration</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="partial">Partial</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>AI Copilot</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>Multi-Branch</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Paid add-on</span></td><td><span class="cross">✗</span></td><td><span class="partial">Limited</span></td></tr>
+        <tr><td>Cloud + Mobile</td><td class="highlight"><span class="check">✓</span></td><td><span class="partial">Partial</span></td><td><span class="check">✓</span></td><td><span class="partial">Partial</span></td></tr>
+        <tr><td>83+ Business Types</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>Appointment & CRM</td><td class="highlight"><span class="check">✓</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>Starting Price</td><td class="highlight" style="color:var(--cyanb);font-weight:700;">₹999/mo</td><td style="color:rgba(255,255,255,0.5);">₹18,000/yr</td><td style="color:rgba(255,255,255,0.5);">₹3,599/yr</td><td style="color:rgba(255,255,255,0.5);">₹12,000/yr</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PLANS -->
+<section class="plans">
+  <div class="plans-inner">
+    <div class="section-header">
+      <p class="section-label">Pricing</p>
+      <h2>Simple, transparent pricing</h2>
+      <p>Pick the plan that fits your business. Upgrade anytime.</p>
+    </div>
+    <div class="billing-toggle">
+      <button class="billing-btn active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
+      <button class="billing-btn" id="btn-yearly" onclick="setBilling('yearly')">Yearly <span style="color:var(--green);font-size:11px;">Save 17%</span></button>
+    </div>
+    <div class="plans-grid" id="plans-grid">
+      <!-- Filled by JS -->
+    </div>
+    <p class="plans-note">All plans include a 14-day free trial. No credit card required to start.</p>
+  </div>
+</section>
+
+<!-- PARTNER / INVESTOR -->
+<section class="partner">
+  <div class="partner-inner">
+    <p class="section-label">Partner & Invest</p>
+    <h2>Building for India's next 60 million businesses</h2>
+    <p>We're on a mission to bring modern ERP to every Indian SMB. If you're an investor, integration partner, or enterprise buyer — let's talk.</p>
+    <div class="partner-form" id="partner-form-wrap">
+      <h3>Get in Touch</h3>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Your Name</label>
+          <input type="text" id="pi-name" placeholder="Adarsh Singh" />
+        </div>
+        <div class="form-field">
+          <label>Phone / Email</label>
+          <input type="text" id="pi-contact" placeholder="9876543210 or email" />
+        </div>
+      </div>
+      <div class="form-field">
+        <label>I am a</label>
+        <select id="pi-type">
+          <option value="">Select type</option>
+          <option value="investor">Investor</option>
+          <option value="partner">Integration Partner</option>
+          <option value="enterprise">Enterprise Buyer</option>
+          <option value="reseller">Reseller / Channel Partner</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Message</label>
+        <textarea id="pi-message" rows="3" placeholder="Tell us about your interest..."></textarea>
+      </div>
+      <button class="submit-btn" onclick="submitPartnerForm()">Send Message →</button>
+    </div>
+  </div>
+</section>
+
+<!-- UPGRADE CTA -->
+<section class="upgrade-cta">
+  <div class="upgrade-cta-inner">
+    <p class="section-label">Ready to Go Live?</p>
+    <h2>Loving Syllabrix?<br/><em>Your real business is one click away.</em></h2>
+    <p>Create your production account, select a plan, complete KYC, and go live. Your trial data shows you exactly what you'll get.</p>
+    <button class="upgrade-btn" onclick="location.href='https://syllabrix.com/get-started'">
+      Create Your Business Account ↗
+    </button>
+    <p style="margin-top:16px;font-size:13px;color:rgba(255,255,255,0.25);">
+      Production accounts are on <strong style="color:rgba(255,255,255,0.4);">syllabrix.com</strong> — separate from this trial environment.
+    </p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 Syllabrix Network. Made with ❤️ in India.</p>
+  <div class="footer-links">
+    <a href="https://syllabrix.com">syllabrix.com</a>
+    <a href="https://syllabrix.com/get-started">Go Live</a>
+    <a href="/login">Trial Login</a>
+  </div>
+</footer>
+
+<script>
+  const API = 'https://syllabrix-quality.onrender.com/api/v1';
+  let allPlans = [];
+  let billing = 'monthly';
+
+  // Fetch plans
+  fetch(`${API}/auth/plans`)
+    .then(r => r.json())
+    .then(data => {
+      allPlans = data.data ?? data;
+      if (Array.isArray(allPlans) && allPlans.length) renderPlans();
+      else renderFallbackPlans();
+    })
+    .catch(() => renderFallbackPlans());
+
+  function setBilling(cycle) {
+    billing = cycle;
+    document.getElementById('btn-monthly').classList.toggle('active', cycle === 'monthly');
+    document.getElementById('btn-yearly').classList.toggle('active', cycle === 'yearly');
+    renderPlans();
+  }
+
+  function renderPlans() {
+    const grid = document.getElementById('plans-grid');
+    if (!allPlans.length) return;
+    const mid = Math.floor(allPlans.length / 2);
+    grid.innerHTML = allPlans.map((plan, i) => {
+      const price = billing === 'yearly' && plan.yearlyPrice ? Math.round(plan.yearlyPrice / 12) : plan.monthlyPrice;
+      const isPopular = i === mid;
+      return `
+        <div class="plan-card ${isPopular ? 'popular' : ''}">
+          ${isPopular ? '<div class="popular-badge">Most Popular</div>' : ''}
+          <div style="display:flex;align-items:center;margin-bottom:6px;">
+            <span class="plan-dot" style="background:${plan.color || '#1FB8D6'}"></span>
+            <span class="plan-name">${plan.name}</span>
+          </div>
+          <p class="plan-tagline">${plan.tagline || ''}</p>
+          <div class="plan-price">
+            <span class="amount" style="color:${plan.color || '#1FB8D6'}">₹${price.toLocaleString('en-IN')}</span>
+            <span class="period">/mo</span>
+          </div>
+          ${billing === 'yearly' && plan.yearlyPrice ? `<div class="plan-price yearly">₹${plan.yearlyPrice.toLocaleString('en-IN')}/yr billed annually</div>` : '<div style="height:20px;"></div>'}
+          <div class="plan-limits">
+            ${plan.maxUsers ? `Up to ${plan.maxUsers} users` : 'Unlimited users'} ·
+            ${plan.maxBranches ? `${plan.maxBranches} branch${plan.maxBranches > 1 ? 'es' : ''}` : 'Unlimited branches'}
+            ${plan.trialDays > 0 ? ` · ${plan.trialDays}-day trial` : ''}
+          </div>
+          <button class="plan-btn ${isPopular ? 'primary' : ''}" onclick="location.href='https://syllabrix.com/get-started'">
+            Get Started →
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  function renderFallbackPlans() {
+    const grid = document.getElementById('plans-grid');
+    grid.innerHTML = `
+      <div class="plan-card">
+        <div style="display:flex;align-items:center;margin-bottom:6px;"><span class="plan-dot" style="background:#0E9F6E"></span><span class="plan-name">Starter</span></div>
+        <p class="plan-tagline">Perfect for getting started</p>
+        <div class="plan-price"><span class="amount" style="color:#0E9F6E">₹999</span><span class="period">/mo</span></div>
+        <div style="height:20px;"></div>
+        <div class="plan-limits">Up to 3 users · 1 branch · 14-day trial</div>
+        <button class="plan-btn" onclick="location.href='https://syllabrix.com/get-started'">Get Started →</button>
+      </div>
+      <div class="plan-card popular">
+        <div class="popular-badge">Most Popular</div>
+        <div style="display:flex;align-items:center;margin-bottom:6px;"><span class="plan-dot" style="background:#1FB8D6"></span><span class="plan-name">Growth</span></div>
+        <p class="plan-tagline">For growing businesses</p>
+        <div class="plan-price"><span class="amount" style="color:#1FB8D6">₹2,499</span><span class="period">/mo</span></div>
+        <div style="height:20px;"></div>
+        <div class="plan-limits">Up to 15 users · 3 branches · 14-day trial</div>
+        <button class="plan-btn primary" onclick="location.href='https://syllabrix.com/get-started'">Get Started →</button>
+      </div>
+      <div class="plan-card">
+        <div style="display:flex;align-items:center;margin-bottom:6px;"><span class="plan-dot" style="background:#7C3AED"></span><span class="plan-name">Scale</span></div>
+        <p class="plan-tagline">Unlimited power</p>
+        <div class="plan-price"><span class="amount" style="color:#7C3AED">₹4,999</span><span class="period">/mo</span></div>
+        <div style="height:20px;"></div>
+        <div class="plan-limits">Unlimited users · Unlimited branches · 30-day trial</div>
+        <button class="plan-btn" onclick="location.href='https://syllabrix.com/get-started'">Get Started →</button>
+      </div>`;
+  }
+
+  // Partner form
+  function submitPartnerForm() {
+    const name = document.getElementById('pi-name').value.trim();
+    const contact = document.getElementById('pi-contact').value.trim();
+    const type = document.getElementById('pi-type').value;
+    const message = document.getElementById('pi-message').value.trim();
+    if (!name || !contact || !type) { alert('Please fill in all required fields.'); return; }
+    // Send to quality backend
+    fetch(`${API}/auth/partner-inquiry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, contact, type, message })
+    }).catch(() => {});
+    document.getElementById('partner-form-wrap').innerHTML = `
+      <div class="submit-success">
+        <div class="check-icon">✅</div>
+        <h3 style="margin-bottom:8px;">Message Received!</h3>
+        <p style="color:rgba(255,255,255,0.5);font-size:14px;">We'll get back to you within 24 hours.</p>
+      </div>`;
+  }
+</script>
+</body>
+</html>
