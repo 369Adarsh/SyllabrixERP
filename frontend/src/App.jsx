@@ -109,6 +109,23 @@ import ChangeList from './pages/platform/ChangeList';
 import ChangeNew from './pages/platform/ChangeNew';
 import ChangeDetail from './pages/platform/ChangeDetail';
 
+// Freelancer module
+import FreelancerLogin from './pages/freelancer/FreelancerLogin';
+import FreelancerRegister from './pages/freelancer/FreelancerRegister';
+import FreelancerLayout from './pages/freelancer/FreelancerLayout';
+import FreelancerProtectedRoute from './pages/freelancer/FreelancerProtectedRoute';
+import FreelancerDashboard from './pages/freelancer/FreelancerDashboard';
+import FreelancerJobs from './pages/freelancer/FreelancerJobs';
+import FreelancerNewJob from './pages/freelancer/FreelancerNewJob';
+import FreelancerJobDetail from './pages/freelancer/FreelancerJobDetail';
+import FreelancerClients from './pages/freelancer/FreelancerClients';
+import FreelancerExpenses from './pages/freelancer/FreelancerExpenses';
+import FreelancerTeam from './pages/freelancer/FreelancerTeam';
+import FreelancerSuppliers from './pages/freelancer/FreelancerSuppliers';
+import FreelancerTools from './pages/freelancer/FreelancerTools';
+import FreelancerAMC from './pages/freelancer/FreelancerAMC';
+import FreelancerBills from './pages/freelancer/FreelancerBills';
+
 function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -183,6 +200,24 @@ export default function App() {
             <Route path="transport/new"         element={<TransportNew />} />
             <Route path="transport/environments" element={<TransportEnvironments />} />
             <Route path="transport/:id"         element={<TransportDetail />} />
+          </Route>
+
+          {/* ── Freelancer Module ── */}
+          <Route path="/freelancer/login" element={<FreelancerLogin />} />
+          <Route path="/freelancer/register" element={<FreelancerRegister />} />
+          <Route path="/freelancer" element={<FreelancerProtectedRoute><FreelancerLayout /></FreelancerProtectedRoute>}>
+            <Route index element={<Navigate to="/freelancer/dashboard" replace />} />
+            <Route path="dashboard"  element={<FreelancerDashboard />} />
+            <Route path="jobs"       element={<FreelancerJobs />} />
+            <Route path="jobs/new"   element={<FreelancerNewJob />} />
+            <Route path="jobs/:id"   element={<FreelancerJobDetail />} />
+            <Route path="clients"    element={<FreelancerClients />} />
+            <Route path="expenses"   element={<FreelancerExpenses />} />
+            <Route path="team"       element={<FreelancerTeam />} />
+            <Route path="suppliers"  element={<FreelancerSuppliers />} />
+            <Route path="tools"      element={<FreelancerTools />} />
+            <Route path="amc"        element={<FreelancerAMC />} />
+            <Route path="bills"      element={<FreelancerBills />} />
           </Route>
 
           {/* ── Tenant App ── */}
