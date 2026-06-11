@@ -14,7 +14,7 @@ export default function FreelancerSuppliers() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', category: '', address: '', note: '' });
+  const [form, setForm] = useState({ name: '', phone: '', materials: '', area: '', notes: '' });
 
   const load = () => {
     setLoading(true);
@@ -35,7 +35,7 @@ export default function FreelancerSuppliers() {
     try {
       await createSupplier(form);
       toast.success('Supplier added');
-      setForm({ name: '', phone: '', category: '', address: '', note: '' });
+      setForm({ name: '', phone: '', materials: '', area: '', notes: '' });
       setShowAdd(false);
       load();
     } catch { toast.error('Could not save'); }
@@ -63,12 +63,12 @@ export default function FreelancerSuppliers() {
           {suppliers.map(s => (
             <div key={s.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '16px 18px' }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 8 }}>{s.name}</div>
-              {s.category && (
-                <span style={{ padding: '2px 8px', borderRadius: 20, fontSize: 11, background: 'rgba(249,115,22,0.1)', color: OR, display: 'inline-block', marginBottom: 8 }}>{s.category}</span>
+              {s.materials && (
+                <span style={{ padding: '2px 8px', borderRadius: 20, fontSize: 11, background: 'rgba(249,115,22,0.1)', color: OR, display: 'inline-block', marginBottom: 8 }}>{s.materials}</span>
               )}
               {s.phone && <div style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>📞 {s.phone}</div>}
-              {s.address && <div style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>📍 {s.address}</div>}
-              {s.note && <div style={{ fontSize: 12, color: MUTED, marginTop: 4, fontStyle: 'italic' }}>{s.note}</div>}
+              {s.area && <div style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>📍 {s.area}</div>}
+              {s.notes && <div style={{ fontSize: 12, color: MUTED, marginTop: 4, fontStyle: 'italic' }}>{s.notes}</div>}
             </div>
           ))}
         </div>
@@ -82,7 +82,7 @@ export default function FreelancerSuppliers() {
               <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }}><X size={18} /></button>
             </div>
             <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[['Name *', 'name', 'text', 'Sharma Hardware'], ['Phone', 'phone', 'tel', '9876543210'], ['Category', 'category', 'text', 'Hardware, Electrical, Paint…'], ['Address', 'address', 'text', 'Area, City'], ['Note', 'note', 'text', 'e.g. Gives credit of 30 days']].map(([label, key, type, ph]) => (
+              {[['Name *', 'name', 'text', 'Sharma Hardware'], ['Phone', 'phone', 'tel', '9876543210'], ['Materials Supplied', 'materials', 'text', 'Hardware, Electrical, Paint…'], ['Area', 'area', 'text', 'Area, City'], ['Notes', 'notes', 'text', 'e.g. Gives credit of 30 days']].map(([label, key, type, ph]) => (
                 <SField key={key} label={label} type={type} value={form[key]} onChange={set(key)} placeholder={ph} />
               ))}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>

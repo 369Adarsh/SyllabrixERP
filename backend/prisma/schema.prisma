@@ -93,6 +93,15 @@ model Tenant {
   stockTransfers          StockTransfer[]
   auditReports            AuditReport[]
 
+  // ── Freelancer (SYL-FL-*) ──────────────────────────────────────────────────
+  flJobs                  FlJob[]
+  flHelpers               FlHelper[]
+  flPartners              FlPartner[]
+  flClients               FlClient[]
+  flSuppliers             FlSupplier[]
+  flTools                 FlTool[]
+  flAMC                   FlAMC[]
+
   hasBranches             Boolean                @default(false)
   featureConfigs          TenantFeatureConfig[]
   opdTokens               OpdToken[]
@@ -3541,4 +3550,289 @@ model TRSettings {
   updatedAt               DateTime @updatedAt
 
   @@map("tr_settings")
+}
+
+// ─── Syllabrix Freelancer — SYL-FL-* ─────────────────────────────────────────
+
+model FlJob {
+  id          String      @id @default(uuid())
+  tenantId    String
+  jobNumber   String
+  status      FlJobStatus @default(ENQUIRY)
+  customerId  String?
+  customerName String
+  customerPhone String
+  siteAddress String?
+  workType    String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  jobValue    Float       @default(0)
+  advanceReq  Float       @default(0)
+  notes       String?
+  meta        Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  estimate    FlEstimate?
+  materials   FlMaterial[]
+  helpers     FlJobHelper[]
+  payments    FlPayment[]
+  expenses    FlExpense[]
+
+  @@unique([tenantId, jobNumber])
+  @@index([tenantId])
+  @@map("fl_jobs")
+}
+
+enum FlJobStatus {
+  ENQUIRY
+  ESTIMATE_SENT
+  IN_PROGRESS
+  COMPLETED
+  PAYMENT_PENDING
+  CLOSED
+  CANCELLED
+}
+
+model FlEstimate {
+  id          String   @id @default(uuid())
+  tenantId    String
+  jobId       String   @unique
+  version     Int      @default(1)
+  validUntil  DateTime?
+  advanceReq  Float    @default(0)
+  terms       String?
+  status      String   @default("DRAFT")
+  total       Float    @default(0)
+  meta        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  job   FlJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  items FlEstimateItem[]
+
+  @@index([tenantId])
+  @@map("fl_estimates")
+}
+
+model FlEstimateItem {
+  id         String  @id @default(uuid())
+  estimateId String
+  type       String  // LABOUR | MATERIAL
+  description String
+  qty        Float   @default(1)
+  unit       String?
+  rate       Float
+  total      Float
+
+  estimate FlEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+
+  @@index([estimateId])
+  @@map("fl_estimate_items")
+}
+
+model FlMaterial {
+  id          String   @id @default(uuid())
+  tenantId    String
+  jobId       String
+  name        String
+  qty         Float
+  unit        String?
+  rate        Float
+  total       Float
+  supplierId  String?
+  purchaseDate DateTime @default(now())
+  receiptUrl  String?
+  notes       String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  job FlJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([jobId])
+  @@map("fl_materials")
+}
+
+model FlHelper {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  skill     String?
+  dailyRate Float    @default(0)
+  isActive  Boolean  @default(true)
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobHelpers FlJobHelper[]
+
+  @@index([tenantId])
+  @@map("fl_helpers")
+}
+
+model FlJobHelper {
+  id         String   @id @default(uuid())
+  tenantId   String
+  jobId      String
+  helperId   String
+  daysWorked Float    @default(0)
+  totalWages Float    @default(0)
+  paidAmount Float    @default(0)
+  meta       Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  job    FlJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  helper FlHelper @relation(fields: [helperId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, helperId])
+  @@index([tenantId])
+  @@map("fl_job_helpers")
+}
+
+model FlPartner {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  skill     String?
+  notes     String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_partners")
+}
+
+model FlPayment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  jobId     String
+  amount    Float
+  mode      String   @default("CASH") // CASH | UPI | BANK | CHEQUE
+  type      String   @default("PAYMENT") // ADVANCE | PAYMENT
+  reference String?
+  note      String?
+  paidAt    DateTime @default(now())
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  job FlJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([jobId])
+  @@map("fl_payments")
+}
+
+model FlExpense {
+  id         String   @id @default(uuid())
+  tenantId   String
+  jobId      String?
+  category   String   // MATERIAL | TOOL | TRAVEL | PHONE | WAGES | OTHER
+  amount     Float
+  note       String?
+  receiptUrl String?
+  taxDeductible Boolean @default(false)
+  expenseDate DateTime @default(now())
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  job FlJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@map("fl_expenses")
+}
+
+model FlClient {
+  id              String   @id @default(uuid())
+  tenantId        String
+  name            String
+  phone           String
+  email           String?
+  address         String?
+  city            String?
+  notes           String?
+  paymentBehaviour String  @default("NORMAL") // ON_TIME | NORMAL | LATE | DEFAULTER
+  referredBy      String?
+  meta            Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_clients")
+}
+
+model FlSupplier {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  ownerName String?
+  phone     String?
+  area      String?
+  materials String?
+  credit    Float    @default(0)
+  outstanding Float  @default(0)
+  notes     String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_suppliers")
+}
+
+model FlTool {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  purchaseDate DateTime?
+  cost         Float    @default(0)
+  condition    String   @default("GOOD") // GOOD | NEEDS_SERVICE | REPLACE
+  warrantyUntil DateTime?
+  nextService  DateTime?
+  notes        String?
+  meta         Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_tools")
+}
+
+model FlAMC {
+  id           String   @id @default(uuid())
+  tenantId     String
+  jobId        String?
+  clientName   String
+  clientPhone  String
+  workType     String
+  type         String   @default("WARRANTY") // WARRANTY | AMC
+  startDate    DateTime
+  endDate      DateTime
+  annualFee    Float    @default(0)
+  nextService  DateTime?
+  schedule     String?
+  notes        String?
+  meta         Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_amc")
 }
