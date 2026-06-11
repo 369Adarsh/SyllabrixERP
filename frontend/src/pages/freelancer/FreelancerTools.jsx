@@ -9,15 +9,15 @@ const MUTED = '#9CA3AF';
 const CARD = '#161616';
 const BORDER = '#222';
 
-const CONDITIONS = ['GOOD', 'NEEDS_SERVICE', 'REPAIR', 'RETIRED'];
-const CONDITION_COLORS = { GOOD: '#4ADE80', NEEDS_SERVICE: '#FBBF24', REPAIR: '#F87171', RETIRED: '#6B7280' };
+const CONDITIONS = ['GOOD', 'NEEDS_SERVICE', 'REPLACE'];
+const CONDITION_COLORS = { GOOD: '#4ADE80', NEEDS_SERVICE: '#FBBF24', REPLACE: '#F87171' };
 
 export default function FreelancerTools() {
   const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', brand: '', purchaseDate: '', purchasePrice: '', condition: 'GOOD', note: '' });
+  const [form, setForm] = useState({ name: '', purchaseDate: '', cost: '', condition: 'GOOD', notes: '' });
 
   const load = () => {
     setLoading(true);
@@ -36,9 +36,9 @@ export default function FreelancerTools() {
     if (!form.name.trim()) return toast.error('Tool name required');
     setSaving(true);
     try {
-      await createTool({ ...form, purchasePrice: parseFloat(form.purchasePrice) || 0, purchaseDate: form.purchaseDate || undefined });
+      await createTool({ ...form, cost: parseFloat(form.cost) || 0, purchaseDate: form.purchaseDate || undefined });
       toast.success('Tool added');
-      setForm({ name: '', brand: '', purchaseDate: '', purchasePrice: '', condition: 'GOOD', note: '' });
+      setForm({ name: '', purchaseDate: '', cost: '', condition: 'GOOD', notes: '' });
       setShowAdd(false);
       load();
     } catch { toast.error('Could not save'); }
@@ -78,10 +78,9 @@ export default function FreelancerTools() {
                 </span>
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>{t.name}</div>
-              {t.brand && <div style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>Brand: {t.brand}</div>}
-              {t.purchasePrice > 0 && <div style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>Cost: ₹{t.purchasePrice}</div>}
+              {t.cost > 0 && <div style={{ fontSize: 12, color: MUTED, marginBottom: 2 }}>Cost: ₹{t.cost.toLocaleString('en-IN')}</div>}
               {t.purchaseDate && <div style={{ fontSize: 12, color: MUTED }}>Bought: {new Date(t.purchaseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>}
-              {t.note && <div style={{ fontSize: 12, color: MUTED, marginTop: 6, fontStyle: 'italic' }}>{t.note}</div>}
+              {t.notes && <div style={{ fontSize: 12, color: MUTED, marginTop: 6, fontStyle: 'italic' }}>{t.notes}</div>}
             </div>
           ))}
         </div>
@@ -96,9 +95,8 @@ export default function FreelancerTools() {
             </div>
             <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <TField label="Tool Name *" value={form.name} onChange={set('name')} placeholder="Drill machine, Wire stripper…" />
-              <TField label="Brand" value={form.brand} onChange={set('brand')} placeholder="Bosch, Stanley, Local…" />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <TField label="Purchase Price (₹)" type="number" value={form.purchasePrice} onChange={set('purchasePrice')} placeholder="0" />
+                <TField label="Cost (₹)" type="number" value={form.cost} onChange={set('cost')} placeholder="0" />
                 <TField label="Purchase Date" type="date" value={form.purchaseDate} onChange={set('purchaseDate')} />
               </div>
               <div>
@@ -108,7 +106,7 @@ export default function FreelancerTools() {
                   {CONDITIONS.map(c => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}
                 </select>
               </div>
-              <TField label="Note" value={form.note} onChange={set('note')} placeholder="Any notes about the tool" />
+              <TField label="Notes" value={form.notes} onChange={set('notes')} placeholder="Any notes about the tool" />
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button type="button" onClick={() => setShowAdd(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid #222', borderRadius: 8, color: MUTED, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={saving} style={{ flex: 2, padding: '10px', background: OR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>

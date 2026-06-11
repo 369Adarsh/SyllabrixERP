@@ -48,6 +48,7 @@ const membershipPlansRoutes = require('./modules/membership-plans/membership-pla
 const returnsRoutes = require('./modules/returns/returns.routes');
 const trainingRoutes = require('./modules/training/training.routes');
 const rolesRoutes = require('./modules/roles/roles.routes');
+const freelancerRoutes = require('./modules/freelancer/freelancer.routes');
 const branchesRoutes = require('./modules/branches/branches.routes');
 const stockTransferRoutes = require('./modules/branches/stockTransfer.routes');
 const featuresRoutes = require('./modules/features/features.routes');
@@ -201,6 +202,7 @@ app.use('/api/v1/automation', automationRoutes);
 app.use('/api/v1/progress', progressRoutes);
 app.use('/api/v1/role-requests', roleRequestsRoutes);
 app.use('/api/v1/b2b', b2bRoutes);
+app.use('/api/v1/fl', freelancerRoutes);
 app.use('/api/v1/membership-plans', membershipPlansRoutes);
 app.use('/api/v1/returns', returnsRoutes);
 app.use('/api/v1/training', trainingRoutes);
