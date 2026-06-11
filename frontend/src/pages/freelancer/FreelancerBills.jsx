@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { pendingPayments, jobsReport } from '../../api/freelancer';
 import toast from 'react-hot-toast';
 
-const OR = '#F97316';
-const TEXT = '#F3F4F6';
-const MUTED = '#9CA3AF';
-const CARD = '#161616';
-const BORDER = '#222';
+const OR = '#f97316';
+const TEXT = '#f1f5f9';
+const MUTED = '#64748b';
+const CARD = '#141414';
+const BORDER = '#1e1e1e';
 
 const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 

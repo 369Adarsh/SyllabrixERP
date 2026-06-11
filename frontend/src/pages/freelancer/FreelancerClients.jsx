@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { listClients, createClient } from '../../api/freelancer';
 import toast from 'react-hot-toast';
 
-const OR = '#F97316';
-const TEXT = '#F3F4F6';
-const MUTED = '#9CA3AF';
-const CARD = '#161616';
-const BORDER = '#222';
+const OR = '#f97316';
+const TEXT = '#f1f5f9';
+const MUTED = '#64748b';
+const CARD = '#141414';
+const BORDER = '#1e1e1e';
 
 export default function FreelancerClients() {
   const [clients, setClients] = useState([]);
@@ -17,15 +17,15 @@ export default function FreelancerClients() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' });
   const [saving, setSaving] = useState(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     listClients({ search: search || undefined })
       .then(r => setClients(r.data))
       .catch(() => toast.error('Could not load clients'))
       .finally(() => setLoading(false));
-  };
+  }, [search]);
 
-  useEffect(() => { load(); }, [search]);
+  useEffect(() => { load(); }, [load]);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
