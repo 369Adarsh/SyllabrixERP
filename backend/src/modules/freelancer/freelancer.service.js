@@ -1,4 +1,5 @@
 const prisma = require('../../config/prisma');
+const wa = require('../whatsapp/whatsapp.service');
 
 // ── Job number generator ──────────────────────────────────────────────────────
 async function nextJobNumber(tenantId) {
@@ -10,7 +11,7 @@ async function nextJobNumber(tenantId) {
 async function createJob(tenantId, data) {
   const jobNumber = await nextJobNumber(tenantId);
   const { startDate, endDate, ...rest } = data;
-  return prisma.flJob.create({
+  const job = await prisma.flJob.create({
     data: {
       tenantId, jobNumber, ...rest,
       startDate: startDate ? new Date(startDate) : undefined,
@@ -18,6 +19,12 @@ async function createJob(tenantId, data) {
     },
     include: { estimate: true, payments: true },
   });
+  // Non-blocking WhatsApp notification to customer
+  if (job.customerPhone) {
+    wa.sendFlJobCreated(tenantId, job.customerPhone, job.customerName, job)
+      .catch(() => {});
+  }
+  return job;
 }
 
 async function listJobs(tenantId, { status, search, page = 1, limit = 20 } = {}) {
@@ -69,7 +76,13 @@ async function updateJob(tenantId, id, data) {
 }
 
 async function updateJobStatus(tenantId, id, status) {
-  return prisma.flJob.update({ where: { id, tenantId }, data: { status } });
+  const job = await prisma.flJob.update({ where: { id, tenantId }, data: { status } });
+  // Non-blocking WhatsApp status update to customer
+  if (job.customerPhone) {
+    wa.sendFlStatusUpdate(tenantId, job.customerPhone, job.customerName, job)
+      .catch(() => {});
+  }
+  return job;
 }
 
 async function deleteJob(tenantId, id) {
@@ -120,9 +133,16 @@ async function deleteMaterial(tenantId, id) {
 // ── PAYMENTS ─────────────────────────────────────────────────────────────────
 async function recordPayment(tenantId, jobId, data) {
   const { paidAt, ...rest } = data;
-  return prisma.flPayment.create({
+  const payment = await prisma.flPayment.create({
     data: { tenantId, jobId, ...rest, ...(paidAt && { paidAt: new Date(paidAt) }) },
   });
+  // Non-blocking WhatsApp payment receipt to customer
+  const job = await prisma.flJob.findFirst({ where: { id: jobId, tenantId } });
+  if (job?.customerPhone) {
+    wa.sendFlPaymentReceived(tenantId, job.customerPhone, job.customerName, job, payment)
+      .catch(() => {});
+  }
+  return payment;
 }
 
 async function listPayments(tenantId, jobId) {

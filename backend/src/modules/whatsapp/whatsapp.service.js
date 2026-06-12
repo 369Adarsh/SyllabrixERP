@@ -166,7 +166,95 @@ const getThread = async (tenantId, phone) => {
   });
 };
 
-// ── Incoming webhook handler ─────────────────────────────────────────────────
+// ── Freelancer notifications ──────────────────────────────────────────────────
+const isWAReady = () => !!(config.whatsappToken && config.whatsappPhoneId);
+
+const flTenantName = async (tenantId) => {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
+  return t?.name || 'Your service provider';
+};
+
+const sendFlJobCreated = async (tenantId, phone, contactName, job) => {
+  if (!isWAReady() || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const body = [
+    `Hi ${contactName || 'there'}! 👋`,
+    ``,
+    `Your job has been created with *${biz}*.`,
+    ``,
+    `📋 *Job #:* ${job.jobNumber}`,
+    `🔧 *Work:* ${job.workType}`,
+    job.jobValue ? `💰 *Value:* ₹${Number(job.jobValue).toLocaleString('en-IN')}` : null,
+    job.startDate ? `📅 *Start:* ${new Date(job.startDate).toLocaleDateString('en-IN')}` : null,
+    ``,
+    `We'll keep you updated at every step. Thank you! 🙏`,
+  ].filter(l => l !== null).join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlJobCreated failed:', e.message));
+};
+
+const STATUS_LABELS = {
+  ENQUIRY: 'Enquiry received', ESTIMATE_SENT: 'Estimate sent',
+  IN_PROGRESS: 'Work started', COMPLETED: 'Work completed',
+  PAYMENT_PENDING: 'Payment pending', CLOSED: 'Job closed', CANCELLED: 'Job cancelled',
+};
+const STATUS_EMOJI = {
+  ENQUIRY: '📩', ESTIMATE_SENT: '📄', IN_PROGRESS: '🔨',
+  COMPLETED: '✅', PAYMENT_PENDING: '⏳', CLOSED: '🔒', CANCELLED: '❌',
+};
+
+const sendFlStatusUpdate = async (tenantId, phone, contactName, job) => {
+  if (!isWAReady() || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const emoji = STATUS_EMOJI[job.status] || '📌';
+  const label = STATUS_LABELS[job.status] || job.status;
+  const body = [
+    `${emoji} *Status Update — ${biz}*`,
+    ``,
+    `Job *${job.jobNumber}* (${job.workType})`,
+    `Status: *${label}*`,
+    job.status === 'COMPLETED' ? `\nThank you for choosing us! 🙏` : `\nFor any queries, please reach out to us.`,
+  ].join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlStatusUpdate failed:', e.message));
+};
+
+const sendFlPaymentReceived = async (tenantId, phone, contactName, job, payment) => {
+  if (!isWAReady() || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const body = [
+    `✅ *Payment Received — ${biz}*`,
+    ``,
+    `Hi ${contactName || 'there'},`,
+    ``,
+    `We've received your payment:`,
+    `💰 *Amount:* ₹${Number(payment.amount).toLocaleString('en-IN')}`,
+    `💳 *Mode:* ${payment.mode}`,
+    `📋 *Job:* ${job.jobNumber} — ${job.workType}`,
+    payment.note ? `📝 *Note:* ${payment.note}` : null,
+    ``,
+    `Thank you! 🙏`,
+  ].filter(l => l !== null).join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlPaymentReceived failed:', e.message));
+};
+
+const sendFlAMCReminder = async (tenantId, phone, contactName, amc, daysLeft) => {
+  if (!isWAReady() || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const urgency = daysLeft <= 7 ? '🚨 *Urgent Reminder*' : '⏰ *Renewal Reminder*';
+  const body = [
+    `${urgency} — ${biz}`,
+    ``,
+    `Hi ${contactName || 'there'},`,
+    ``,
+    `Your *${amc.workType}* contract is expiring in *${daysLeft} day${daysLeft !== 1 ? 's' : ''}*.`,
+    `📅 Expiry: ${new Date(amc.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+    amc.annualFee ? `💰 Annual Fee: ₹${Number(amc.annualFee).toLocaleString('en-IN')}` : null,
+    ``,
+    `Please contact us to renew your contract on time. Thank you! 🙏`,
+  ].filter(l => l !== null).join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlAMCReminder failed:', e.message));
+};
+
+// ── Incoming webhook handler ──────────────────────────────────────────────────
 const handleInbound = async (tenantId, entry) => {
   const changes = entry?.changes || [];
   for (const change of changes) {
@@ -177,12 +265,56 @@ const handleInbound = async (tenantId, entry) => {
       if (msg.type !== 'text') continue;
       const phone = msg.from;
       const contactName = contacts.find(c => c.wa_id === phone)?.profile?.name || null;
+      const body = msg.text?.body || '';
+
       await prisma.whatsAppMessage.upsert({
         where: { waMessageId: msg.id },
         update: {},
-        create: { tenantId, phone, contactName, direction: 'INBOUND', body: msg.text?.body || '', waMessageId: msg.id, status: 'DELIVERED' },
+        create: { tenantId, phone, contactName, direction: 'INBOUND', body, waMessageId: msg.id, status: 'DELIVERED' },
       });
+
+      // Auto-create inquiry job if no recent inquiry from this number
+      await _autoCreateInquiry(tenantId, phone, contactName, body);
     }
+  }
+};
+
+const _autoCreateInquiry = async (tenantId, phone, contactName, messageBody) => {
+  try {
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1 hour dedup window
+    const existing = await prisma.flJob.findFirst({
+      where: { tenantId, customerPhone: phone, createdAt: { gte: cutoff } },
+    });
+    if (existing) return; // Already created an inquiry recently
+
+    const count = await prisma.flJob.count({ where: { tenantId } });
+    const jobNumber = `JOB-${String(count + 1).padStart(4, '0')}`;
+    const job = await prisma.flJob.create({
+      data: {
+        tenantId, jobNumber,
+        customerName: contactName || 'WhatsApp Inquiry',
+        customerPhone: phone,
+        workType: 'WhatsApp Inquiry',
+        description: messageBody,
+        status: 'ENQUIRY',
+      },
+    });
+
+    const biz = await flTenantName(tenantId);
+    const reply = [
+      `Thank you for reaching out to *${biz}*! 🙏`,
+      ``,
+      `We've received your message and will get back to you shortly.`,
+      ``,
+      `📋 *Reference:* ${jobNumber}`,
+      ``,
+      `_This is an automated acknowledgment._`,
+    ].join('\n');
+
+    await sendText(tenantId, phone, reply, contactName);
+    console.log(`[WA Inbound] Auto-created inquiry ${jobNumber} for ${phone} (tenant ${tenantId})`);
+  } catch (e) {
+    console.error('[WA Inbound] Failed to auto-create inquiry:', e.message);
   }
 };
 
@@ -198,4 +330,6 @@ function normalizePhone(phone) {
 module.exports = {
   sendText, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
   dispatchOverdueFeeReminders, getConversations, getThread, handleInbound,
+  sendFlJobCreated, sendFlStatusUpdate, sendFlPaymentReceived, sendFlAMCReminder,
+  isWAReady,
 };
