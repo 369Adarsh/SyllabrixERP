@@ -128,10 +128,33 @@ const bulkFeeReminders = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// GET /whatsapp/qr-status  — returns QR string + connection status (for Nerve Center setup page)
+// GET /whatsapp/qr-status  — returns QR string + connection status
 const qrStatus = (req, res) => {
   const { getStatus } = require('./baileys.service');
   res.json(getStatus());
+};
+
+// GET /whatsapp/qr.png  — returns scannable QR image directly
+const qrImage = async (req, res) => {
+  const { getStatus } = require('./baileys.service');
+  const { status, qr } = getStatus();
+
+  if (status === 'connected') {
+    return res.send('<h2 style="font-family:sans-serif;color:green">✓ WhatsApp Connected!</h2><p>No QR needed — already linked.</p>');
+  }
+  if (!qr) {
+    return res.send('<h2 style="font-family:sans-serif">QR not ready yet</h2><p>Refresh in a few seconds…</p><script>setTimeout(()=>location.reload(),3000)</script>');
+  }
+
+  try {
+    const QRCode = require('qrcode');
+    const png = await QRCode.toBuffer(qr, { width: 400, margin: 2 });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(png);
+  } catch (e) {
+    res.status(500).json({ error: 'Could not generate QR image' });
+  }
 };
 
 // GET /whatsapp/conversations
@@ -149,7 +172,7 @@ const thread = async (req, res, next) => {
 };
 
 module.exports = {
-  verify, webhook, qrStatus,
+  verify, webhook, qrStatus, qrImage,
   send, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
   bulkFeeReminders, conversations, thread,
 };
