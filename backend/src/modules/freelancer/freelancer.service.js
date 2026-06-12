@@ -26,7 +26,7 @@ async function listJobs(tenantId, { status, search, page = 1, limit = 20 } = {})
   const [jobs, total] = await Promise.all([
     prisma.flJob.findMany({
       where,
-      include: { payments: true, materials: true, helpers: true },
+      include: { payments: { select: { amount: true } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -238,8 +238,12 @@ async function dashboardStats(tenantId) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-  const [allJobs, monthlyPayments, monthlyExpenses, activeJobs, pendingJobs] = await Promise.all([
-    prisma.flJob.findMany({ where: { tenantId }, include: { payments: true } }),
+  const [
+    monthlyPayments, monthlyExpenses,
+    activeJobs, pendingJobs,
+    totalPaymentsAgg, totalJobValueAgg,
+    overdueJobs, completedThisMonth,
+  ] = await Promise.all([
     prisma.flPayment.aggregate({
       where: { tenantId, paidAt: { gte: monthStart, lte: monthEnd } },
       _sum: { amount: true },
@@ -250,33 +254,33 @@ async function dashboardStats(tenantId) {
     }),
     prisma.flJob.count({ where: { tenantId, status: 'IN_PROGRESS' } }),
     prisma.flJob.count({ where: { tenantId, status: 'PAYMENT_PENDING' } }),
+    prisma.flPayment.aggregate({ where: { tenantId }, _sum: { amount: true } }),
+    prisma.flJob.aggregate({ where: { tenantId }, _sum: { jobValue: true } }),
+    prisma.flJob.findMany({
+      where: {
+        tenantId,
+        endDate: { lt: now },
+        status: { notIn: ['CLOSED', 'CANCELLED', 'COMPLETED'] },
+      },
+      select: { id: true, jobNumber: true, customerName: true, endDate: true },
+      take: 10,
+    }),
+    prisma.flJob.count({
+      where: { tenantId, status: 'COMPLETED', updatedAt: { gte: monthStart } },
+    }),
   ]);
 
-  const totalReceived = allJobs.reduce((s, j) => s + j.payments.reduce((ps, p) => ps + p.amount, 0), 0);
-  const totalJobValue = allJobs.reduce((s, j) => s + j.jobValue, 0);
-  const pendingAmount = totalJobValue - totalReceived;
-
-  // overdue jobs (end date passed, not closed)
-  const overdueJobs = allJobs.filter(j =>
-    j.endDate && new Date(j.endDate) < now &&
-    !['CLOSED', 'CANCELLED', 'COMPLETED'].includes(j.status)
-  );
-
-  const completedThisMonth = allJobs.filter(j =>
-    j.status === 'COMPLETED' && new Date(j.updatedAt) >= monthStart
-  ).length;
+  const totalReceived = totalPaymentsAgg._sum.amount || 0;
+  const totalJobValue = totalJobValueAgg._sum.jobValue || 0;
 
   return {
     earnedThisMonth: monthlyPayments._sum.amount || 0,
     expensesThisMonth: monthlyExpenses._sum.amount || 0,
-    pendingAmount: Math.max(0, pendingAmount),
+    pendingAmount: Math.max(0, totalJobValue - totalReceived),
     activeJobs,
     pendingPaymentJobs: pendingJobs,
     completedThisMonth,
-    overdueJobs: overdueJobs.map(j => ({
-      id: j.id, jobNumber: j.jobNumber,
-      customerName: j.customerName, endDate: j.endDate,
-    })),
+    overdueJobs,
   };
 }
 
