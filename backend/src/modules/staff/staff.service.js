@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../../config/prisma');
 
 const list = (tenantId, { branchId } = {}) =>
   prisma.staff.findMany({
