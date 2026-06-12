@@ -1,61 +1,16 @@
-const axios = require('axios');
 const prisma = require('../../config/prisma');
-const config = require('../../config/env');
-
-const WA_BASE = () => `https://graph.facebook.com/v19.0/${config.whatsappPhoneId}/messages`;
-const WA_HEADERS = () => ({
-  Authorization: `Bearer ${config.whatsappToken}`,
-  'Content-Type': 'application/json',
-});
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
-// ── Core send ────────────────────────────────────────────────────────────────
-const sendRaw = async (payload) => {
-  try {
-    const { data } = await axios.post(WA_BASE(), payload, { headers: WA_HEADERS() });
-    return data;
-  } catch (err) {
-    // Surface Meta's actual error message instead of generic axios error
-    const metaError = err.response?.data?.error;
-    if (metaError) {
-      const msg = metaError.error_user_msg || metaError.message || 'WhatsApp API error';
-      const code = metaError.code;
-      // Common Meta error codes with friendly messages
-      const friendly = {
-        131030: 'Recipient phone number is not registered on WhatsApp.',
-        131047: 'Message failed — recipient may have opted out or number is invalid.',
-        131026: 'Recipient number is not on WhatsApp.',
-        100:    'Invalid phone number format. Use 10-digit Indian mobile number.',
-        190:    'WhatsApp access token has expired. Please refresh it in Meta Developer Console.',
-        200:    'Permission denied — check your WhatsApp Business account permissions.',
-        368:    'Your WhatsApp Business account has been temporarily blocked.',
-        // Test account limitation
-        131051: 'This number is not in your test recipients list. Add it in Meta Developer Console → WhatsApp → API Setup.',
-      };
-      const readableMsg = friendly[code] || `${msg} (Meta error code: ${code})`;
-      const e = new Error(readableMsg);
-      e.statusCode = 400;
-      e.metaCode = code;
-      throw e;
-    }
-    throw err;
-  }
-};
-
+// ── Core send (Baileys) ───────────────────────────────────────────────────────
 const sendText = async (tenantId, phone, body, contactName = null) => {
   const normalized = normalizePhone(phone);
-  const payload = {
-    messaging_product: 'whatsapp',
-    to: normalized,
-    type: 'text',
-    text: { body },
-  };
-  const result = await sendRaw(payload);
+  // Lazy require to avoid circular dep with baileys.service
+  const baileys = require('./baileys.service');
+  await baileys.sendWA(normalized, body);
   await prisma.whatsAppMessage.create({
-    data: { tenantId, phone: normalized, contactName, direction: 'OUTBOUND', body, waMessageId: result?.messages?.[0]?.id, status: 'SENT' },
+    data: { tenantId, phone: normalized, contactName, direction: 'OUTBOUND', body, status: 'SENT' },
   });
-  return result;
 };
 
 // ── Invoice notification ─────────────────────────────────────────────────────
@@ -254,27 +209,33 @@ const sendFlAMCReminder = async (tenantId, phone, contactName, amc, daysLeft) =>
   return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlAMCReminder failed:', e.message));
 };
 
-// ── Incoming webhook handler ──────────────────────────────────────────────────
+// ── Shared inbound processor (called by Baileys handler + Meta webhook) ───────
+const _processInbound = async (tenantId, phone, contactName, body, waMessageId) => {
+  try {
+    await prisma.whatsAppMessage.upsert({
+      where:  { waMessageId: waMessageId || '__never__' },
+      update: {},
+      create: { tenantId, phone, contactName, direction: 'INBOUND', body, waMessageId, status: 'DELIVERED' },
+    });
+  } catch {
+    // If upsert fails (e.g. no waMessageId), just create
+    await prisma.whatsAppMessage.create({
+      data: { tenantId, phone, contactName, direction: 'INBOUND', body, status: 'DELIVERED' },
+    }).catch(() => {});
+  }
+  await _autoCreateInquiry(tenantId, phone, contactName, body);
+};
+
+// ── Meta webhook handler (kept for backward compat, Baileys is primary) ───────
 const handleInbound = async (tenantId, entry) => {
-  const changes = entry?.changes || [];
-  for (const change of changes) {
-    const value = change.value;
-    const messages = value?.messages || [];
-    const contacts = value?.contacts || [];
+  for (const change of entry?.changes || []) {
+    const messages = change.value?.messages || [];
+    const contacts = change.value?.contacts || [];
     for (const msg of messages) {
       if (msg.type !== 'text') continue;
-      const phone = msg.from;
+      const phone       = msg.from;
       const contactName = contacts.find(c => c.wa_id === phone)?.profile?.name || null;
-      const body = msg.text?.body || '';
-
-      await prisma.whatsAppMessage.upsert({
-        where: { waMessageId: msg.id },
-        update: {},
-        create: { tenantId, phone, contactName, direction: 'INBOUND', body, waMessageId: msg.id, status: 'DELIVERED' },
-      });
-
-      // Auto-create inquiry job if no recent inquiry from this number
-      await _autoCreateInquiry(tenantId, phone, contactName, body);
+      await _processInbound(tenantId, phone, contactName, msg.text?.body || '', msg.id);
     }
   }
 };
@@ -329,7 +290,7 @@ function normalizePhone(phone) {
 
 module.exports = {
   sendText, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
-  dispatchOverdueFeeReminders, getConversations, getThread, handleInbound,
+  dispatchOverdueFeeReminders, getConversations, getThread, handleInbound, _processInbound,
   sendFlJobCreated, sendFlStatusUpdate, sendFlPaymentReceived, sendFlAMCReminder,
   isWAReady,
 };

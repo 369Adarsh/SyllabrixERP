@@ -128,6 +128,12 @@ const bulkFeeReminders = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+// GET /whatsapp/qr-status  — returns QR string + connection status (for Nerve Center setup page)
+const qrStatus = (req, res) => {
+  const { getStatus } = require('./baileys.service');
+  res.json(getStatus());
+};
+
 // GET /whatsapp/conversations
 const conversations = async (req, res, next) => {
   try {
@@ -143,7 +149,7 @@ const thread = async (req, res, next) => {
 };
 
 module.exports = {
-  verify, webhook,
+  verify, webhook, qrStatus,
   send, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
   bulkFeeReminders, conversations, thread,
 };
