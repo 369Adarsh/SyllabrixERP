@@ -68,3 +68,8 @@ export const dashboardStats = () => fl('reports/dashboard');
 export const monthlyReport = (params) => fl('reports/monthly', { params });
 export const pendingPayments = () => fl('reports/pending');
 export const jobsReport = () => fl('reports/jobs');
+export const financeReport = (params) => fl('reports/finance', { params });
+
+// Settings
+export const getSettings = () => fl('settings');
+export const updateSettings = (data) => flPatch('settings', data);
