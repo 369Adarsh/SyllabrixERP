@@ -51,6 +51,8 @@ export default function FreelancerAMC() {
     if (!form.clientName.trim()) return toast.error('Client name required');
     if (!form.clientPhone.trim()) return toast.error('Client phone required');
     if (!form.workType.trim()) return toast.error('Work description required');
+    if (!form.startDate) return toast.error('Start date is required');
+    if (!form.endDate) return toast.error('End date is required');
     setSaving(true);
     try {
       await createAMC({
