@@ -36,11 +36,14 @@ export default function Login() {
     setUnverifiedEmail(null);
     try {
       if (mode === 'staff') {
-        await staffLogin({ email: form.email, password: form.password, tenantId: form.tenantId || undefined });
+        const res = await staffLogin({ email: form.email, password: form.password, tenantId: form.tenantId || undefined });
+        const bType = res?.data?.tenant?.businessType;
+        navigate(bType === 'FREELANCER' ? '/freelancer/dashboard' : '/dashboard');
       } else {
-        await login({ email: form.email, password: form.password });
+        const res = await login({ email: form.email, password: form.password });
+        const bType = res?.data?.tenant?.businessType;
+        navigate(bType === 'FREELANCER' ? '/freelancer/dashboard' : '/dashboard');
       }
-      navigate('/dashboard');
     } catch (err) {
       if (err.response?.status === 409 && err.response?.data?.data?.tenants) {
         setTenantChoices(err.response.data.data.tenants);
@@ -59,8 +62,9 @@ export default function Login() {
     setTenantChoices(null);
     setLoading(true);
     try {
-      await staffLogin({ email: form.email, password: form.password, tenantId });
-      navigate('/dashboard');
+      const res = await staffLogin({ email: form.email, password: form.password, tenantId });
+      const bType = res?.data?.tenant?.businessType;
+      navigate(bType === 'FREELANCER' ? '/freelancer/dashboard' : '/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {
