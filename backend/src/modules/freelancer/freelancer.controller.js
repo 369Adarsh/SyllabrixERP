@@ -64,3 +64,8 @@ exports.dashboardStats  = async (req, res, next) => { try { res.json(await svc.d
 exports.monthlyReport   = async (req, res, next) => { try { res.json(await svc.monthlyReport(tid(req), req.query)); } catch(e){next(e);} };
 exports.pendingPayments = async (req, res, next) => { try { res.json(await svc.pendingPayments(tid(req))); } catch(e){next(e);} };
 exports.jobsReport      = async (req, res, next) => { try { res.json(await svc.jobsReport(tid(req))); } catch(e){next(e);} };
+exports.financeReport   = async (req, res, next) => { try { res.json(await svc.financeReport(tid(req), req.query)); } catch(e){next(e);} };
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+exports.getSettings    = async (req, res, next) => { try { res.json(await svc.getSettings(tid(req))); } catch(e){next(e);} };
+exports.updateSettings = async (req, res, next) => { try { res.json(await svc.updateSettings(tid(req), req.body)); } catch(e){next(e);} };

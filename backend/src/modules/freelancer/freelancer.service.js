@@ -348,6 +348,104 @@ async function jobsReport(tenantId) {
   });
 }
 
+// ── SETTINGS (module config + labels) ────────────────────────────────────────
+const DEFAULT_FL_MODULES = ['jobs','clients','finance','expenses','bills','team','suppliers','tools','amc'];
+
+async function getSettings(tenantId) {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { sidebarConfig: true, labelConfig: true } });
+  const sidebar = t?.sidebarConfig || {};
+  const labels  = t?.labelConfig  || {};
+  return {
+    activeModules: sidebar.flModules  ?? DEFAULT_FL_MODULES,
+    moduleLabels:  labels.flLabels    ?? {},
+  };
+}
+
+async function updateSettings(tenantId, { activeModules, moduleLabels }) {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { sidebarConfig: true, labelConfig: true } });
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      sidebarConfig: { ...(t?.sidebarConfig || {}), flModules: activeModules },
+      labelConfig:   { ...(t?.labelConfig   || {}), flLabels:  moduleLabels  },
+    },
+  });
+  return getSettings(tenantId);
+}
+
+// ── FINANCE REPORT (full tally) ───────────────────────────────────────────────
+async function financeReport(tenantId, { year } = {}) {
+  const y = parseInt(year) || new Date().getFullYear();
+  const yearStart = new Date(y, 0, 1);
+  const yearEnd   = new Date(y, 11, 31, 23, 59, 59);
+
+  const [allPayments, allExpenses, allJobs, yearPayments, yearExpenses] = await Promise.all([
+    prisma.flPayment.findMany({ where: { tenantId } }),
+    prisma.flExpense.findMany({ where: { tenantId } }),
+    prisma.flJob.findMany({ where: { tenantId }, include: { payments: true } }),
+    prisma.flPayment.findMany({ where: { tenantId, paidAt: { gte: yearStart, lte: yearEnd } } }),
+    prisma.flExpense.findMany({ where: { tenantId, expenseDate: { gte: yearStart, lte: yearEnd } } }),
+  ]);
+
+  const allTimeIncome   = allPayments.reduce((s, p) => s + p.amount, 0);
+  const allTimeExpenses = allExpenses.reduce((s, e) => s + e.amount, 0);
+
+  const totalJobValue   = allJobs.reduce((s, j) => s + j.jobValue, 0);
+  const totalReceived   = allPayments.reduce((s, p) => s + p.amount, 0);
+  const outstanding     = Math.max(0, totalJobValue - totalReceived);
+
+  // Month-by-month for selected year
+  const monthly = [];
+  for (let m = 1; m <= 12; m++) {
+    const mStart = new Date(y, m - 1, 1);
+    const mEnd   = new Date(y, m, 0, 23, 59, 59);
+    const inc  = yearPayments.filter(p => new Date(p.paidAt) >= mStart && new Date(p.paidAt) <= mEnd).reduce((s, p) => s + p.amount, 0);
+    const exp  = yearExpenses.filter(e => new Date(e.expenseDate) >= mStart && new Date(e.expenseDate) <= mEnd).reduce((s, e) => s + e.amount, 0);
+    const jobs = allJobs.filter(j => new Date(j.createdAt) >= mStart && new Date(j.createdAt) <= mEnd).length;
+    monthly.push({ month: m, name: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1], income: inc, expenses: exp, profit: inc - exp, jobs });
+  }
+
+  // Top clients (by total received)
+  const clientTotals = {};
+  allJobs.forEach(j => {
+    const received = j.payments.reduce((s, p) => s + p.amount, 0);
+    if (!clientTotals[j.customerName]) clientTotals[j.customerName] = { name: j.customerName, received: 0, jobs: 0 };
+    clientTotals[j.customerName].received += received;
+    clientTotals[j.customerName].jobs++;
+  });
+  const topClients = Object.values(clientTotals).sort((a, b) => b.received - a.received).slice(0, 8);
+
+  // Top work types
+  const workTotals = {};
+  allJobs.forEach(j => {
+    const wt = j.workType || 'Other';
+    const received = j.payments.reduce((s, p) => s + p.amount, 0);
+    if (!workTotals[wt]) workTotals[wt] = { workType: wt, received: 0, jobs: 0 };
+    workTotals[wt].received += received;
+    workTotals[wt].jobs++;
+  });
+  const topWorkTypes = Object.values(workTotals).sort((a, b) => b.received - a.received).slice(0, 8);
+
+  // Expense breakdown by category
+  const expByCat = {};
+  allExpenses.forEach(e => {
+    expByCat[e.category] = (expByCat[e.category] || 0) + e.amount;
+  });
+  const expensesByCategory = Object.entries(expByCat).map(([category, amount]) => ({ category, amount })).sort((a, b) => b.amount - a.amount);
+
+  const yearIncome   = yearPayments.reduce((s, p) => s + p.amount, 0);
+  const yearExp      = yearExpenses.reduce((s, e) => s + e.amount, 0);
+
+  return {
+    allTime:  { income: allTimeIncome, expenses: allTimeExpenses, profit: allTimeIncome - allTimeExpenses, outstanding },
+    thisYear: { income: yearIncome, expenses: yearExp, profit: yearIncome - yearExp, year: y },
+    monthly,
+    topClients,
+    topWorkTypes,
+    expensesByCategory,
+  };
+}
+
 module.exports = {
   createJob, listJobs, getJob, updateJob, updateJobStatus, deleteJob,
   saveEstimate, getEstimate,
@@ -361,4 +459,5 @@ module.exports = {
   createTool, listTools, updateTool,
   createAMC, listAMC, updateAMC,
   dashboardStats, monthlyReport, pendingPayments, jobsReport,
+  getSettings, updateSettings, financeReport,
 };

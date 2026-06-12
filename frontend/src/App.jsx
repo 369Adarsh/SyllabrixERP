@@ -125,6 +125,8 @@ import FreelancerSuppliers from './pages/freelancer/FreelancerSuppliers';
 import FreelancerTools from './pages/freelancer/FreelancerTools';
 import FreelancerAMC from './pages/freelancer/FreelancerAMC';
 import FreelancerBills from './pages/freelancer/FreelancerBills';
+import FreelancerFinance from './pages/freelancer/FreelancerFinance';
+import FreelancerSettings from './pages/freelancer/FreelancerSettings';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -218,6 +220,8 @@ export default function App() {
             <Route path="tools"      element={<FreelancerTools />} />
             <Route path="amc"        element={<FreelancerAMC />} />
             <Route path="bills"      element={<FreelancerBills />} />
+            <Route path="finance"    element={<FreelancerFinance />} />
+            <Route path="settings"   element={<FreelancerSettings />} />
           </Route>
 
           {/* ── Tenant App ── */}

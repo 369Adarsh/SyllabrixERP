@@ -66,5 +66,10 @@ router.get   ('/reports/dashboard',     ctrl.dashboardStats);
 router.get   ('/reports/monthly',       ctrl.monthlyReport);
 router.get   ('/reports/pending',       ctrl.pendingPayments);
 router.get   ('/reports/jobs',          ctrl.jobsReport);
+router.get   ('/reports/finance',       ctrl.financeReport);
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+router.get   ('/settings',              ctrl.getSettings);
+router.patch ('/settings',              ctrl.updateSettings);
 
 module.exports = router;
