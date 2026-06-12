@@ -172,17 +172,24 @@ async function listClients(tenantId, { search } = {}) {
     { name: { contains: search, mode: 'insensitive' } },
     { phone: { contains: search } },
   ];
-  return prisma.flClient.findMany({ where, orderBy: { name: 'asc' } });
+  return prisma.flClient.findMany({
+    where,
+    orderBy: { name: 'asc' },
+    include: { _count: { select: { jobs: true } } },
+  });
 }
 
 async function getClient(tenantId, id) {
-  const client = await prisma.flClient.findFirst({ where: { id, tenantId } });
-  const jobs = await prisma.flJob.findMany({
-    where: { tenantId, customerPhone: client?.phone },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
+  return prisma.flClient.findFirst({
+    where: { id, tenantId },
+    include: {
+      jobs: {
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, jobNumber: true, workType: true, status: true, jobValue: true, createdAt: true },
+      },
+    },
   });
-  return { ...client, jobs };
 }
 
 async function updateClient(tenantId, id, data) {
