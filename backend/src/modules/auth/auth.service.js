@@ -113,8 +113,11 @@ const register = async ({ name, email: rawEmail, password, phone, businessName, 
   seedForTenant(tenant.id, businessType).catch(() => {});
 
   if (!IS_STAGING) {
-    // Send verification email (non-blocking — never fail the registration)
-    sendVerificationEmail(email, businessName, emailVerifyToken).catch(err => console.error('[EMAIL] Verification send failed:', err.message));
+    const plan = planKey
+      ? await prisma.platformPlan.findFirst({ where: { key: planKey }, select: { trialDays: true } }).catch(() => null)
+      : null;
+    const trialDays = plan?.trialDays ?? 14;
+    sendVerificationEmail(email, businessName, emailVerifyToken, trialDays).catch(err => console.error('[EMAIL] Verification send failed:', err.message));
   }
 
   return { requiresVerification: !IS_STAGING, email };
