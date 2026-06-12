@@ -123,12 +123,12 @@ function OverviewTab({ job }) {
   const rows = [
     ['Customer', job.customerName],
     ['Phone', job.customerPhone || '—'],
-    ['Address', job.customerAddress || '—'],
+    ['Address', job.siteAddress || '—'],
     ['Work Type', job.workType || '—'],
     ['Description', job.description || '—'],
     ['Start Date', job.startDate ? new Date(job.startDate).toLocaleDateString('en-IN') : '—'],
     ['End Date', job.endDate ? new Date(job.endDate).toLocaleDateString('en-IN') : '—'],
-    ['Advance Paid', job.advancePaid ? `₹${job.advancePaid}` : '—'],
+    ['Advance Req', job.advanceReq ? `₹${job.advanceReq}` : '—'],
     ['Created', new Date(job.createdAt).toLocaleString('en-IN')],
   ];
   return (
@@ -146,16 +146,16 @@ function OverviewTab({ job }) {
 }
 
 function MaterialsTab({ job, reload }) {
-  const [form, setForm] = useState({ name: '', qty: '', unit: '', unitPrice: '', total: '' });
+  const [form, setForm] = useState({ name: '', qty: '', unit: '', rate: '', total: '' });
   const [adding, setAdding] = useState(false);
 
   const set = (k) => (e) => {
     const v = e.target.value;
     setForm(f => {
       const updated = { ...f, [k]: v };
-      if (k === 'qty' || k === 'unitPrice') {
+      if (k === 'qty' || k === 'rate') {
         const qty = parseFloat(k === 'qty' ? v : updated.qty) || 0;
-        const up = parseFloat(k === 'unitPrice' ? v : updated.unitPrice) || 0;
+        const up = parseFloat(k === 'rate' ? v : updated.rate) || 0;
         updated.total = String(qty * up);
       }
       return updated;
@@ -166,9 +166,9 @@ function MaterialsTab({ job, reload }) {
     if (!form.name.trim()) return toast.error('Material name required');
     setAdding(true);
     try {
-      await addMaterial(job.id, { name: form.name, qty: parseFloat(form.qty) || 1, unit: form.unit, unitPrice: parseFloat(form.unitPrice) || 0, total: parseFloat(form.total) || 0 });
+      await addMaterial(job.id, { name: form.name, qty: parseFloat(form.qty) || 1, unit: form.unit, rate: parseFloat(form.rate) || 0, total: parseFloat(form.total) || 0 });
       toast.success('Material added');
-      setForm({ name: '', qty: '', unit: '', unitPrice: '', total: '' });
+      setForm({ name: '', qty: '', unit: '', rate: '', total: '' });
       reload();
     } catch { toast.error('Could not add material'); }
     finally { setAdding(false); }
@@ -185,7 +185,7 @@ function MaterialsTab({ job, reload }) {
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '16px 18px' }}>
         <h3 style={{ fontSize: 13, fontWeight: 600, color: OR, marginBottom: 14 }}>ADD MATERIAL</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: 10, alignItems: 'end' }}>
-          {[['Name', 'name', 'Wire, PVC pipe…'], ['Qty', 'qty', '1'], ['Unit', 'unit', 'pcs'], ['Unit Price ₹', 'unitPrice', '0'], ['Total ₹', 'total', '0']].map(([label, key, ph]) => (
+          {[['Name', 'name', 'Wire, PVC pipe…'], ['Qty', 'qty', '1'], ['Unit', 'unit', 'pcs'], ['Unit Price ₹', 'rate', '0'], ['Total ₹', 'total', '0']].map(([label, key, ph]) => (
             <div key={key}>
               <label style={{ fontSize: 11, color: MUTED, display: 'block', marginBottom: 4 }}>{label}</label>
               <input type={key === 'name' || key === 'unit' ? 'text' : 'number'} value={form[key]} onChange={set(key)} placeholder={ph}
@@ -216,7 +216,7 @@ function MaterialsTab({ job, reload }) {
                   <td style={{ padding: '10px 16px', fontSize: 13, color: TEXT }}>{m.name}</td>
                   <td style={{ padding: '10px 16px', fontSize: 13, color: MUTED }}>{m.qty}</td>
                   <td style={{ padding: '10px 16px', fontSize: 13, color: MUTED }}>{m.unit || '—'}</td>
-                  <td style={{ padding: '10px 16px', fontSize: 13, color: MUTED }}>{fmt(m.unitPrice)}</td>
+                  <td style={{ padding: '10px 16px', fontSize: 13, color: MUTED }}>{fmt(m.rate)}</td>
                   <td style={{ padding: '10px 16px', fontSize: 13, color: TEXT, fontWeight: 500 }}>{fmt(m.total)}</td>
                   <td style={{ padding: '10px 16px' }}>
                     <button onClick={() => remove(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, display: 'flex' }}>
