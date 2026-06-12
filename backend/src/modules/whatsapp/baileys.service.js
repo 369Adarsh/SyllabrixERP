@@ -130,7 +130,8 @@ function getStatus(tenantId) {
 async function disconnectTenant(tenantId) {
   const slot = sessions.get(tenantId);
   if (slot?.sock) {
-    try { await slot.sock.logout(); } catch {}
+    try { slot.sock.end(undefined); } catch {}           // close socket immediately
+    slot.sock.logout().catch(() => {});                  // best-effort WA logout, non-blocking
   }
   sessions.delete(tenantId);
   await prisma.waSession.delete({ where: { id: tenantId } }).catch(() => {});
