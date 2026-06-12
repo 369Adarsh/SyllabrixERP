@@ -3575,6 +3575,7 @@ model FlJob {
   updatedAt   DateTime    @updatedAt
 
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      FlClient?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
   estimate    FlEstimate?
   materials   FlMaterial[]
   helpers     FlJobHelper[]
@@ -3583,6 +3584,7 @@ model FlJob {
 
   @@unique([tenantId, jobNumber])
   @@index([tenantId])
+  @@index([customerId])
   @@map("fl_jobs")
 }
 
@@ -3766,7 +3768,8 @@ model FlClient {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobs   FlJob[]
 
   @@index([tenantId])
   @@map("fl_clients")
