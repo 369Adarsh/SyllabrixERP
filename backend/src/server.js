@@ -3,6 +3,7 @@ const config = require('./config/env');
 const prisma = require('./config/prisma');
 const { startAutomation } = require('./modules/automation/automation.service');
 const { seedDefaultAdmin, seedDefaultPlans } = require('./modules/superadmin/superadmin.service');
+const { connect: connectWhatsApp } = require('./modules/whatsapp/baileys.service');
 
 const start = async () => {
   try {
@@ -13,6 +14,9 @@ const start = async () => {
     seedDefaultAdmin().catch(e => console.error('seedDefaultAdmin error:', e.message));
     seedDefaultPlans().catch(e => console.error('seedDefaultPlans error:', e.message));
     startAutomation();
+
+    // Start WhatsApp (Baileys) — non-blocking, shows QR in logs on first run
+    connectWhatsApp().catch(e => console.error('[Baileys] Startup error:', e.message));
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);

@@ -3839,3 +3839,13 @@ model FlAMC {
   @@index([tenantId])
   @@map("fl_amc")
 }
+
+// Baileys WhatsApp session — stores auth credentials in DB so Render restarts don't require re-scan
+model WaSession {
+  id        String   @id
+  creds     Json?
+  keys      Json?
+  updatedAt DateTime @updatedAt
+
+  @@map("wa_sessions")
+}
