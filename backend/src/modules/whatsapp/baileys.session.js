@@ -1,11 +1,9 @@
 const prisma = require('../../config/prisma');
 
-const SESSION_ID = 'main';
-
-async function useDBAuthState() {
+async function useDBAuthState(tenantId) {
   const { initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
 
-  const stored = await prisma.waSession.findUnique({ where: { id: SESSION_ID } });
+  const stored = await prisma.waSession.findUnique({ where: { id: tenantId } });
 
   const revive  = (obj) => obj ? JSON.parse(JSON.stringify(obj), BufferJSON.reviver)    : null;
   const replace = (obj) =>       JSON.parse(JSON.stringify(obj,  BufferJSON.replacer));
@@ -15,9 +13,9 @@ async function useDBAuthState() {
 
   const flush = async () => {
     await prisma.waSession.upsert({
-      where:  { id: SESSION_ID },
-      create: { id: SESSION_ID, creds: replace(creds), keys: replace(keys) },
-      update: {                 creds: replace(creds), keys: replace(keys) },
+      where:  { id: tenantId },
+      create: { id: tenantId, creds: replace(creds), keys: replace(keys) },
+      update: {               creds: replace(creds), keys: replace(keys) },
     });
   };
 

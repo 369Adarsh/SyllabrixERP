@@ -128,16 +128,34 @@ const bulkFeeReminders = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-// GET /whatsapp/qr-status  — returns QR string + connection status
+// GET /whatsapp/qr-status  — returns QR string + connection status for this tenant
 const qrStatus = (req, res) => {
-  const { getStatus } = require('./baileys.service');
-  res.json(getStatus());
+  const { getStatus, connectTenant } = require('./baileys.service');
+  const tenantId = req.tenantId;
+  const info = getStatus(tenantId);
+  // If disconnected and no session pending, kick off a new connection attempt
+  if (info.status === 'disconnected') {
+    connectTenant(tenantId).catch(() => {});
+  }
+  res.json(info);
 };
 
-// GET /whatsapp/qr.png  — returns HTML page with scannable QR (no extra packages)
+// POST /whatsapp/disconnect  — unlink WhatsApp for this tenant
+const disconnectWA = async (req, res, next) => {
+  try {
+    const { disconnectTenant } = require('./baileys.service');
+    await disconnectTenant(req.tenantId);
+    res.json({ success: true, message: 'WhatsApp disconnected' });
+  } catch (e) { next(e); }
+};
+
+// GET /whatsapp/qr.png  — returns HTML page with scannable QR for this tenant
 const qrImage = (req, res) => {
-  const { getStatus } = require('./baileys.service');
-  const { status, qr } = getStatus();
+  const { getStatus, connectTenant } = require('./baileys.service');
+  const tenantId = req.tenantId;
+  const { status, qr } = getStatus(tenantId);
+  // Kick off connection if not already started
+  if (status === 'disconnected') connectTenant(tenantId).catch(() => {});
 
   res.setHeader('Content-Type', 'text/html');
   res.setHeader('Cache-Control', 'no-store');
@@ -185,7 +203,7 @@ const thread = async (req, res, next) => {
 };
 
 module.exports = {
-  verify, webhook, qrStatus, qrImage,
+  verify, webhook, qrStatus, qrImage, disconnectWA,
   send, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
   bulkFeeReminders, conversations, thread,
 };

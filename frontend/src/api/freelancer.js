@@ -73,3 +73,9 @@ export const financeReport = (params) => fl('reports/finance', { params });
 // Settings
 export const getSettings = () => fl('settings');
 export const updateSettings = (data) => flPatch('settings', data);
+
+// WhatsApp
+export const getWAStatus   = () => api.get('/whatsapp/qr-status');
+export const disconnectWA  = () => api.post('/whatsapp/disconnect');
+// QR image URL — opened directly in browser (authenticated via cookie/token not needed since we load inline)
+export const getWAQRUrl    = () => `${import.meta.env.VITE_API_URL || ''}/api/v1/whatsapp/qr.png`;
