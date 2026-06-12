@@ -13,8 +13,8 @@ const BORDER = '#222';
 export default function FreelancerNewJob() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    customerName: '', customerPhone: '', customerAddress: '',
-    workType: '', description: '', jobValue: '', advancePaid: '',
+    customerName: '', customerPhone: '', siteAddress: '',
+    workType: '', description: '', jobValue: '', advanceReq: '',
     startDate: '', endDate: '',
   });
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function FreelancerNewJob() {
       const payload = {
         ...form,
         jobValue: parseFloat(form.jobValue) || 0,
-        advancePaid: parseFloat(form.advancePaid) || 0,
+        advanceReq: parseFloat(form.advanceReq) || 0,
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
       };
@@ -74,7 +74,7 @@ export default function FreelancerNewJob() {
               </Field>
             </TwoCol>
             <Field label="Address">
-              <FInput value={form.customerAddress} onChange={set('customerAddress')} placeholder="House no., street, area…" />
+              <FInput value={form.siteAddress} onChange={set('siteAddress')} placeholder="House no., street, area…" />
             </Field>
           </Section>
 
@@ -99,7 +99,7 @@ export default function FreelancerNewJob() {
                 <FInput type="number" value={form.jobValue} onChange={set('jobValue')} placeholder="0" />
               </Field>
               <Field label="Advance Received (₹)">
-                <FInput type="number" value={form.advancePaid} onChange={set('advancePaid')} placeholder="0" />
+                <FInput type="number" value={form.advanceReq} onChange={set('advanceReq')} placeholder="0" />
               </Field>
             </TwoCol>
             <TwoCol>
