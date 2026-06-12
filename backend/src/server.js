@@ -1,19 +1,3 @@
-// Regenerate Prisma client before loading any modules.
-// Render caches node_modules between deploys, so the generated client
-// can be stale when new models are added. Running generate here guarantees
-// the client always matches the committed schema, regardless of how Render
-// invokes this file (npm start, node src/server.js, etc.).
-const { execSync } = require('child_process');
-const path = require('path');
-try {
-  execSync('npx prisma generate', {
-    stdio: 'inherit',
-    cwd: path.join(__dirname, '..'), // backend root — where prisma/schema.prisma lives
-  });
-} catch (e) {
-  console.error('[startup] prisma generate failed:', e.message);
-}
-
 const app = require('./app');
 const config = require('./config/env');
 const prisma = require('./config/prisma');
