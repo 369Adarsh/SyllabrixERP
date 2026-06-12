@@ -122,7 +122,7 @@ const layout = ({ preheader, headerTag, bodyHtml, footerNote, frontendUrl }) => 
 
 // ── Verification Email ─────────────────────────────────────────────────────────
 const sendVerificationEmail = async (toEmail, businessName, token) => {
-  const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL || (config.clientUrl || 'http://localhost:5173').split(',')[0].trim();
   const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
 
   const html = layout({
@@ -196,7 +196,7 @@ const sendVerificationEmail = async (toEmail, businessName, token) => {
 
 // ── Password Reset Email ───────────────────────────────────────────────────────
 const sendPasswordResetEmail = async (toEmail, token) => {
-  const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL || (config.clientUrl || 'http://localhost:5173').split(',')[0].trim();
   const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
 
