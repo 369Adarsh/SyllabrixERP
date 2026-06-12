@@ -16,6 +16,8 @@ async function createJob(tenantId, data) {
 }
 
 async function listJobs(tenantId, { status, search, page = 1, limit = 20 } = {}) {
+  const p = parseInt(page) || 1;
+  const l = parseInt(limit) || 20;
   const where = { tenantId };
   if (status) where.status = status;
   if (search) where.OR = [
@@ -28,12 +30,12 @@ async function listJobs(tenantId, { status, search, page = 1, limit = 20 } = {})
       where,
       include: { payments: { select: { amount: true } } },
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (p - 1) * l,
+      take: l,
     }),
     prisma.flJob.count({ where }),
   ]);
-  return { jobs, total, page, pages: Math.ceil(total / limit) };
+  return { jobs, total, page: p, pages: Math.ceil(total / l) };
 }
 
 async function getJob(tenantId, id) {
