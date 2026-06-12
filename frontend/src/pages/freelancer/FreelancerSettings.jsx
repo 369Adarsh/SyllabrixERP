@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Save, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
-import { getSettings, updateSettings } from '../../api/freelancer';
+import { Save, RefreshCw, ToggleLeft, ToggleRight, Wifi, WifiOff, QrCode, Unlink } from 'lucide-react';
+import { getSettings, updateSettings, getWAStatus, disconnectWA } from '../../api/freelancer';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
@@ -141,6 +141,117 @@ export default function FreelancerSettings() {
       </button>
 
       <p style={{ fontSize: 12, color: MUTED, marginTop: 12 }}>After saving, reload the page to see your updated sidebar.</p>
+
+      <WhatsAppConnect />
+    </div>
+  );
+}
+
+function WhatsAppConnect() {
+  const [waStatus, setWaStatus] = useState(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [qrImg, setQrImg] = useState(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const { data } = await getWAStatus();
+      setWaStatus(data);
+      if (data.qr) {
+        setQrImg(`https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=8&data=${encodeURIComponent(data.qr)}`);
+      } else {
+        setQrImg(null);
+      }
+    } catch { setWaStatus({ status: 'disconnected', hasQR: false }); }
+  }, []);
+
+  useEffect(() => {
+    fetchStatus();
+    // Poll every 5s while QR pending, every 15s otherwise
+    const interval = setInterval(fetchStatus, waStatus?.status === 'qr_pending' ? 5000 : 15000);
+    return () => clearInterval(interval);
+  }, [fetchStatus, waStatus?.status]);
+
+  const handleDisconnect = async () => {
+    if (!window.confirm('Unlink WhatsApp? Automation will stop sending messages.')) return;
+    setDisconnecting(true);
+    try {
+      await disconnectWA();
+      toast.success('WhatsApp unlinked');
+      fetchStatus();
+    } catch { toast.error('Could not disconnect'); }
+    finally { setDisconnecting(false); }
+  };
+
+  const statusColor = { connected: '#4ade80', qr_pending: '#fbbf24', connecting: '#60a5fa', disconnected: '#ef4444' };
+  const statusLabel = { connected: 'Connected', qr_pending: 'Scan QR to connect', connecting: 'Connecting…', disconnected: 'Not connected' };
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden', marginTop: 24 }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 2 }}>WhatsApp Automation</div>
+          <div style={{ fontSize: 12, color: MUTED }}>Link your WhatsApp to send job updates, payment receipts, and receive inquiries automatically</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor[waStatus?.status] || '#ef4444', display: 'inline-block' }} />
+          <span style={{ fontSize: 12, color: statusColor[waStatus?.status] || '#ef4444', fontWeight: 500 }}>
+            {statusLabel[waStatus?.status] || 'Not connected'}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ padding: '20px 22px' }}>
+        {waStatus?.status === 'connected' ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Wifi size={20} color="#4ade80" />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>WhatsApp is active</div>
+                <div style={{ fontSize: 12, color: MUTED }}>Clients will receive automatic updates from your number</div>
+              </div>
+            </div>
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'transparent', border: '1px solid #ef4444', borderRadius: 8, color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <Unlink size={13} /> {disconnecting ? 'Unlinking…' : 'Unlink WhatsApp'}
+            </button>
+          </div>
+        ) : waStatus?.status === 'qr_pending' && qrImg ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <QrCode size={16} color={OR} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>Scan with WhatsApp to activate</span>
+            </div>
+            <img src={qrImg} width={280} height={280} alt="WhatsApp QR" style={{ borderRadius: 10, border: `2px solid ${BORDER}` }} />
+            <div style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>
+              On your phone → WhatsApp → <strong style={{ color: TEXT }}>⋮ Menu</strong> → <strong style={{ color: TEXT }}>Linked Devices</strong> → <strong style={{ color: TEXT }}>Link a Device</strong>
+            </div>
+            <div style={{ fontSize: 11, color: MUTED }}>QR refreshes automatically every 5 seconds</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+              <WifiOff size={20} color={MUTED} />
+              <div>
+                <div style={{ fontSize: 13, color: TEXT }}>
+                  {waStatus?.status === 'connecting' ? 'Connecting to WhatsApp…' : 'WhatsApp not linked'}
+                </div>
+                <div style={{ fontSize: 12, color: MUTED }}>
+                  {waStatus?.status === 'connecting' ? 'Please wait, QR will appear shortly' : 'Click below to get your QR code'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={fetchStatus}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: OR, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <QrCode size={13} /> Get QR Code
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
