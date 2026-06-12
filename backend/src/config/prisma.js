@@ -5,7 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 function buildUrl(base) {
   if (!base || base.includes('connection_limit')) return base;
   const sep = base.includes('?') ? '&' : '?';
-  return `${base}${sep}connection_limit=3&pool_timeout=10`;
+  return `${base}${sep}connection_limit=7&pool_timeout=20`;
 }
 
 const prisma = new PrismaClient({
