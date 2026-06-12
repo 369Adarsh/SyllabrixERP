@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import { createJob } from '../../api/freelancer';
 import toast from 'react-hot-toast';
 
@@ -104,10 +104,10 @@ export default function FreelancerNewJob() {
             </TwoCol>
             <TwoCol>
               <Field label="Start Date">
-                <FInput type="date" value={form.startDate} onChange={set('startDate')} />
+                <DateInput value={form.startDate} onChange={set('startDate')} />
               </Field>
               <Field label="Expected End Date">
-                <FInput type="date" value={form.endDate} onChange={set('endDate')} />
+                <DateInput value={form.endDate} onChange={set('endDate')} />
               </Field>
             </TwoCol>
           </Section>
@@ -166,5 +166,37 @@ function FInput({ type = 'text', value, onChange, placeholder }) {
       placeholder={placeholder}
       style={{ padding: '9px 12px', background: '#111', border: '1.5px solid #2a2a2a', borderRadius: 8, fontSize: 14, color: '#F3F4F6', outline: 'none', width: '100%', boxSizing: 'border-box' }}
     />
+  );
+}
+
+function DateInput({ value, onChange }) {
+  const ref = useRef();
+  const display = value
+    ? new Date(value + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '';
+  return (
+    <div style={{ position: 'relative' }}>
+      <div
+        onClick={() => ref.current?.showPicker?.() || ref.current?.click()}
+        style={{
+          padding: '9px 38px 9px 12px', background: '#111', border: '1.5px solid #2a2a2a',
+          borderRadius: 8, fontSize: 14, color: value ? '#F3F4F6' : '#6B7280',
+          cursor: 'pointer', userSelect: 'none', minHeight: 38, boxSizing: 'border-box',
+        }}
+      >
+        {display || 'Select date'}
+      </div>
+      <Calendar
+        size={15} color="#F97316"
+        style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+      />
+      <input
+        ref={ref}
+        type="date"
+        value={value}
+        onChange={onChange}
+        style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', cursor: 'pointer' }}
+      />
+    </div>
   );
 }
