@@ -119,9 +119,10 @@ async function deleteMaterial(tenantId, id) {
 
 // ── PAYMENTS ─────────────────────────────────────────────────────────────────
 async function recordPayment(tenantId, jobId, data) {
-  const payment = await prisma.flPayment.create({ data: { tenantId, jobId, ...data } });
-  // recalculate job value paid
-  return payment;
+  const { paidAt, ...rest } = data;
+  return prisma.flPayment.create({
+    data: { tenantId, jobId, ...rest, ...(paidAt && { paidAt: new Date(paidAt) }) },
+  });
 }
 
 async function listPayments(tenantId, jobId) {
@@ -190,7 +191,10 @@ async function updateClient(tenantId, id, data) {
 
 // ── EXPENSES ─────────────────────────────────────────────────────────────────
 async function createExpense(tenantId, data) {
-  return prisma.flExpense.create({ data: { tenantId, ...data } });
+  const { expenseDate, ...rest } = data;
+  return prisma.flExpense.create({
+    data: { tenantId, ...rest, ...(expenseDate && { expenseDate: new Date(expenseDate) }) },
+  });
 }
 
 async function listExpenses(tenantId, { month, year } = {}) {
@@ -222,8 +226,18 @@ async function updateSupplier(tenantId, id, data) {
 }
 
 // ── TOOLS ────────────────────────────────────────────────────────────────────
+function parseDates(data, fields) {
+  const result = { ...data };
+  fields.forEach(f => {
+    if (f in result) {
+      result[f] = result[f] ? new Date(result[f]) : null;
+    }
+  });
+  return result;
+}
+
 async function createTool(tenantId, data) {
-  return prisma.flTool.create({ data: { tenantId, ...data } });
+  return prisma.flTool.create({ data: { tenantId, ...parseDates(data, ['purchaseDate', 'warrantyUntil', 'nextService']) } });
 }
 
 async function listTools(tenantId) {
@@ -231,12 +245,12 @@ async function listTools(tenantId) {
 }
 
 async function updateTool(tenantId, id, data) {
-  return prisma.flTool.update({ where: { id, tenantId }, data });
+  return prisma.flTool.update({ where: { id, tenantId }, data: parseDates(data, ['purchaseDate', 'warrantyUntil', 'nextService']) });
 }
 
 // ── AMC ──────────────────────────────────────────────────────────────────────
 async function createAMC(tenantId, data) {
-  return prisma.flAMC.create({ data: { tenantId, ...data } });
+  return prisma.flAMC.create({ data: { tenantId, ...parseDates(data, ['startDate', 'endDate', 'nextService']) } });
 }
 
 async function listAMC(tenantId) {
@@ -244,7 +258,7 @@ async function listAMC(tenantId) {
 }
 
 async function updateAMC(tenantId, id, data) {
-  return prisma.flAMC.update({ where: { id, tenantId }, data });
+  return prisma.flAMC.update({ where: { id, tenantId }, data: parseDates(data, ['startDate', 'endDate', 'nextService']) });
 }
 
 // ── REPORTS ──────────────────────────────────────────────────────────────────
