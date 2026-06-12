@@ -9,8 +9,13 @@ async function nextJobNumber(tenantId) {
 // ── JOBS ─────────────────────────────────────────────────────────────────────
 async function createJob(tenantId, data) {
   const jobNumber = await nextJobNumber(tenantId);
+  const { startDate, endDate, ...rest } = data;
   return prisma.flJob.create({
-    data: { tenantId, jobNumber, ...data },
+    data: {
+      tenantId, jobNumber, ...rest,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate:   endDate   ? new Date(endDate)   : undefined,
+    },
     include: { estimate: true, payments: true },
   });
 }
@@ -52,7 +57,15 @@ async function getJob(tenantId, id) {
 }
 
 async function updateJob(tenantId, id, data) {
-  return prisma.flJob.update({ where: { id, tenantId }, data });
+  const { startDate, endDate, ...rest } = data;
+  return prisma.flJob.update({
+    where: { id, tenantId },
+    data: {
+      ...rest,
+      ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
+      ...(endDate   !== undefined && { endDate:   endDate   ? new Date(endDate)   : null }),
+    },
+  });
 }
 
 async function updateJobStatus(tenantId, id, status) {
