@@ -8,6 +8,7 @@ const { whatsappLimiter } = require('../../middleware/rateLimiter');
 
 // Public — setup only, no sensitive data
 router.get('/qr-status', ctrl.qrStatus);
+router.get('/qr.png', ctrl.qrImage);
 
 // Protected routes
 router.use(authenticate);
