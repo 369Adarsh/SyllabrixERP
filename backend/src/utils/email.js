@@ -69,7 +69,7 @@ const layout = ({ preheader, headerTag, bodyHtml, footerNote, frontendUrl }) => 
             <td style="background:linear-gradient(135deg,#0F2942 0%,#1E3A5F 50%,#0E6B7A 100%);border-radius:16px 16px 0 0;padding:36px 40px 32px;text-align:center;">
 
               <!-- Logo / Wordmark -->
-              <img src="https://www.syllabrix.com/logo.png" alt="Syllabrix" width="140" style="display:block;margin:0 auto 16px;height:auto;max-width:140px;" />
+              <img src="https://syllabrix.com/logo.png" alt="Syllabrix" width="140" style="display:block;margin:0 auto 16px;height:auto;max-width:140px;" />
               <div style="font-size:32px;font-weight:900;color:#FFFFFF;letter-spacing:-0.03em;line-height:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
                 Syllab<span style="color:#17B9D0;">rix</span>
               </div>
