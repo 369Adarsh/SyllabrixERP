@@ -6,12 +6,11 @@ const { whatsappLimiter } = require('../../middleware/rateLimiter');
 // Note: GET /webhook and POST /webhook are mounted in app.js before express.json()
 // to capture the raw body needed for Meta's X-Hub-Signature-256 verification.
 
-// Public — setup only, no sensitive data
-router.get('/qr-status', ctrl.qrStatus);
-router.get('/qr.png', ctrl.qrImage);
-
 // Protected routes
 router.use(authenticate);
+router.get('/qr-status',  authorize('OWNER', 'ADMIN'), ctrl.qrStatus);
+router.get('/qr.png',     authorize('OWNER', 'ADMIN'), ctrl.qrImage);
+router.post('/disconnect', authorize('OWNER', 'ADMIN'), ctrl.disconnectWA);
 router.get('/conversations', ctrl.conversations);
 router.get('/conversations/:phone', ctrl.thread);
 router.post('/send', whatsappLimiter, authorize('OWNER', 'ADMIN', 'STAFF'), ctrl.send);
