@@ -134,27 +134,40 @@ const qrStatus = (req, res) => {
   res.json(getStatus());
 };
 
-// GET /whatsapp/qr.png  — returns scannable QR image directly
-const qrImage = async (req, res) => {
+// GET /whatsapp/qr.png  — returns HTML page with scannable QR (no extra packages)
+const qrImage = (req, res) => {
   const { getStatus } = require('./baileys.service');
   const { status, qr } = getStatus();
 
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Cache-Control', 'no-store');
+
   if (status === 'connected') {
-    return res.send('<h2 style="font-family:sans-serif;color:green">✓ WhatsApp Connected!</h2><p>No QR needed — already linked.</p>');
-  }
-  if (!qr) {
-    return res.send('<h2 style="font-family:sans-serif">QR not ready yet</h2><p>Refresh in a few seconds…</p><script>setTimeout(()=>location.reload(),3000)</script>');
+    return res.send(`<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:40px">
+      <h2 style="color:#16a34a">✅ WhatsApp Connected!</h2>
+      <p>Your WhatsApp is linked and automation is active.</p>
+    </body></html>`);
   }
 
-  try {
-    const QRCode = require('qrcode');
-    const png = await QRCode.toBuffer(qr, { width: 400, margin: 2 });
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'no-store');
-    res.send(png);
-  } catch (e) {
-    res.status(500).json({ error: 'Could not generate QR image' });
+  if (!qr) {
+    return res.send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="4"></head>
+      <body style="font-family:sans-serif;text-align:center;padding:40px">
+      <h2>⏳ QR not ready yet…</h2>
+      <p>Auto-refreshing in 4 seconds. Status: <strong>${status}</strong></p>
+    </body></html>`);
   }
+
+  const encoded = encodeURIComponent(qr);
+  return res.send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="30">
+    <style>body{font-family:sans-serif;text-align:center;padding:40px;background:#f9f9f9}
+    img{border:3px solid #e5e7eb;border-radius:12px;margin:20px auto;display:block}
+    h2{color:#111}p{color:#555}</style></head>
+    <body>
+      <h2>📱 Scan to Link WhatsApp</h2>
+      <p>Open WhatsApp → <strong>⋮ Menu</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong></p>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=10&data=${encoded}" width="350" height="350" alt="WhatsApp QR Code"/>
+      <p style="font-size:13px;color:#9ca3af">QR refreshes every 30 seconds. Page auto-reloads.</p>
+    </body></html>`);
 };
 
 // GET /whatsapp/conversations
