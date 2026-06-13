@@ -7,6 +7,26 @@ import {
 } from '../../api/freelancer';
 import toast from 'react-hot-toast';
 
+const WA_GREEN = '#25D366';
+function waLink(phone, text) {
+  if (!phone) return null;
+  let p = String(phone).replace(/\D/g, '');
+  if (p.startsWith('0')) p = p.slice(1);
+  if (p.length === 10) p = '91' + p;
+  return `https://wa.me/${p}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+}
+function WABtn({ phone, text, label = 'WhatsApp' }) {
+  const link = waLink(phone, text);
+  if (!link) return null;
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', background: `${WA_GREEN}18`, border: `1px solid ${WA_GREEN}50`, borderRadius: 7, color: WA_GREEN, fontSize: 12, fontWeight: 600, textDecoration: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill={WA_GREEN}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      {label}
+    </a>
+  );
+}
+
 const OR = '#F97316';
 const TEXT = '#F3F4F6';
 const MUTED = '#9CA3AF';
@@ -79,6 +99,15 @@ export default function FreelancerJobDetail() {
           <p style={{ fontSize: 14, color: TEXT, marginTop: 4 }}>
             {job.customerName}{job.workType ? ` — ${job.workType}` : ''}
           </p>
+          {job.customerPhone && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              <WABtn phone={job.customerPhone} label="Message" />
+              <WABtn phone={job.customerPhone} label="Send Update"
+                text={`Hi ${job.customerName}! Update on your job ${job.jobNumber} (${job.workType || 'service'}): Status is now *${STATUS_LABELS[job.status]}*. For any queries, please reach out to us. Thank you! 🙏`} />
+              <WABtn phone={job.customerPhone} label="Payment Reminder"
+                text={`Hi ${job.customerName}, this is a gentle reminder regarding payment for job *${job.jobNumber}* (${job.workType || 'service'}). Please make the payment at your convenience. Thank you! 🙏`} />
+            </div>
+          )}
         </div>
         {/* Money summary */}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
@@ -122,7 +151,6 @@ function Stat({ label, value, color }) {
 function OverviewTab({ job }) {
   const rows = [
     ['Customer', job.customerName],
-    ['Phone', job.customerPhone || '—'],
     ['Address', job.siteAddress || '—'],
     ['Work Type', job.workType || '—'],
     ['Description', job.description || '—'],
@@ -134,6 +162,11 @@ function OverviewTab({ job }) {
   return (
     <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 22px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '14px 20px' }}>
+        <span style={{ fontSize: 13, color: MUTED }}>Phone</span>
+        <span style={{ fontSize: 13, color: TEXT, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {job.customerPhone || '—'}
+          {job.customerPhone && <WABtn phone={job.customerPhone} label="Chat" />}
+        </span>
         {rows.map(([k, v]) => (
           <>
             <span key={`k-${k}`} style={{ fontSize: 13, color: MUTED }}>{k}</span>
