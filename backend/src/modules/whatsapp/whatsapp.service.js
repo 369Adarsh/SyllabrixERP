@@ -7,7 +7,7 @@ const sendText = async (tenantId, phone, body, contactName = null) => {
   const normalized = normalizePhone(phone);
   // Lazy require to avoid circular dep with baileys.service
   const baileys = require('./baileys.service');
-  await baileys.sendWA(normalized, body);
+  await baileys.sendWA(tenantId, normalized, body);
   await prisma.whatsAppMessage.create({
     data: { tenantId, phone: normalized, contactName, direction: 'OUTBOUND', body, status: 'SENT' },
   });
@@ -122,7 +122,10 @@ const getThread = async (tenantId, phone) => {
 };
 
 // ── Freelancer notifications ──────────────────────────────────────────────────
-const isWAReady = () => !!(config.whatsappToken && config.whatsappPhoneId);
+const isWAReady = (tenantId) => {
+  const { getStatus } = require('./baileys.service');
+  return getStatus(tenantId).status === 'connected';
+};
 
 const flTenantName = async (tenantId) => {
   const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
@@ -130,7 +133,7 @@ const flTenantName = async (tenantId) => {
 };
 
 const sendFlJobCreated = async (tenantId, phone, contactName, job) => {
-  if (!isWAReady() || !phone) return;
+  if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
   const body = [
     `Hi ${contactName || 'there'}! 👋`,
@@ -158,7 +161,7 @@ const STATUS_EMOJI = {
 };
 
 const sendFlStatusUpdate = async (tenantId, phone, contactName, job) => {
-  if (!isWAReady() || !phone) return;
+  if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
   const emoji = STATUS_EMOJI[job.status] || '📌';
   const label = STATUS_LABELS[job.status] || job.status;
@@ -173,7 +176,7 @@ const sendFlStatusUpdate = async (tenantId, phone, contactName, job) => {
 };
 
 const sendFlPaymentReceived = async (tenantId, phone, contactName, job, payment) => {
-  if (!isWAReady() || !phone) return;
+  if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
   const body = [
     `✅ *Payment Received — ${biz}*`,
@@ -192,7 +195,7 @@ const sendFlPaymentReceived = async (tenantId, phone, contactName, job, payment)
 };
 
 const sendFlAMCReminder = async (tenantId, phone, contactName, amc, daysLeft) => {
-  if (!isWAReady() || !phone) return;
+  if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
   const urgency = daysLeft <= 7 ? '🚨 *Urgent Reminder*' : '⏰ *Renewal Reminder*';
   const body = [
