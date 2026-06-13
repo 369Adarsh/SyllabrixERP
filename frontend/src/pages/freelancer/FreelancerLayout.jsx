@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Briefcase, Users, Receipt, TrendingDown,
   UserCheck, Package, Wrench, FileCheck, LogOut, Menu, X,
-  BarChart3, Settings,
+  BarChart3, Settings, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getSettings } from '../../api/freelancer';
@@ -114,22 +114,28 @@ export default function FreelancerLayout() {
           </NavLink>
         ))}
 
-        {/* Settings — always shown */}
+        {/* Settings + WhatsApp — always shown */}
         <div style={{ borderTop: `1px solid ${BORDER}`, marginTop: 8, paddingTop: 8 }}>
-          <NavLink
-            to="/freelancer/settings"
-            onClick={() => setOpen(false)}
-            style={({ isActive }) => ({
-              display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
-              borderRadius: 9, marginBottom: 1, textDecoration: 'none', transition: 'all 0.12s',
-              background: isActive ? ACTIVE_BG : 'transparent',
-              color: isActive ? OR : MUTED, fontWeight: isActive ? 600 : 400, fontSize: 14,
-              borderLeft: isActive ? `2px solid ${OR}` : '2px solid transparent',
-            })}
-          >
-            <Settings size={16} />
-            Settings
-          </NavLink>
+          {[
+            { to: '/freelancer/whatsapp', icon: MessageCircle, label: 'WhatsApp' },
+            { to: '/freelancer/settings',  icon: Settings,       label: 'Settings'  },
+          ].map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
+                borderRadius: 9, marginBottom: 1, textDecoration: 'none', transition: 'all 0.12s',
+                background: isActive ? ACTIVE_BG : 'transparent',
+                color: isActive ? OR : MUTED, fontWeight: isActive ? 600 : 400, fontSize: 14,
+                borderLeft: isActive ? `2px solid ${OR}` : '2px solid transparent',
+              })}
+            >
+              <Icon size={16} />
+              {label}
+            </NavLink>
+          ))}
         </div>
       </nav>
 

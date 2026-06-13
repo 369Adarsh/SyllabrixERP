@@ -72,4 +72,13 @@ router.get   ('/reports/finance',       ctrl.financeReport);
 router.get   ('/settings',              ctrl.getSettings);
 router.patch ('/settings',              ctrl.updateSettings);
 
+// ── WhatsApp Automation Settings ─────────────────────────────────────────────
+router.get   ('/wa-settings',           ctrl.getWaSettings);
+router.patch ('/wa-settings',           ctrl.updateWaSettings);
+
+// ── WhatsApp Broadcast ────────────────────────────────────────────────────────
+router.get   ('/broadcast/preview',     ctrl.previewBroadcast);
+router.post  ('/broadcast',             ctrl.sendBroadcast);
+router.get   ('/broadcast/history',     ctrl.listBroadcasts);
+
 module.exports = router;

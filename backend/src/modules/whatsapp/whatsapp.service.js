@@ -132,11 +132,15 @@ const flTenantName = async (tenantId) => {
   return t?.name || 'Your service provider';
 };
 
-const sendFlJobCreated = async (tenantId, phone, contactName, job) => {
+const fillVars = (template, vars) =>
+  template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+
+const sendFlJobCreated = async (tenantId, phone, contactName, job, customMsg = null) => {
   if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
-  const body = [
-    `Hi ${contactName || 'there'}! 👋`,
+  const vars = { name: contactName || 'there', biz, jobNumber: job.jobNumber, work: job.workType || '', value: job.jobValue ? `₹${Number(job.jobValue).toLocaleString('en-IN')}` : '' };
+  const body = customMsg ? fillVars(customMsg, vars) : [
+    `Hi ${vars.name}! 👋`,
     ``,
     `Your job has been created with *${biz}*.`,
     ``,
@@ -160,12 +164,13 @@ const STATUS_EMOJI = {
   COMPLETED: '✅', PAYMENT_PENDING: '⏳', CLOSED: '🔒', CANCELLED: '❌',
 };
 
-const sendFlStatusUpdate = async (tenantId, phone, contactName, job) => {
+const sendFlStatusUpdate = async (tenantId, phone, contactName, job, customMsg = null) => {
   if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
   const emoji = STATUS_EMOJI[job.status] || '📌';
   const label = STATUS_LABELS[job.status] || job.status;
-  const body = [
+  const vars = { name: contactName || 'there', biz, jobNumber: job.jobNumber, work: job.workType || '', status: label, emoji };
+  const body = customMsg ? fillVars(customMsg, vars) : [
     `${emoji} *Status Update — ${biz}*`,
     ``,
     `Job *${job.jobNumber}* (${job.workType})`,
@@ -175,16 +180,18 @@ const sendFlStatusUpdate = async (tenantId, phone, contactName, job) => {
   return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlStatusUpdate failed:', e.message));
 };
 
-const sendFlPaymentReceived = async (tenantId, phone, contactName, job, payment) => {
+const sendFlPaymentReceived = async (tenantId, phone, contactName, job, payment, customMsg = null) => {
   if (!isWAReady(tenantId) || !phone) return;
   const biz = await flTenantName(tenantId);
-  const body = [
+  const amt = `₹${Number(payment.amount).toLocaleString('en-IN')}`;
+  const vars = { name: contactName || 'there', biz, jobNumber: job.jobNumber, work: job.workType || '', amount: amt, mode: payment.mode };
+  const body = customMsg ? fillVars(customMsg, vars) : [
     `✅ *Payment Received — ${biz}*`,
     ``,
-    `Hi ${contactName || 'there'},`,
+    `Hi ${vars.name},`,
     ``,
     `We've received your payment:`,
-    `💰 *Amount:* ₹${Number(payment.amount).toLocaleString('en-IN')}`,
+    `💰 *Amount:* ${amt}`,
     `💳 *Mode:* ${payment.mode}`,
     `📋 *Job:* ${job.jobNumber} — ${job.workType}`,
     payment.note ? `📝 *Note:* ${payment.note}` : null,
