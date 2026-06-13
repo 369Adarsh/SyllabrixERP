@@ -12,11 +12,15 @@ async function useDBAuthState(tenantId) {
   let keys  = revive(stored?.keys)  || {};
 
   const flush = async () => {
-    await prisma.waSession.upsert({
-      where:  { id: tenantId },
-      create: { id: tenantId, creds: replace(creds), keys: replace(keys) },
-      update: {               creds: replace(creds), keys: replace(keys) },
-    });
+    try {
+      await prisma.waSession.upsert({
+        where:  { id: tenantId },
+        create: { id: tenantId, creds: replace(creds), keys: replace(keys) },
+        update: {               creds: replace(creds), keys: replace(keys) },
+      });
+    } catch (e) {
+      console.error(`[Baileys:session] Failed to persist session for ${tenantId.slice(-6)}:`, e.message);
+    }
   };
 
   return {
@@ -36,7 +40,8 @@ async function useDBAuthState(tenantId) {
             keys[cat] ??= {};
             for (const [id, v] of Object.entries(vals ?? {})) {
               if (v == null) delete keys[cat][id];
-              else           keys[cat][id] = v;
+              // Store in serialized form so revive() in keys.get works correctly for in-memory values
+              else           keys[cat][id] = replace(v);
             }
           }
           await flush();
