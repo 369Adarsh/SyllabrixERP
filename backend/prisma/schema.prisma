@@ -2507,7 +2507,7 @@ model BusinessTemplate {
 
 model PlatformPlan {
   id           String   @id @default(uuid())
-  key          String   @unique // STARTER | GROWTH | SCALE
+  key          String   @unique // STARTER | GROWTH | SCALE | FL_BASIC | FL_PRO etc.
   name         String
   tagline      String?
   description  String?
@@ -2521,6 +2521,7 @@ model PlatformPlan {
   maxUsers     Int?
   maxBranches  Int?
   sortOrder    Int      @default(0)
+  segment      String   @default("BUSINESS") // BUSINESS | FREELANCER
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -45,9 +45,9 @@ const getPublicBusinessTypes = async () => {
   return categories.filter(c => c.businessTypes.length > 0);
 };
 
-const getPublicPlans = async () => {
+const getPublicPlans = async (segment = 'BUSINESS') => {
   return prisma.platformPlan.findMany({
-    where: { isActive: true, isPublic: true },
+    where: { isActive: true, isPublic: true, segment },
     select: { id: true, key: true, name: true, tagline: true, description: true, monthlyPrice: true, yearlyPrice: true, color: true, trialDays: true, maxUsers: true, maxBranches: true, modules: true, sortOrder: true },
     orderBy: { sortOrder: 'asc' },
   });
@@ -116,7 +116,8 @@ const register = async ({ name, email: rawEmail, password, phone, businessName, 
     const plan = planKey
       ? await prisma.platformPlan.findFirst({ where: { key: planKey }, select: { trialDays: true } }).catch(() => null)
       : null;
-    const trialDays = plan?.trialDays ?? 14;
+    // Cap at 30 days — planKey comes from the registration form and should not grant extended trials
+    const trialDays = Math.min(plan?.trialDays ?? 14, 30);
     sendVerificationEmail(email, businessName, emailVerifyToken, trialDays).catch(err => console.error('[EMAIL] Verification send failed:', err.message));
   }
 
@@ -330,7 +331,7 @@ const resendVerification = async ({ email: rawEmail }) => {
   if (!user || user.isEmailVerified) return; // silent — don't leak account info
   const token = crypto.randomBytes(32).toString('hex');
   await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: token } });
-  sendVerificationEmail(email, tenant.name, token).catch(err => console.error('[EMAIL] Resend verification failed:', err.message));
+  sendVerificationEmail(email, tenant.name, token, 14).catch(err => console.error('[EMAIL] Resend verification failed:', err.message));
 };
 
 const sanitize = ({ password, refreshToken, passwordResetToken, ...rest }) => rest;
