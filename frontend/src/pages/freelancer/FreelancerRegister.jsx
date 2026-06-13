@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Wrench } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getPublicPlans } from '../../api/auth';
 import toast from 'react-hot-toast';
 
 const OR = '#F97316';
@@ -21,12 +22,21 @@ export default function FreelancerRegister() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
-    phone: '', workDescription: '', city: '', howYouWork: '',
+    phone: '', workDescription: '', city: '', howYouWork: '', planKey: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPw, setShowPw] = useState(false);
   const [done, setDone] = useState(false);
+  const [plans, setPlans] = useState([]);
+
+  useEffect(() => {
+    getPublicPlans('FREELANCER').then(r => {
+      const list = r.data?.data || [];
+      setPlans(list);
+      if (list.length === 1) setForm(f => ({ ...f, planKey: list[0].key }));
+    }).catch(() => {});
+  }, []);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -58,6 +68,7 @@ export default function FreelancerRegister() {
         businessName: form.workDescription,
         businessType: 'FREELANCER',
         city: form.city,
+        planKey: form.planKey || undefined,
         meta: { howYouWork: form.howYouWork, isFreelancer: true },
       });
       setDone(true);
@@ -148,6 +159,42 @@ export default function FreelancerRegister() {
                 ))}
               </div>
             </div>
+
+            {/* Plan selection — only shown when plans exist */}
+            {plans.length > 1 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>Choose your plan</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {plans.map(plan => {
+                    const selected = form.planKey === plan.key;
+                    return (
+                      <button
+                        key={plan.key}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, planKey: plan.key }))}
+                        style={{
+                          padding: '12px 16px', borderRadius: 10,
+                          border: `2px solid ${selected ? OR : BORDER}`,
+                          background: selected ? 'rgba(249,115,22,0.08)' : '#111',
+                          cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: selected ? OR : TEXT }}>{plan.name}</div>
+                          {plan.tagline && <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{plan.tagline}</div>}
+                          {plan.trialDays > 0 && <div style={{ fontSize: 11, color: '#34D399', marginTop: 3 }}>{plan.trialDays}-day free trial</div>}
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: selected ? OR : TEXT }}>₹{plan.monthlyPrice.toLocaleString('en-IN')}</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>/month</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* City */}
             <Field label="City (optional)">

@@ -177,7 +177,7 @@ const getSubscriptions = async (req, res, next) => {
 
 // Plan Builder
 const getManagedPlans = async (req, res, next) => {
-  try { ok(res, await svc.getManagedPlans()); } catch (e) { next(e); }
+  try { ok(res, await svc.getManagedPlans(req.query.segment || null)); } catch (e) { next(e); }
 };
 
 const createManagedPlan = async (req, res, next) => {

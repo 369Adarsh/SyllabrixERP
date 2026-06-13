@@ -120,7 +120,7 @@ export const cancelSAMaintenance        = (id) => api.patch(`/maintenance/${id}/
 export const getSASubscriptions         = (params) => api.get('/subscriptions', { params });
 
 // Plan Builder — Plans
-export const getSAManagedPlans          = ()       => api.get('/plan-builder/plans');
+export const getSAManagedPlans          = (segment) => api.get('/plan-builder/plans', { params: segment ? { segment } : {} });
 export const createSAManagedPlan        = (data)   => api.post('/plan-builder/plans', data);
 export const updateSAManagedPlan        = (id, data) => api.patch(`/plan-builder/plans/${id}`, data);
 export const toggleSAManagedPlan        = (id)     => api.patch(`/plan-builder/plans/${id}/toggle`);
