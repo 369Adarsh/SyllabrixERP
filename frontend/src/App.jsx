@@ -105,6 +105,7 @@ import TransportManager from './pages/platform/TransportManager';
 import TransportNew from './pages/platform/TransportNew';
 import TransportDetail from './pages/platform/TransportDetail';
 import TransportEnvironments from './pages/platform/TransportEnvironments';
+import FreelancerTenants from './pages/platform/FreelancerTenants';
 import ChangeList from './pages/platform/ChangeList';
 import ChangeNew from './pages/platform/ChangeNew';
 import ChangeDetail from './pages/platform/ChangeDetail';
@@ -170,6 +171,7 @@ export default function App() {
             <Route index element={<Navigate to="/platform/dashboard" replace />} />
             <Route path="dashboard" element={<PlatformDashboard />} />
             <Route path="tenants" element={<Tenants />} />
+            <Route path="freelancers" element={<FreelancerTenants />} />
             <Route path="compliance" element={<Compliance />} />
             <Route path="role-requests" element={<RoleRequests />} />
             <Route path="announcements" element={<Announcements />} />

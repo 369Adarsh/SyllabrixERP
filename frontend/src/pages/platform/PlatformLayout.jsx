@@ -14,6 +14,7 @@ const NAV = [
   { to: '/platform/onboarding',       icon: '🚀', label: 'Onboarding Pipeline' },
   { section: 'Tenants' },
   { to: '/platform/tenants',          icon: '🏢', label: 'All Tenants' },
+  { to: '/platform/freelancers',      icon: '🧑‍💼', label: 'Freelancers' },
   { to: '/platform/compliance',       icon: '🛡', label: 'Compliance & KYC' },
   { to: '/platform/subscriptions',    icon: '💳', label: 'Subscriptions' },
   { section: 'Platform Control' },
