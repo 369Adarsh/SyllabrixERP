@@ -133,8 +133,8 @@ const qrStatus = (req, res) => {
   const { getStatus, connectTenant } = require('./baileys.service');
   const tenantId = req.tenantId;
   const info = getStatus(tenantId);
-  // If disconnected and no session pending, kick off a new connection attempt
-  if (info.status === 'disconnected') {
+  // Kick off a new connection only when fully idle (not already connecting, qr_pending, or connected)
+  if (info.status === 'disconnected' || info.status === 'logged_out') {
     connectTenant(tenantId).catch(() => {});
   }
   res.json(info);
@@ -150,12 +150,14 @@ const disconnectWA = async (req, res, next) => {
 };
 
 // GET /whatsapp/qr.png  — returns HTML page with scannable QR for this tenant
-const qrImage = (req, res) => {
+// QR image is rendered server-side — the raw pairing credential is never sent to any external service
+const qrImage = async (req, res) => {
   const { getStatus, connectTenant } = require('./baileys.service');
+  const QRCode = require('qrcode');
   const tenantId = req.tenantId;
   const { status, qr } = getStatus(tenantId);
-  // Kick off connection if not already started
-  if (status === 'disconnected') connectTenant(tenantId).catch(() => {});
+  // Kick off connection if not already in progress
+  if (status === 'disconnected' || status === 'logged_out') connectTenant(tenantId).catch(() => {});
 
   res.setHeader('Content-Type', 'text/html');
   res.setHeader('Cache-Control', 'no-store');
@@ -175,7 +177,8 @@ const qrImage = (req, res) => {
     </body></html>`);
   }
 
-  const encoded = encodeURIComponent(qr);
+  // Render QR server-side as a data URI — credential never leaves this server
+  const qrDataUrl = await QRCode.toDataURL(qr, { margin: 2, width: 350 });
   return res.send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="30">
     <style>body{font-family:sans-serif;text-align:center;padding:40px;background:#f9f9f9}
     img{border:3px solid #e5e7eb;border-radius:12px;margin:20px auto;display:block}
@@ -183,7 +186,7 @@ const qrImage = (req, res) => {
     <body>
       <h2>📱 Scan to Link WhatsApp</h2>
       <p>Open WhatsApp → <strong>⋮ Menu</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong></p>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=10&data=${encoded}" width="350" height="350" alt="WhatsApp QR Code"/>
+      <img src="${qrDataUrl}" width="350" height="350" alt="WhatsApp QR Code"/>
       <p style="font-size:13px;color:#9ca3af">QR refreshes every 30 seconds. Page auto-reloads.</p>
     </body></html>`);
 };

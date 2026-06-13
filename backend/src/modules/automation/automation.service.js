@@ -125,9 +125,15 @@ const startAutomation = () => {
     const in7  = new Date(now); in7.setDate(now.getDate() + 7);
     const in8  = new Date(now); in8.setDate(now.getDate() + 8);
 
+    // Only process AMCs for tenants with an active WA session to avoid full-table scans
+    const activeSessions = await prisma.waSession.findMany({ select: { id: true } });
+    const activeTenantIds = activeSessions.map(s => s.id);
+    if (activeTenantIds.length === 0) return;
+
     // Contracts expiring in exactly 30 days or exactly 7 days (±12h window)
     const contracts = await prisma.flAMC.findMany({
       where: {
+        tenantId: { in: activeTenantIds },
         endDate: {
           gte: new Date(in7.getTime() - 12 * 3600 * 1000),
           lte: new Date(in30.getTime() + 12 * 3600 * 1000),

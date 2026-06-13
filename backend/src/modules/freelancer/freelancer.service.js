@@ -11,14 +11,23 @@ async function nextJobNumber(tenantId) {
 async function createJob(tenantId, data) {
   const jobNumber = await nextJobNumber(tenantId);
   const { startDate, endDate, ...rest } = data;
-  const job = await prisma.flJob.create({
-    data: {
-      tenantId, jobNumber, ...rest,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate:   endDate   ? new Date(endDate)   : undefined,
-    },
-    include: { estimate: true, payments: true },
-  });
+  const jobData = {
+    tenantId, jobNumber, ...rest,
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate:   endDate   ? new Date(endDate)   : undefined,
+  };
+  let job;
+  try {
+    job = await prisma.flJob.create({ data: jobData, include: { estimate: true, payments: true } });
+  } catch (e) {
+    if (e.code !== 'P2002') throw e;
+    // Concurrent job creation race on jobNumber — retry with a fresh count
+    const retryCount = await prisma.flJob.count({ where: { tenantId } });
+    job = await prisma.flJob.create({
+      data: { ...jobData, jobNumber: `JOB-${String(retryCount + 1).padStart(4, '0')}` },
+      include: { estimate: true, payments: true },
+    });
+  }
   // Non-blocking WhatsApp notification to customer
   if (job.customerPhone) {
     prisma.flWaSettings.findUnique({ where: { tenantId } }).then(s => {
@@ -100,6 +109,9 @@ async function deleteJob(tenantId, id) {
 // ── ESTIMATES ────────────────────────────────────────────────────────────────
 async function saveEstimate(tenantId, jobId, { items, advanceReq, validUntil, terms }) {
   const total = items.reduce((s, i) => s + i.total, 0);
+  // Verify the job belongs to this tenant before touching its estimates
+  const job = await prisma.flJob.findFirst({ where: { id: jobId, tenantId } });
+  if (!job) { const e = new Error('Job not found'); e.statusCode = 404; throw e; }
   const existing = await prisma.flEstimate.findUnique({ where: { jobId } });
 
   if (existing) {
@@ -181,6 +193,9 @@ async function assignHelper(tenantId, jobId, { helperId, daysWorked = 0 }) {
 }
 
 async function updateJobHelper(tenantId, jobId, helperId, data) {
+  // Verify the job-helper record belongs to this tenant before updating
+  const jh = await prisma.flJobHelper.findFirst({ where: { jobId, helperId, tenantId } });
+  if (!jh) { const e = new Error('Job helper not found'); e.statusCode = 404; throw e; }
   return prisma.flJobHelper.update({ where: { jobId_helperId: { jobId, helperId } }, data });
 }
 

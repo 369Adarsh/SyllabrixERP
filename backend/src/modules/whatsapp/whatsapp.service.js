@@ -252,6 +252,13 @@ const handleInbound = async (tenantId, entry) => {
 
 const _autoCreateInquiry = async (tenantId, phone, contactName, messageBody) => {
   try {
+    // Only create job inquiries for freelancer-type tenants
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { businessType: true },
+    });
+    if (tenant?.businessType !== 'FREELANCER') return;
+
     const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1 hour dedup window
     const existing = await prisma.flJob.findFirst({
       where: { tenantId, customerPhone: phone, createdAt: { gte: cutoff } },
@@ -260,16 +267,33 @@ const _autoCreateInquiry = async (tenantId, phone, contactName, messageBody) => 
 
     const count = await prisma.flJob.count({ where: { tenantId } });
     const jobNumber = `JOB-${String(count + 1).padStart(4, '0')}`;
-    const job = await prisma.flJob.create({
-      data: {
-        tenantId, jobNumber,
-        customerName: contactName || 'WhatsApp Inquiry',
-        customerPhone: phone,
-        workType: 'WhatsApp Inquiry',
-        description: messageBody,
-        status: 'ENQUIRY',
-      },
-    });
+    let job;
+    try {
+      job = await prisma.flJob.create({
+        data: {
+          tenantId, jobNumber,
+          customerName: contactName || 'WhatsApp Inquiry',
+          customerPhone: phone,
+          workType: 'WhatsApp Inquiry',
+          description: messageBody,
+          status: 'ENQUIRY',
+        },
+      });
+    } catch (e) {
+      if (e.code !== 'P2002') throw e;
+      // Concurrent race on jobNumber — retry with a fresh count
+      const retryCount = await prisma.flJob.count({ where: { tenantId } });
+      job = await prisma.flJob.create({
+        data: {
+          tenantId, jobNumber: `JOB-${String(retryCount + 1).padStart(4, '0')}`,
+          customerName: contactName || 'WhatsApp Inquiry',
+          customerPhone: phone,
+          workType: 'WhatsApp Inquiry',
+          description: messageBody,
+          status: 'ENQUIRY',
+        },
+      });
+    }
 
     const biz = await flTenantName(tenantId);
     const reply = [

@@ -4,6 +4,9 @@ const { useDBAuthState } = require('./baileys.session');
 // One session per tenant: tenantId → { sock, status, qr, retries }
 const sessions = new Map();
 
+// Track intentional disconnects so the close-event handler does not auto-reconnect
+const disconnecting = new Set();
+
 function normJid(phone) {
   let p = String(phone).replace(/\D/g, '');
   if (p.startsWith('0')) p = p.slice(1);
@@ -21,6 +24,12 @@ async function connectTenant(tenantId) {
 
   // Initialise session slot
   const slot = sessions.get(tenantId) || { status: 'disconnected', qr: null, retries: 0, sock: null };
+
+  // Clean up old socket's listeners before replacing to prevent duplicate message handlers
+  if (slot.sock) {
+    try { slot.sock.ev.removeAllListeners(); } catch {}
+  }
+
   slot.status = 'connecting';
   sessions.set(tenantId, slot);
 
@@ -48,6 +57,9 @@ async function connectTenant(tenantId) {
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
+    // Ignore close events triggered by an intentional disconnectTenant() call
+    if (disconnecting.has(tenantId)) return;
+
     const s = sessions.get(tenantId) || slot;
 
     if (qr) {
@@ -70,10 +82,13 @@ async function connectTenant(tenantId) {
       s.sock   = null;
 
       if (loggedOut) {
+        // User removed the device from their phone — clear creds and stop.
+        // Do NOT auto-reconnect; user must re-scan QR manually.
         console.log(`[Baileys:${tenantId.slice(-6)}] Logged out — clearing session`);
         prisma.waSession.delete({ where: { id: tenantId } }).catch(() => {});
-        s.retries = 0;
-        setTimeout(() => connectTenant(tenantId), 3000);
+        s.status = 'logged_out';
+        sessions.set(tenantId, s);
+        return;
       } else if (s.retries < 8) {
         s.retries++;
         const delay = Math.min(5000 * s.retries, 60_000);
@@ -106,11 +121,11 @@ async function connectTenant(tenantId) {
 
 // Called on server start — reconnect all tenants that have saved sessions
 async function reconnectAll() {
-  const sessions = await prisma.waSession.findMany({ select: { id: true } });
-  for (const { id } of sessions) {
+  const savedSessions = await prisma.waSession.findMany({ select: { id: true } });
+  for (const { id } of savedSessions) {
     connectTenant(id).catch(e => console.error(`[Baileys] reconnect failed for ${id}:`, e.message));
   }
-  console.log(`[Baileys] Reconnecting ${sessions.length} saved session(s)`);
+  console.log(`[Baileys] Reconnecting ${savedSessions.length} saved session(s)`);
 }
 
 async function sendWA(tenantId, phone, text) {
@@ -129,12 +144,15 @@ function getStatus(tenantId) {
 
 async function disconnectTenant(tenantId) {
   const slot = sessions.get(tenantId);
+  // Mark as intentional BEFORE calling end() so the close-event handler ignores this disconnect
+  disconnecting.add(tenantId);
   if (slot?.sock) {
-    try { slot.sock.end(undefined); } catch {}           // close socket immediately
-    slot.sock.logout().catch(() => {});                  // best-effort WA logout, non-blocking
+    try { slot.sock.end(undefined); } catch {}
+    // Do NOT call logout() after end() — the socket is already closed and logout would fail silently
   }
   sessions.delete(tenantId);
   await prisma.waSession.delete({ where: { id: tenantId } }).catch(() => {});
+  disconnecting.delete(tenantId);
 }
 
 module.exports = { connectTenant, reconnectAll, sendWA, getStatus, disconnectTenant };
