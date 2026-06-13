@@ -76,10 +76,23 @@ export default function FreelancerSettings() {
 
       {/* Profile summary */}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '18px 22px', marginBottom: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Your Account</div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{tenant?.name}</div>
-        <div style={{ fontSize: 13, color: MUTED }}>{tenant?.email}</div>
-        {tenant?.city && <div style={{ fontSize: 13, color: MUTED }}>{tenant.city}</div>}
+        <div style={{ fontSize: 12, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Your Account</div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{tenant?.name}</div>
+            <div style={{ fontSize: 13, color: MUTED }}>{tenant?.email}</div>
+            {tenant?.city && <div style={{ fontSize: 13, color: MUTED }}>{tenant.city}</div>}
+          </div>
+          {tenant?.syllabrixId && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Syllabrix ID</div>
+              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#1FB8D6', background: 'rgba(31,184,214,0.08)', border: '1px solid rgba(31,184,214,0.2)', padding: '4px 10px', borderRadius: 7, letterSpacing: '0.05em' }}>
+                {tenant.syllabrixId}
+              </div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Your unique platform ID</div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Module configuration */}
