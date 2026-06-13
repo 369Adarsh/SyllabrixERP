@@ -80,6 +80,11 @@ const app = express();
 // ─── Health check — must be before HTTPS redirect so Railway's internal HTTP probe gets 200 ──
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'Syllabrix API' }));
 
+// ─── Trust proxy (Render/Railway/Vercel sit behind reverse proxies on quality + production) ──
+if (config.nodeEnv !== 'development') {
+  app.set('trust proxy', 1);
+}
+
 // ─── HTTPS redirect in production ─────────────────────────────────────────────
 if (config.nodeEnv === 'production') {
   app.use((req, res, next) => {
@@ -88,7 +93,6 @@ if (config.nodeEnv === 'production') {
     }
     next();
   });
-  app.set('trust proxy', 1); // Trust Railway/Render/Vercel reverse proxy
 }
 
 // ─── Security headers (Helmet) ─────────────────────────────────────────────────
