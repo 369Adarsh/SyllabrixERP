@@ -37,7 +37,8 @@ export const saGetMe = () => api.get('/auth/me');
 export const getSAPlatformDashboard = () => api.get('/dashboard');
 
 // Tenants
-export const getSATenants = () => api.get('/tenants');
+export const getSATenants = (params) => api.get('/tenants', { params });
+export const getFreelancerTenants = (params) => api.get('/tenants', { params: { ...params, businessType: 'FREELANCER', limit: 200 } });
 export const getSATenant = (id) => api.get(`/tenants/${id}`);
 export const toggleSATenant = (id) => api.patch(`/tenants/${id}/toggle`);
 export const changeSATenantPlan = (id, plan) => api.patch(`/tenants/${id}/plan`, { plan });
