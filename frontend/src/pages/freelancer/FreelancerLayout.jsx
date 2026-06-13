@@ -73,7 +73,14 @@ export default function FreelancerLayout() {
             <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {tenant?.name || 'My Work'}
             </div>
-            <div style={{ fontSize: 10, color: OR, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Freelancer</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
+              <div style={{ fontSize: 10, color: OR, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Freelancer</div>
+              {tenant?.syllabrixId && (
+                <div style={{ fontSize: 9, color: '#1FB8D6', fontWeight: 700, fontFamily: 'monospace', letterSpacing: '0.04em', background: 'rgba(31,184,214,0.1)', padding: '1px 5px', borderRadius: 4 }}>
+                  {tenant.syllabrixId}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
