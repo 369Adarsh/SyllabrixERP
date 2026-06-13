@@ -101,6 +101,8 @@ model Tenant {
   flSuppliers             FlSupplier[]
   flTools                 FlTool[]
   flAMC                   FlAMC[]
+  flWaSettings            FlWaSettings?
+  flWaBroadcasts          FlWaBroadcast[]
 
   hasBranches             Boolean                @default(false)
   featureConfigs          TenantFeatureConfig[]
@@ -3848,4 +3850,55 @@ model WaSession {
   updatedAt DateTime @updatedAt
 
   @@map("wa_sessions")
+}
+
+// ── Freelancer WhatsApp Automation Settings ───────────────────────────────────
+model FlWaSettings {
+  id        String  @id @default(uuid())
+  tenantId  String  @unique
+
+  // Automation toggles — all ON by default
+  notifyNewJob       Boolean @default(true)
+  notifyStatus       Boolean @default(true)
+  notifyPayment      Boolean @default(true)
+  notifyAmcRenewal   Boolean @default(true)
+
+  // Follow-up: auto message X days after job completed
+  followUpEnabled    Boolean @default(false)
+  followUpDays       Int     @default(1)
+  followUpMsg        String? // null = use default template
+
+  // Payment reminder: auto message X days after completion if balance > 0
+  payReminderEnabled Boolean @default(false)
+  payReminderDays    Int     @default(3)
+  payReminderMsg     String?
+
+  // Custom message templates (null = use system default)
+  msgNewJob     String?
+  msgStatus     String?
+  msgPayment    String?
+  msgAmcRenewal String?
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("fl_wa_settings")
+}
+
+// ── Freelancer WhatsApp Broadcasts ────────────────────────────────────────────
+model FlWaBroadcast {
+  id        String   @id @default(uuid())
+  tenantId  String
+  message   String
+  filter    String   @default("all") // all | pending_payment | active_jobs | amc
+  sentCount Int      @default(0)
+  failCount Int      @default(0)
+  status    String   @default("PENDING") // PENDING | SENDING | DONE | FAILED
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_wa_broadcasts")
 }

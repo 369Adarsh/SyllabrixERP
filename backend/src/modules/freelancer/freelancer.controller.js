@@ -69,3 +69,12 @@ exports.financeReport   = async (req, res, next) => { try { res.json(await svc.f
 // ── Settings ──────────────────────────────────────────────────────────────────
 exports.getSettings    = async (req, res, next) => { try { res.json(await svc.getSettings(tid(req))); } catch(e){next(e);} };
 exports.updateSettings = async (req, res, next) => { try { res.json(await svc.updateSettings(tid(req), req.body)); } catch(e){next(e);} };
+
+// ── WhatsApp Automation Settings ─────────────────────────────────────────────
+exports.getWaSettings    = async (req, res, next) => { try { res.json(await svc.getWaSettings(tid(req))); } catch(e){next(e);} };
+exports.updateWaSettings = async (req, res, next) => { try { res.json(await svc.updateWaSettings(tid(req), req.body)); } catch(e){next(e);} };
+
+// ── WhatsApp Broadcast ────────────────────────────────────────────────────────
+exports.previewBroadcast = async (req, res, next) => { try { res.json(await svc.previewBroadcast(tid(req), req.query.filter || 'all')); } catch(e){next(e);} };
+exports.sendBroadcast    = async (req, res, next) => { try { res.json(await svc.sendBroadcast(tid(req), req.body)); } catch(e){next(e);} };
+exports.listBroadcasts   = async (req, res, next) => { try { res.json(await svc.listBroadcasts(tid(req))); } catch(e){next(e);} };

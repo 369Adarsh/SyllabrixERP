@@ -21,8 +21,12 @@ async function createJob(tenantId, data) {
   });
   // Non-blocking WhatsApp notification to customer
   if (job.customerPhone) {
-    wa.sendFlJobCreated(tenantId, job.customerPhone, job.customerName, job)
-      .catch(() => {});
+    prisma.flWaSettings.findUnique({ where: { tenantId } }).then(s => {
+      if (s === null || s.notifyNewJob) {
+        wa.sendFlJobCreated(tenantId, job.customerPhone, job.customerName, job, s?.msgNewJob || null)
+          .catch(() => {});
+      }
+    }).catch(() => {});
   }
   return job;
 }
@@ -79,8 +83,12 @@ async function updateJobStatus(tenantId, id, status) {
   const job = await prisma.flJob.update({ where: { id, tenantId }, data: { status } });
   // Non-blocking WhatsApp status update to customer
   if (job.customerPhone) {
-    wa.sendFlStatusUpdate(tenantId, job.customerPhone, job.customerName, job)
-      .catch(() => {});
+    prisma.flWaSettings.findUnique({ where: { tenantId } }).then(s => {
+      if (s === null || s.notifyStatus) {
+        wa.sendFlStatusUpdate(tenantId, job.customerPhone, job.customerName, job, s?.msgStatus || null)
+          .catch(() => {});
+      }
+    }).catch(() => {});
   }
   return job;
 }
@@ -139,8 +147,12 @@ async function recordPayment(tenantId, jobId, data) {
   // Non-blocking WhatsApp payment receipt to customer
   const job = await prisma.flJob.findFirst({ where: { id: jobId, tenantId } });
   if (job?.customerPhone) {
-    wa.sendFlPaymentReceived(tenantId, job.customerPhone, job.customerName, job, payment)
-      .catch(() => {});
+    prisma.flWaSettings.findUnique({ where: { tenantId } }).then(s => {
+      if (s === null || s.notifyPayment) {
+        wa.sendFlPaymentReceived(tenantId, job.customerPhone, job.customerName, job, payment, s?.msgPayment || null)
+          .catch(() => {});
+      }
+    }).catch(() => {});
   }
   return payment;
 }
@@ -505,6 +517,108 @@ async function financeReport(tenantId, { year } = {}) {
   };
 }
 
+// ── WhatsApp Automation Settings ─────────────────────────────────────────────
+async function getWaSettings(tenantId) {
+  const s = await prisma.flWaSettings.findUnique({ where: { tenantId } });
+  if (s) return s;
+  // Auto-create with defaults on first access
+  return prisma.flWaSettings.create({ data: { tenantId } });
+}
+
+async function updateWaSettings(tenantId, data) {
+  const allowed = [
+    'notifyNewJob','notifyStatus','notifyPayment','notifyAmcRenewal',
+    'followUpEnabled','followUpDays','followUpMsg',
+    'payReminderEnabled','payReminderDays','payReminderMsg',
+    'msgNewJob','msgStatus','msgPayment','msgAmcRenewal',
+  ];
+  const clean = Object.fromEntries(Object.entries(data).filter(([k]) => allowed.includes(k)));
+  return prisma.flWaSettings.upsert({
+    where:  { tenantId },
+    create: { tenantId, ...clean },
+    update: clean,
+  });
+}
+
+// ── WhatsApp Broadcast ────────────────────────────────────────────────────────
+async function getBroadcastTargets(tenantId, filter) {
+  if (filter === 'pending_payment') {
+    const jobs = await prisma.flJob.findMany({
+      where: { tenantId, status: { in: ['IN_PROGRESS', 'COMPLETED', 'PAYMENT_PENDING'] } },
+      include: { payments: true },
+    });
+    return jobs
+      .filter(j => {
+        const paid = j.payments.reduce((s, p) => s + p.amount, 0);
+        return (j.jobValue || 0) - paid > 0 && j.customerPhone;
+      })
+      .map(j => ({ name: j.customerName, phone: j.customerPhone, ref: j.jobNumber }));
+  }
+  if (filter === 'active_jobs') {
+    const jobs = await prisma.flJob.findMany({
+      where: { tenantId, status: { in: ['ENQUIRY','ESTIMATE_SENT','IN_PROGRESS'] }, customerPhone: { not: null } },
+      select: { customerName: true, customerPhone: true, jobNumber: true },
+    });
+    return jobs.map(j => ({ name: j.customerName, phone: j.customerPhone, ref: j.jobNumber }));
+  }
+  if (filter === 'amc') {
+    const amcs = await prisma.flAMC.findMany({
+      where: { tenantId, clientPhone: { not: null } },
+      select: { clientName: true, clientPhone: true, workType: true },
+    });
+    return amcs.map(a => ({ name: a.clientName, phone: a.clientPhone, ref: a.workType }));
+  }
+  // 'all' — all clients with a phone
+  const clients = await prisma.flClient.findMany({
+    where: { tenantId, phone: { not: '' } },
+    select: { name: true, phone: true },
+  });
+  return clients.map(c => ({ name: c.name, phone: c.phone, ref: null }));
+}
+
+async function sendBroadcast(tenantId, { message, filter = 'all' }) {
+  const targets = await getBroadcastTargets(tenantId, filter);
+  if (!targets.length) return { sentCount: 0, failCount: 0, total: 0 };
+
+  const broadcast = await prisma.flWaBroadcast.create({
+    data: { tenantId, message, filter, status: 'SENDING' },
+  });
+
+  let sentCount = 0, failCount = 0;
+
+  for (const t of targets) {
+    const body = message
+      .replace(/\{name\}/g, t.name || 'there')
+      .replace(/\{ref\}/g, t.ref || '');
+    try {
+      await wa.sendText(tenantId, t.phone, body);
+      sentCount++;
+    } catch { failCount++; }
+    // Rate limit: 1 message per second to avoid WA ban
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  await prisma.flWaBroadcast.update({
+    where: { id: broadcast.id },
+    data: { sentCount, failCount, status: 'DONE' },
+  });
+
+  return { sentCount, failCount, total: targets.length };
+}
+
+async function listBroadcasts(tenantId) {
+  return prisma.flWaBroadcast.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  });
+}
+
+async function previewBroadcast(tenantId, filter) {
+  const targets = await getBroadcastTargets(tenantId, filter);
+  return { count: targets.length, sample: targets.slice(0, 5) };
+}
+
 module.exports = {
   createJob, listJobs, getJob, updateJob, updateJobStatus, deleteJob,
   saveEstimate, getEstimate,
@@ -519,4 +633,6 @@ module.exports = {
   createAMC, listAMC, updateAMC,
   dashboardStats, monthlyReport, pendingPayments, jobsReport,
   getSettings, updateSettings, financeReport,
+  getWaSettings, updateWaSettings,
+  sendBroadcast, listBroadcasts, previewBroadcast,
 };

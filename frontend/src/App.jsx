@@ -127,6 +127,7 @@ import FreelancerAMC from './pages/freelancer/FreelancerAMC';
 import FreelancerBills from './pages/freelancer/FreelancerBills';
 import FreelancerFinance from './pages/freelancer/FreelancerFinance';
 import FreelancerSettings from './pages/freelancer/FreelancerSettings';
+import FreelancerWhatsApp from './pages/freelancer/FreelancerWhatsApp';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -221,6 +222,7 @@ export default function App() {
             <Route path="amc"        element={<FreelancerAMC />} />
             <Route path="bills"      element={<FreelancerBills />} />
             <Route path="finance"    element={<FreelancerFinance />} />
+            <Route path="whatsapp"   element={<FreelancerWhatsApp />} />
             <Route path="settings"   element={<FreelancerSettings />} />
           </Route>
 
