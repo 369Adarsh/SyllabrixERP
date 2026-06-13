@@ -128,6 +128,69 @@ const bulkFeeReminders = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+// GET /whatsapp/qr-status  — returns QR string + connection status for this tenant
+const qrStatus = (req, res) => {
+  const { getStatus, connectTenant } = require('./baileys.service');
+  const tenantId = req.tenantId;
+  const info = getStatus(tenantId);
+  // Kick off a new connection only when fully idle (not already connecting, qr_pending, or connected)
+  if (info.status === 'disconnected' || info.status === 'logged_out') {
+    connectTenant(tenantId).catch(() => {});
+  }
+  res.json(info);
+};
+
+// POST /whatsapp/disconnect  — unlink WhatsApp for this tenant
+const disconnectWA = async (req, res, next) => {
+  try {
+    const { disconnectTenant } = require('./baileys.service');
+    await disconnectTenant(req.tenantId);
+    res.json({ success: true, message: 'WhatsApp disconnected' });
+  } catch (e) { next(e); }
+};
+
+// GET /whatsapp/qr.png  — returns HTML page with scannable QR for this tenant
+// QR image is rendered server-side — the raw pairing credential is never sent to any external service
+const qrImage = async (req, res) => {
+  const { getStatus, connectTenant } = require('./baileys.service');
+  const QRCode = require('qrcode');
+  const tenantId = req.tenantId;
+  const { status, qr } = getStatus(tenantId);
+  // Kick off connection if not already in progress
+  if (status === 'disconnected' || status === 'logged_out') connectTenant(tenantId).catch(() => {});
+
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Cache-Control', 'no-store');
+
+  if (status === 'connected') {
+    return res.send(`<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:40px">
+      <h2 style="color:#16a34a">✅ WhatsApp Connected!</h2>
+      <p>Your WhatsApp is linked and automation is active.</p>
+    </body></html>`);
+  }
+
+  if (!qr) {
+    return res.send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="4"></head>
+      <body style="font-family:sans-serif;text-align:center;padding:40px">
+      <h2>⏳ QR not ready yet…</h2>
+      <p>Auto-refreshing in 4 seconds. Status: <strong>${status}</strong></p>
+    </body></html>`);
+  }
+
+  // Render QR server-side as a data URI — credential never leaves this server
+  const qrDataUrl = await QRCode.toDataURL(qr, { margin: 2, width: 350 });
+  return res.send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="30">
+    <style>body{font-family:sans-serif;text-align:center;padding:40px;background:#f9f9f9}
+    img{border:3px solid #e5e7eb;border-radius:12px;margin:20px auto;display:block}
+    h2{color:#111}p{color:#555}</style></head>
+    <body>
+      <h2>📱 Scan to Link WhatsApp</h2>
+      <p>Open WhatsApp → <strong>⋮ Menu</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong></p>
+      <img src="${qrDataUrl}" width="350" height="350" alt="WhatsApp QR Code"/>
+      <p style="font-size:13px;color:#9ca3af">QR refreshes every 30 seconds. Page auto-reloads.</p>
+    </body></html>`);
+};
+
 // GET /whatsapp/conversations
 const conversations = async (req, res, next) => {
   try {
@@ -143,7 +206,7 @@ const thread = async (req, res, next) => {
 };
 
 module.exports = {
-  verify, webhook,
+  verify, webhook, qrStatus, qrImage, disconnectWA,
   send, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
   bulkFeeReminders, conversations, thread,
 };

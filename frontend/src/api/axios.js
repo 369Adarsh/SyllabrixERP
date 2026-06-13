@@ -30,7 +30,8 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
         localStorage.clear();
-        window.location.href = '/login';
+        const isFreelancer = window.location.pathname.startsWith('/freelancer');
+        window.location.href = isFreelancer ? '/freelancer/login' : '/login';
         return Promise.reject(err);
       }
       try {
@@ -43,7 +44,8 @@ api.interceptors.response.use(
         return api(original);
       } catch {
         localStorage.clear();
-        window.location.href = '/login';
+        const isFreelancer = window.location.pathname.startsWith('/freelancer');
+        window.location.href = isFreelancer ? '/freelancer/login' : '/login';
       }
     }
     return Promise.reject(err);

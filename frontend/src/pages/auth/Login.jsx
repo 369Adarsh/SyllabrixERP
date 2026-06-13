@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/ui/Input';
@@ -36,11 +36,14 @@ export default function Login() {
     setUnverifiedEmail(null);
     try {
       if (mode === 'staff') {
-        await staffLogin({ email: form.email, password: form.password, tenantId: form.tenantId || undefined });
+        const res = await staffLogin({ email: form.email, password: form.password, tenantId: form.tenantId || undefined });
+        const bType = res?.data?.tenant?.businessType;
+        navigate(bType === 'FREELANCER' ? '/freelancer/dashboard' : '/dashboard');
       } else {
-        await login({ email: form.email, password: form.password });
+        const res = await login({ email: form.email, password: form.password });
+        const bType = res?.data?.tenant?.businessType;
+        navigate(bType === 'FREELANCER' ? '/freelancer/dashboard' : '/dashboard');
       }
-      navigate('/dashboard');
     } catch (err) {
       if (err.response?.status === 409 && err.response?.data?.data?.tenants) {
         setTenantChoices(err.response.data.data.tenants);
@@ -59,8 +62,9 @@ export default function Login() {
     setTenantChoices(null);
     setLoading(true);
     try {
-      await staffLogin({ email: form.email, password: form.password, tenantId });
-      navigate('/dashboard');
+      const res = await staffLogin({ email: form.email, password: form.password, tenantId });
+      const bType = res?.data?.tenant?.businessType;
+      navigate(bType === 'FREELANCER' ? '/freelancer/dashboard' : '/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {
@@ -69,6 +73,7 @@ export default function Login() {
   };
 
   const switchMode = (m) => {
+    if (m === 'freelancer') { navigate('/freelancer/login'); return; }
     setMode(m);
     setErrors({});
     setTenantChoices(null);
@@ -88,20 +93,25 @@ export default function Login() {
 
         <div className="auth-card">
           {/* Mode tabs */}
-          <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 4, marginBottom: 24 }}>
-            {['owner', 'staff'].map((m) => (
+          <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 4, marginBottom: 24, gap: 2 }}>
+            {[
+              { key: 'owner',      label: 'Owner / Admin' },
+              { key: 'staff',      label: 'Staff Login'   },
+              { key: 'freelancer', label: 'Freelancer'    },
+            ].map(({ key, label }) => (
               <button
-                key={m}
-                onClick={() => switchMode(m)}
+                key={key}
+                onClick={() => switchMode(key)}
                 style={{
-                  flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
-                  fontWeight: 600, fontSize: 14, transition: 'all 0.15s',
-                  background: mode === m ? '#fff' : 'transparent',
-                  color: mode === m ? 'var(--navy)' : '#6B7280',
-                  boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                  flex: 1, padding: '8px 4px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontWeight: 600, fontSize: 13, transition: 'all 0.15s',
+                  background: mode === key ? '#fff' : 'transparent',
+                  color: mode === key ? 'var(--navy)' : '#6B7280',
+                  boxShadow: mode === key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {m === 'owner' ? 'Owner / Admin' : 'Staff Login'}
+                {label}
               </button>
             ))}
           </div>

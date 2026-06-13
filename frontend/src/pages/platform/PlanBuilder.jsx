@@ -13,10 +13,10 @@ const S = {
   h1: { fontSize: 22, fontWeight: 700, color: '#F1F5F9', marginBottom: 4 },
   sub: { fontSize: 13, color: '#64748B', marginBottom: 28 },
   tabs: { display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid #1E2D3D', paddingBottom: 0 },
-  tab: (active) => ({
+  tab: (active, accent) => ({
     padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-    background: 'none', border: 'none', borderBottom: active ? '2px solid #1FB8D6' : '2px solid transparent',
-    color: active ? '#1FB8D6' : '#64748B', transition: 'all 0.15s', marginBottom: -1,
+    background: 'none', border: 'none', borderBottom: active ? `2px solid ${accent || '#1FB8D6'}` : '2px solid transparent',
+    color: active ? (accent || '#1FB8D6') : '#64748B', transition: 'all 0.15s', marginBottom: -1,
   }),
   card: { background: '#192533', border: '1px solid #1E2D3D', borderRadius: 12, padding: 24, marginBottom: 20 },
   planGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginBottom: 24 },
@@ -30,6 +30,7 @@ const S = {
   btn: (variant) => ({
     padding: '8px 16px', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
     ...(variant === 'primary'  && { background: '#1FB8D6', color: '#0B131C' }),
+    ...(variant === 'orange'   && { background: '#f97316', color: '#fff' }),
     ...(variant === 'danger'   && { background: 'rgba(220,38,38,0.12)', color: '#F87171', border: '1px solid rgba(220,38,38,0.25)' }),
     ...(variant === 'ghost'    && { background: 'rgba(255,255,255,0.05)', color: '#94A3B8', border: '1px solid #1E2D3D' }),
     ...(variant === 'success'  && { background: 'rgba(16,185,129,0.12)', color: '#34D399', border: '1px solid rgba(16,185,129,0.25)' }),
@@ -73,38 +74,52 @@ function ModuleMatrix({ selected, onChange }) {
   );
 }
 
-const PLAN_BLANK = { key: '', name: '', tagline: '', description: '', monthlyPrice: '', yearlyPrice: '', color: '#1FB8D6', trialDays: 14, maxUsers: '', maxBranches: '', sortOrder: 0, modules: [] };
+const planBlank = (segment) => ({ key: '', name: '', tagline: '', description: '', monthlyPrice: '', yearlyPrice: '', color: segment === 'FREELANCER' ? '#f97316' : '#1FB8D6', trialDays: 14, maxUsers: '', maxBranches: '', sortOrder: 0, modules: [], segment });
 const OFFER_BLANK = { code: '', description: '', discountType: 'PERCENT', discountValue: '', applicablePlans: [], maxUses: '', validFrom: '', validUntil: '' };
 
 export default function PlanBuilder() {
-  const [tab, setTab] = useState('plans');
+  const [tab, setTab] = useState('business');
   const [plans, setPlans] = useState([]);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [planForm, setPlanForm] = useState(null); // null=closed, {}=new, {id,...}=edit
+  const [planForm, setPlanForm] = useState(null);
   const [offerForm, setOfferForm] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const load = async () => {
+  const activeSegment = tab === 'freelancer' ? 'FREELANCER' : 'BUSINESS';
+
+  const loadPlans = async (segment) => {
     setLoading(true);
     try {
-      const [p, o] = await Promise.all([getSAManagedPlans(), getSAManagedOffers()]);
-      setPlans(p.data?.data || []);
-      setOffers(o.data?.data || []);
-    } catch { toast.error('Failed to load'); }
+      const res = await getSAManagedPlans(segment);
+      setPlans(res.data?.data || []);
+    } catch { toast.error('Failed to load plans'); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadOffers = async () => {
+    setLoading(true);
+    try {
+      const res = await getSAManagedOffers();
+      setOffers(res.data?.data || []);
+    } catch { toast.error('Failed to load offers'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (tab === 'offers') loadOffers();
+    else loadPlans(activeSegment);
+  }, [tab]);
 
   // ── Plan actions ──
-  const openNewPlan = () => setPlanForm({ ...PLAN_BLANK });
+  const openNewPlan = () => setPlanForm(planBlank(activeSegment));
   const openEditPlan = (plan) => setPlanForm({
     id: plan.id, key: plan.key, name: plan.name, tagline: plan.tagline || '',
     description: plan.description || '', monthlyPrice: plan.monthlyPrice,
     yearlyPrice: plan.yearlyPrice || '', color: plan.color || '#1FB8D6',
     trialDays: plan.trialDays, maxUsers: plan.maxUsers || '', maxBranches: plan.maxBranches || '',
     sortOrder: plan.sortOrder, modules: Array.isArray(plan.modules) ? plan.modules : [],
+    segment: plan.segment || 'BUSINESS',
   });
 
   const savePlan = async () => {
@@ -122,7 +137,7 @@ export default function PlanBuilder() {
         toast.success('Plan created');
       }
       setPlanForm(null);
-      load();
+      loadPlans(activeSegment);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Save failed');
     } finally { setSaving(false); }
@@ -132,7 +147,7 @@ export default function PlanBuilder() {
     try {
       await toggleSAManagedPlan(plan.id);
       toast.success(plan.isActive ? 'Plan deactivated' : 'Plan activated');
-      load();
+      loadPlans(activeSegment);
     } catch { toast.error('Failed'); }
   };
 
@@ -141,7 +156,7 @@ export default function PlanBuilder() {
     try {
       await deleteSAManagedPlan(plan.id);
       toast.success('Plan deleted');
-      load();
+      loadPlans(activeSegment);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Delete failed');
     }
@@ -173,7 +188,7 @@ export default function PlanBuilder() {
         toast.success('Offer created');
       }
       setOfferForm(null);
-      load();
+      loadOffers();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Save failed');
     } finally { setSaving(false); }
@@ -184,7 +199,7 @@ export default function PlanBuilder() {
     try {
       await deleteSAManagedOffer(offer.id);
       toast.success('Offer deleted');
-      load();
+      loadOffers();
     } catch { toast.error('Delete failed'); }
   };
 
@@ -193,81 +208,98 @@ export default function PlanBuilder() {
     setOfferForm(f => ({ ...f, applicablePlans: ap.includes(key) ? ap.filter(k => k !== key) : [...ap, key] }));
   };
 
+  const PlanList = ({ accentColor }) => (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+        <button style={S.btn(tab === 'freelancer' ? 'orange' : 'primary')} onClick={openNewPlan}>+ New Plan</button>
+      </div>
+
+      {loading ? (
+        <div style={{ color: '#64748B', fontSize: 14 }}>Loading…</div>
+      ) : (
+        <div style={S.planGrid}>
+          {plans.map(plan => (
+            <div key={plan.id} style={S.planCard(plan.color, plan.isActive)}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: plan.color, display: 'inline-block' }} />
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>{plan.name}</span>
+                    <span style={S.badge(plan.isActive ? '#34D399' : '#64748B')}>{plan.isActive ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748B' }}>{plan.key}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button style={{ ...S.btn('ghost'), padding: '5px 10px' }} onClick={() => openEditPlan(plan)}>Edit</button>
+                </div>
+              </div>
+
+              {plan.tagline && <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>{plan.tagline}</div>}
+
+              <div style={{ marginBottom: 14 }}>
+                <span style={{ fontSize: 26, fontWeight: 800, color: plan.color }}>₹{plan.monthlyPrice.toLocaleString('en-IN')}</span>
+                <span style={{ fontSize: 12, color: '#64748B' }}>/mo</span>
+                {plan.yearlyPrice && (
+                  <span style={{ fontSize: 11, color: '#64748B', marginLeft: 8 }}>₹{plan.yearlyPrice.toLocaleString('en-IN')}/yr</span>
+                )}
+              </div>
+
+              <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10 }}>
+                {plan.maxUsers ? `Up to ${plan.maxUsers} users` : 'Unlimited users'} &middot;{' '}
+                {plan.maxBranches ? `${plan.maxBranches} branch${plan.maxBranches > 1 ? 'es' : ''}` : 'Unlimited branches'}
+                {plan.trialDays > 0 && ` · ${plan.trialDays}-day trial`}
+              </div>
+
+              <div style={{ fontSize: 11, color: '#475569', marginBottom: 14 }}>
+                <span style={{ color: '#64748B', fontWeight: 600 }}>Modules: </span>
+                {(Array.isArray(plan.modules) ? plan.modules : []).slice(0, 5).join(', ')}
+                {(Array.isArray(plan.modules) ? plan.modules : []).length > 5 && ` +${plan.modules.length - 5} more`}
+              </div>
+
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button style={{ ...S.btn(plan.isActive ? 'ghost' : 'success'), padding: '5px 10px', fontSize: 12 }} onClick={() => togglePlan(plan)}>
+                  {plan.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <button style={{ ...S.btn('danger'), padding: '5px 10px', fontSize: 12 }} onClick={() => deletePlan(plan)}>Delete</button>
+              </div>
+            </div>
+          ))}
+
+          {plans.length === 0 && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: '#64748B', fontSize: 14 }}>
+              No {tab === 'freelancer' ? 'freelancer' : 'business'} plans yet. Click "+ New Plan" to create the first one.
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div style={S.page}>
       <div style={S.h1}>Plan Creator</div>
       <div style={S.sub}>Define pricing tiers, module access, and promotional offers for Syllabrix plans.</div>
 
       <div style={S.tabs}>
-        <button style={S.tab(tab === 'plans')}  onClick={() => setTab('plans')}>Pricing Plans</button>
-        <button style={S.tab(tab === 'offers')} onClick={() => setTab('offers')}>Promo Offers</button>
+        <button style={S.tab(tab === 'business', '#1FB8D6')}    onClick={() => setTab('business')}>🏢 Business Plans</button>
+        <button style={S.tab(tab === 'freelancer', '#f97316')}  onClick={() => setTab('freelancer')}>🧑‍💼 Freelancer Plans</button>
+        <button style={S.tab(tab === 'offers', '#A78BFA')}      onClick={() => setTab('offers')}>🎟 Promo Offers</button>
       </div>
 
-      {/* ── Plans Tab ── */}
-      {tab === 'plans' && (
+      {/* ── Business Plans Tab ── */}
+      {tab === 'business' && <PlanList accentColor="#1FB8D6" />}
+
+      {/* ── Freelancer Plans Tab ── */}
+      {tab === 'freelancer' && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-            <button style={S.btn('primary')} onClick={openNewPlan}>+ New Plan</button>
-          </div>
-
-          {loading ? (
-            <div style={{ color: '#64748B', fontSize: 14 }}>Loading…</div>
-          ) : (
-            <div style={S.planGrid}>
-              {plans.map(plan => (
-                <div key={plan.id} style={S.planCard(plan.color, plan.isActive)}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: plan.color, display: 'inline-block' }} />
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>{plan.name}</span>
-                        <span style={S.badge(plan.isActive ? '#34D399' : '#64748B')}>{plan.isActive ? 'Active' : 'Inactive'}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#64748B' }}>{plan.key}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button style={{ ...S.btn('ghost'), padding: '5px 10px' }} onClick={() => openEditPlan(plan)}>Edit</button>
-                    </div>
-                  </div>
-
-                  {plan.tagline && <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>{plan.tagline}</div>}
-
-                  <div style={{ marginBottom: 14 }}>
-                    <span style={{ fontSize: 26, fontWeight: 800, color: plan.color }}>₹{plan.monthlyPrice.toLocaleString('en-IN')}</span>
-                    <span style={{ fontSize: 12, color: '#64748B' }}>/mo</span>
-                    {plan.yearlyPrice && (
-                      <span style={{ fontSize: 11, color: '#64748B', marginLeft: 8 }}>₹{plan.yearlyPrice.toLocaleString('en-IN')}/yr</span>
-                    )}
-                  </div>
-
-                  <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10 }}>
-                    {plan.maxUsers ? `Up to ${plan.maxUsers} users` : 'Unlimited users'} &middot;{' '}
-                    {plan.maxBranches ? `${plan.maxBranches} branch${plan.maxBranches > 1 ? 'es' : ''}` : 'Unlimited branches'}
-                    {plan.trialDays > 0 && ` · ${plan.trialDays}-day trial`}
-                  </div>
-
-                  <div style={{ fontSize: 11, color: '#475569', marginBottom: 14 }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>Modules: </span>
-                    {(Array.isArray(plan.modules) ? plan.modules : []).slice(0, 5).join(', ')}
-                    {(Array.isArray(plan.modules) ? plan.modules : []).length > 5 && ` +${plan.modules.length - 5} more`}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button style={{ ...S.btn(plan.isActive ? 'ghost' : 'success'), padding: '5px 10px', fontSize: 12 }} onClick={() => togglePlan(plan)}>
-                      {plan.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button style={{ ...S.btn('danger'), padding: '5px 10px', fontSize: 12 }} onClick={() => deletePlan(plan)}>Delete</button>
-                  </div>
-                </div>
-              ))}
-
-              {plans.length === 0 && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: '#64748B', fontSize: 14 }}>
-                  No plans yet. Click "New Plan" to create your first pricing tier.
-                </div>
-              )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, padding: '12px 16px', background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 10 }}>
+            <span style={{ fontSize: 20 }}>🧑‍💼</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#f97316' }}>Freelancer Plan Set</div>
+              <div style={{ fontSize: 12, color: '#9CA3AF' }}>These plans appear on the freelancer registration page. Designed for solo professionals and small teams.</div>
             </div>
-          )}
+          </div>
+          <PlanList accentColor="#f97316" />
         </>
       )}
 
@@ -331,18 +363,23 @@ export default function PlanBuilder() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
           <div style={{ background: '#192533', border: '1px solid #1E2D3D', borderRadius: 14, width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>{planForm.id ? 'Edit Plan' : 'New Plan'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>{planForm.id ? 'Edit Plan' : 'New Plan'}</div>
+                <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: planForm.segment === 'FREELANCER' ? 'rgba(249,115,22,0.15)' : 'rgba(31,184,214,0.12)', color: planForm.segment === 'FREELANCER' ? '#f97316' : '#1FB8D6' }}>
+                  {planForm.segment === 'FREELANCER' ? '🧑‍💼 Freelancer Plan' : '🏢 Business Plan'}
+                </span>
+              </div>
               <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 20, cursor: 'pointer' }} onClick={() => setPlanForm(null)}>×</button>
             </div>
 
             <div style={S.row}>
               <div style={S.col}>
-                <label style={S.label}>Plan Key (e.g. STARTER)</label>
-                <input style={S.input} value={planForm.key} onChange={e => setPlanForm(f => ({ ...f, key: e.target.value.toUpperCase() }))} placeholder="STARTER" disabled={!!planForm.id} />
+                <label style={S.label}>Plan Key (e.g. FL_BASIC)</label>
+                <input style={S.input} value={planForm.key} onChange={e => setPlanForm(f => ({ ...f, key: e.target.value.toUpperCase() }))} placeholder={planForm.segment === 'FREELANCER' ? 'FL_BASIC' : 'STARTER'} disabled={!!planForm.id} />
               </div>
               <div style={S.col}>
                 <label style={S.label}>Display Name</label>
-                <input style={S.input} value={planForm.name} onChange={e => setPlanForm(f => ({ ...f, name: e.target.value }))} placeholder="Starter" />
+                <input style={S.input} value={planForm.name} onChange={e => setPlanForm(f => ({ ...f, name: e.target.value }))} placeholder={planForm.segment === 'FREELANCER' ? 'Solo' : 'Starter'} />
               </div>
               <div style={{ width: 80 }}>
                 <label style={S.label}>Color</label>
@@ -352,7 +389,7 @@ export default function PlanBuilder() {
 
             <div style={{ marginBottom: 14 }}>
               <label style={S.label}>Tagline</label>
-              <input style={S.input} value={planForm.tagline} onChange={e => setPlanForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Perfect for getting started" />
+              <input style={S.input} value={planForm.tagline} onChange={e => setPlanForm(f => ({ ...f, tagline: e.target.value }))} placeholder={planForm.segment === 'FREELANCER' ? 'Perfect for solo professionals' : 'Perfect for getting started'} />
             </div>
 
             <div style={{ marginBottom: 14 }}>
@@ -363,11 +400,11 @@ export default function PlanBuilder() {
             <div style={S.row}>
               <div style={S.col}>
                 <label style={S.label}>Monthly Price (₹)</label>
-                <input style={S.input} type="number" value={planForm.monthlyPrice} onChange={e => setPlanForm(f => ({ ...f, monthlyPrice: e.target.value }))} placeholder="999" />
+                <input style={S.input} type="number" value={planForm.monthlyPrice} onChange={e => setPlanForm(f => ({ ...f, monthlyPrice: e.target.value }))} placeholder="299" />
               </div>
               <div style={S.col}>
                 <label style={S.label}>Yearly Price (₹) <span style={{ color: '#475569' }}>optional</span></label>
-                <input style={S.input} type="number" value={planForm.yearlyPrice} onChange={e => setPlanForm(f => ({ ...f, yearlyPrice: e.target.value }))} placeholder="9990" />
+                <input style={S.input} type="number" value={planForm.yearlyPrice} onChange={e => setPlanForm(f => ({ ...f, yearlyPrice: e.target.value }))} placeholder="2990" />
               </div>
               <div style={S.col}>
                 <label style={S.label}>Trial Days</label>
@@ -397,7 +434,9 @@ export default function PlanBuilder() {
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button style={S.btn('ghost')} onClick={() => setPlanForm(null)}>Cancel</button>
-              <button style={S.btn('primary')} onClick={savePlan} disabled={saving}>{saving ? 'Saving…' : (planForm.id ? 'Save Changes' : 'Create Plan')}</button>
+              <button style={planForm.segment === 'FREELANCER' ? S.btn('orange') : S.btn('primary')} onClick={savePlan} disabled={saving}>
+                {saving ? 'Saving…' : (planForm.id ? 'Save Changes' : 'Create Plan')}
+              </button>
             </div>
           </div>
         </div>

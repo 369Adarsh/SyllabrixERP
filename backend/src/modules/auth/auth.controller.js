@@ -72,7 +72,8 @@ const me = async (req, res, next) => {
 
 const getPublicPlans = async (req, res, next) => {
   try {
-    const plans = await authService.getPublicPlans();
+    const segment = req.query.segment || 'BUSINESS';
+    const plans = await authService.getPublicPlans(segment);
     ok(res, plans);
   } catch (err) { next(err); }
 };

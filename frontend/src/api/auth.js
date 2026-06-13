@@ -8,3 +8,4 @@ export const refreshToken = (data) => api.post('/auth/refresh', data);
 export const forgotPassword = (data) => api.post('/auth/forgot-password', data);
 export const resetPassword = (data) => api.post('/auth/reset-password', data);
 export const getMe = () => api.get('/auth/me');
+export const getPublicPlans = (segment) => api.get('/auth/plans', { params: segment ? { segment } : {} });

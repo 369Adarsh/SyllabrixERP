@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const prisma = require('../../config/prisma');
-const { sendText } = require('../whatsapp/whatsapp.service');
+const { sendText, sendFlAMCReminder } = require('../whatsapp/whatsapp.service');
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
@@ -114,6 +114,42 @@ const startAutomation = () => {
       const sales = await prisma.transaction.findMany({ where: { tenantId: tenant.id, createdAt: { gte: today, lt: tomorrow } } });
       const total = sales.reduce((s, t) => s + t.total, 0);
       console.log(`[EOD] ${tenant.name}: ${sales.length} sales, ₹${total.toFixed(2)}`);
+    }
+  }, { timezone: 'Asia/Kolkata' });
+
+  // AMC expiry reminders — daily at 9 AM IST
+  cron.schedule('0 9 * * *', async () => {
+    console.log('[AMC] Checking expiring contracts…');
+    const now = new Date();
+    const in30 = new Date(now); in30.setDate(now.getDate() + 30);
+    const in7  = new Date(now); in7.setDate(now.getDate() + 7);
+    const in8  = new Date(now); in8.setDate(now.getDate() + 8);
+
+    // Only process AMCs for tenants with an active WA session to avoid full-table scans
+    const activeSessions = await prisma.waSession.findMany({ select: { id: true } });
+    const activeTenantIds = activeSessions.map(s => s.id);
+    if (activeTenantIds.length === 0) return;
+
+    // Contracts expiring in exactly 30 days or exactly 7 days (±12h window)
+    const contracts = await prisma.flAMC.findMany({
+      where: {
+        tenantId: { in: activeTenantIds },
+        endDate: {
+          gte: new Date(in7.getTime() - 12 * 3600 * 1000),
+          lte: new Date(in30.getTime() + 12 * 3600 * 1000),
+        },
+      },
+    });
+
+    for (const amc of contracts) {
+      const daysLeft = Math.ceil((new Date(amc.endDate) - now) / 86_400_000);
+      if (daysLeft !== 30 && daysLeft !== 7) continue;
+      try {
+        await sendFlAMCReminder(amc.tenantId, amc.clientPhone, amc.clientName, amc, daysLeft);
+        console.log(`[AMC] Sent ${daysLeft}d reminder → ${amc.clientPhone} (${amc.workType})`);
+      } catch (e) {
+        console.error(`[AMC] Reminder failed for ${amc.id}:`, e.message);
+      }
     }
   }, { timezone: 'Asia/Kolkata' });
 

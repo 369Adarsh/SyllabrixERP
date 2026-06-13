@@ -105,6 +105,7 @@ import TransportManager from './pages/platform/TransportManager';
 import TransportNew from './pages/platform/TransportNew';
 import TransportDetail from './pages/platform/TransportDetail';
 import TransportEnvironments from './pages/platform/TransportEnvironments';
+import FreelancerTenants from './pages/platform/FreelancerTenants';
 import ChangeList from './pages/platform/ChangeList';
 import ChangeNew from './pages/platform/ChangeNew';
 import ChangeDetail from './pages/platform/ChangeDetail';
@@ -125,6 +126,9 @@ import FreelancerSuppliers from './pages/freelancer/FreelancerSuppliers';
 import FreelancerTools from './pages/freelancer/FreelancerTools';
 import FreelancerAMC from './pages/freelancer/FreelancerAMC';
 import FreelancerBills from './pages/freelancer/FreelancerBills';
+import FreelancerFinance from './pages/freelancer/FreelancerFinance';
+import FreelancerSettings from './pages/freelancer/FreelancerSettings';
+import FreelancerWhatsApp from './pages/freelancer/FreelancerWhatsApp';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -167,6 +171,7 @@ export default function App() {
             <Route index element={<Navigate to="/platform/dashboard" replace />} />
             <Route path="dashboard" element={<PlatformDashboard />} />
             <Route path="tenants" element={<Tenants />} />
+            <Route path="freelancers" element={<FreelancerTenants />} />
             <Route path="compliance" element={<Compliance />} />
             <Route path="role-requests" element={<RoleRequests />} />
             <Route path="announcements" element={<Announcements />} />
@@ -218,6 +223,9 @@ export default function App() {
             <Route path="tools"      element={<FreelancerTools />} />
             <Route path="amc"        element={<FreelancerAMC />} />
             <Route path="bills"      element={<FreelancerBills />} />
+            <Route path="finance"    element={<FreelancerFinance />} />
+            <Route path="whatsapp"   element={<FreelancerWhatsApp />} />
+            <Route path="settings"   element={<FreelancerSettings />} />
           </Route>
 
           {/* ── Tenant App ── */}

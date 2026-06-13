@@ -69,7 +69,7 @@ const layout = ({ preheader, headerTag, bodyHtml, footerNote, frontendUrl }) => 
             <td style="background:linear-gradient(135deg,#0F2942 0%,#1E3A5F 50%,#0E6B7A 100%);border-radius:16px 16px 0 0;padding:36px 40px 32px;text-align:center;">
 
               <!-- Logo / Wordmark -->
-              <img src="https://www.syllabrix.com/logo.png" alt="Syllabrix" width="140" style="display:block;margin:0 auto 16px;height:auto;max-width:140px;" />
+              <img src="https://syllabrix.com/logo.png" alt="Syllabrix" width="140" style="display:block;margin:0 auto 16px;height:auto;max-width:140px;" />
               <div style="font-size:32px;font-weight:900;color:#FFFFFF;letter-spacing:-0.03em;line-height:1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
                 Syllab<span style="color:#17B9D0;">rix</span>
               </div>
@@ -120,83 +120,179 @@ const layout = ({ preheader, headerTag, bodyHtml, footerNote, frontendUrl }) => 
 </body>
 </html>`;
 
-// ── Verification Email ─────────────────────────────────────────────────────────
-const sendVerificationEmail = async (toEmail, businessName, token) => {
-  const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://localhost:5173';
+// ── Trial Verification Email ───────────────────────────────────────────────────
+const sendVerificationEmail = async (toEmail, businessName, token, trialDays = 14) => {
+  const frontendUrl = process.env.FRONTEND_URL || (config.clientUrl || 'http://localhost:5173').split(',')[0].trim();
   const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
+  const name = businessName || 'there';
 
-  const html = layout({
-    frontendUrl,
-    preheader: `Verify your email to activate your Syllabrix account${businessName ? ` for ${businessName}` : ''}.`,
-    headerTag: '✉️ &nbsp; Email Verification',
-    bodyHtml: `
-      <!-- Greeting -->
-      <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#0F2942;letter-spacing:-0.02em;">
-        Verify your email address
-      </h1>
-      <p style="margin:0 0 24px;font-size:15px;color:#64748B;line-height:1.6;">
-        Welcome to Syllabrix${businessName ? `, <strong style="color:#0F2942;">${businessName}</strong>` : ''}!
-        You're one step away from getting started.
-      </p>
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Start Your Syllabrix Trial</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F0F4F8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 
-      <!-- Info box -->
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#EFF6FF,#F0FDFA);border:1px solid #BAE6FD;border-radius:12px;margin-bottom:28px;">
+  <!-- Preview text -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F0F4F8;">
+    One click to unlock your ${trialDays}-day free trial — no credit card needed.&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0F4F8;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+
+        <!-- ── HEADER ── -->
         <tr>
-          <td style="padding:20px 24px;">
-            <table cellpadding="0" cellspacing="0" border="0">
+          <td style="background:linear-gradient(135deg,#0A1F35 0%,#0F2942 40%,#0B5E70 100%);border-radius:16px 16px 0 0;padding:0;overflow:hidden;">
+
+            <!-- Top accent bar -->
+            <div style="height:4px;background:linear-gradient(90deg,#17B9D0 0%,#34D399 50%,#17B9D0 100%);"></div>
+
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="vertical-align:top;padding-right:14px;font-size:24px;line-height:1;">🔐</td>
-                <td>
-                  <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#0F2942;">Confirm it's you</p>
-                  <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-                    Click the button below to verify your email address and activate your account. This link expires in <strong>24 hours</strong>.
+                <td style="padding:36px 40px 32px;text-align:center;">
+
+                  <!-- Logo -->
+                  <img src="https://syllabrix.com/logo.png" alt="Syllabrix" width="150" style="display:block;margin:0 auto 20px;height:auto;max-width:150px;"/>
+
+                  <!-- Trial badge -->
+                  <div style="display:inline-block;background:rgba(23,185,208,0.15);border:1px solid rgba(23,185,208,0.4);border-radius:30px;padding:6px 20px;margin-bottom:20px;">
+                    <span style="font-size:12px;font-weight:700;color:#4DD8EC;letter-spacing:0.1em;text-transform:uppercase;">🎯 &nbsp; ${trialDays}-Day Free Trial</span>
+                  </div>
+
+                  <!-- Headline -->
+                  <h1 style="margin:0 0 10px;font-size:28px;font-weight:900;color:#FFFFFF;letter-spacing:-0.02em;line-height:1.2;">
+                    Your trial is <span style="color:#17B9D0;">one click</span> away
+                  </h1>
+                  <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.65);line-height:1.6;">
+                    Verify your email to activate <strong style="color:rgba(255,255,255,0.9);">${name}</strong> on Syllabrix
                   </p>
+
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-      </table>
 
-      <!-- CTA Button -->
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+        <!-- ── BODY ── -->
         <tr>
-          <td align="center">
-            <a href="${verifyLink}"
-               style="display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#17B9D0,#0E9CB5);color:#FFFFFF;text-decoration:none;border-radius:12px;font-size:16px;font-weight:700;letter-spacing:0.01em;box-shadow:0 4px 16px rgba(23,185,208,0.35);">
-              ✓ &nbsp; Verify Email Address
-            </a>
+          <td style="background:#FFFFFF;padding:40px 40px 36px;">
+
+            <!-- Welcome line -->
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.7;text-align:center;">
+              Hi <strong style="color:#0F2942;">${name}</strong> 👋 — welcome to Syllabrix!<br/>
+              Click below to verify your email and start your <strong style="color:#0B5E70;">${trialDays}-day free trial</strong>.<br/>
+              <span style="font-size:13px;color:#94A3B8;">No credit card required. Cancel anytime.</span>
+            </p>
+
+            <!-- CTA Button -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:36px;">
+              <tr>
+                <td align="center">
+                  <a href="${verifyLink}"
+                     style="display:inline-block;padding:18px 56px;background:linear-gradient(135deg,#17B9D0 0%,#0B9DB2 100%);color:#FFFFFF;text-decoration:none;border-radius:14px;font-size:17px;font-weight:800;letter-spacing:0.01em;box-shadow:0 6px 24px rgba(23,185,208,0.4);">
+                    ✓ &nbsp; Verify Email &amp; Start Trial
+                  </a>
+                  <p style="margin:10px 0 0;font-size:12px;color:#CBD5E1;">Link expires in 24 hours</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- What's included -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#F8FAFC,#F0FDFA);border:1px solid #CBD5E1;border-radius:14px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:22px 24px 18px;">
+                  <p style="margin:0 0 16px;font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.1em;text-align:center;">What's included in your trial</p>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td width="33%" style="text-align:center;padding:0 8px 12px;">
+                        <div style="font-size:26px;margin-bottom:6px;">🧾</div>
+                        <div style="font-size:12px;font-weight:700;color:#0F2942;margin-bottom:2px;">GST Invoicing</div>
+                        <div style="font-size:11px;color:#94A3B8;">Bills, quotations &amp; credit notes</div>
+                      </td>
+                      <td width="33%" style="text-align:center;padding:0 8px 12px;border-left:1px solid #E2E8F0;border-right:1px solid #E2E8F0;">
+                        <div style="font-size:26px;margin-bottom:6px;">📦</div>
+                        <div style="font-size:12px;font-weight:700;color:#0F2942;margin-bottom:2px;">Inventory &amp; POS</div>
+                        <div style="font-size:11px;color:#94A3B8;">Stock, sales &amp; purchase orders</div>
+                      </td>
+                      <td width="33%" style="text-align:center;padding:0 8px 12px;">
+                        <div style="font-size:26px;margin-bottom:6px;">📊</div>
+                        <div style="font-size:12px;font-weight:700;color:#0F2942;margin-bottom:2px;">Smart Reports</div>
+                        <div style="font-size:11px;color:#94A3B8;">P&amp;L, tax &amp; business insights</div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Trial countdown box -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="vertical-align:middle;padding-right:14px;font-size:22px;line-height:1;width:32px;">⏱️</td>
+                      <td>
+                        <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:#92400E;">Your ${trialDays}-day trial begins when you verify</p>
+                        <p style="margin:0;font-size:12px;color:#B45309;line-height:1.5;">
+                          Full access to all features. No payment until your trial ends — and only if you choose to continue.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <div style="border-top:1px solid #F1F5F9;margin:24px 0;"></div>
+
+            <!-- Fallback link -->
+            <p style="margin:0 0 6px;font-size:11px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;">Can't click the button?</p>
+            <p style="margin:0 0 4px;font-size:11px;color:#94A3B8;">Copy and paste this link into your browser:</p>
+            <p style="margin:0;font-size:11px;color:#17B9D0;word-break:break-all;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 12px;font-family:monospace;">${verifyLink}</p>
+
           </td>
         </tr>
+
+        <!-- ── FOOTER ── -->
+        <tr>
+          <td style="background:#F8FAFC;border-top:1px solid #E2E8F0;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 6px;font-size:12px;color:#94A3B8;">
+              If you did not sign up for Syllabrix, you can safely ignore this email.
+            </p>
+            <p style="margin:0 0 12px;font-size:12px;color:#CBD5E1;">
+              Need help? &nbsp;<a href="${frontendUrl}/support" style="color:#17B9D0;text-decoration:none;">support@syllabrix.com</a>
+            </p>
+            <div style="border-top:1px solid #E2E8F0;margin:14px 0 12px;"></div>
+            <p style="margin:0 0 4px;font-size:11px;color:#CBD5E1;">© ${new Date().getFullYear()} Syllabrix · Built for Indian businesses</p>
+            <p style="margin:0;font-size:11px;color:#CBD5E1;">Syllabrix Technologies Pvt. Ltd.</p>
+          </td>
+        </tr>
+
       </table>
-
-      <!-- Divider -->
-      <div style="border-top:1px solid #F1F5F9;margin:24px 0;"></div>
-
-      <!-- Copy link fallback -->
-      <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;">
-        Can't click the button?
-      </p>
-      <p style="margin:0 0 4px;font-size:12px;color:#94A3B8;">Copy and paste this link into your browser:</p>
-      <p style="margin:0;font-size:11px;color:#17B9D0;word-break:break-all;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 12px;font-family:monospace;">
-        ${verifyLink}
-      </p>`,
-    footerNote: 'If you did not create a Syllabrix account, you can safely ignore this email. No account will be activated without clicking the button above.',
-  });
+    </td></tr>
+  </table>
+</body>
+</html>`;
 
   if (process.env.RESEND_API_KEY) {
-    await sendViaResend({ to: toEmail, subject: '✉️ Verify your Syllabrix account', html });
+    await sendViaResend({ to: toEmail, subject: `🚀 Verify your email — start your ${trialDays}-day Syllabrix trial`, html });
   } else {
     const transporter = createTransporter();
     if (!transporter) { logFallback('EMAIL VERIFICATION LINK', verifyLink); return; }
-    await transporter.sendMail({ from: FROM(), to: toEmail, subject: '✉️ Verify your Syllabrix account', html });
+    await transporter.sendMail({ from: FROM(), to: toEmail, subject: `🚀 Verify your email — start your ${trialDays}-day Syllabrix trial`, html });
   }
-  console.log(`[EMAIL] Verification sent to ${toEmail}`);
+  console.log(`[EMAIL] Trial verification sent to ${toEmail}`);
 };
 
 // ── Password Reset Email ───────────────────────────────────────────────────────
 const sendPasswordResetEmail = async (toEmail, token) => {
-  const frontendUrl = process.env.FRONTEND_URL || config.clientUrl || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL || (config.clientUrl || 'http://localhost:5173').split(',')[0].trim();
   const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
 

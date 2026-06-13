@@ -96,7 +96,7 @@ const listTenants = ({ search, businessType, plan, isActive, page = 1, limit = 2
         plan: true, isActive: true, gstin: true, city: true, state: true, createdAt: true,
         syllabrixId: true, hasBranches: true,
         branches: { select: { id: true, name: true, code: true, isHQ: true, syllabrixId: true, city: true }, orderBy: { isHQ: 'desc' } },
-        _count: { select: { users: true, invoices: true, transactions: true } },
+        _count: { select: { users: true, invoices: true, transactions: true, flJobs: true, flClients: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
@@ -854,8 +854,11 @@ const seedDefaultPlans = async () => {
   console.log('✅ Default platform plans seeded');
 };
 
-const getManagedPlans = () =>
-  prisma.platformPlan.findMany({ orderBy: { sortOrder: 'asc' } });
+const getManagedPlans = (segment) =>
+  prisma.platformPlan.findMany({
+    where: segment ? { segment } : undefined,
+    orderBy: { sortOrder: 'asc' },
+  });
 
 const createManagedPlan = (data, adminName) =>
   prisma.platformPlan.create({
@@ -874,6 +877,7 @@ const createManagedPlan = (data, adminName) =>
       maxUsers: data.maxUsers ? Number(data.maxUsers) : null,
       maxBranches: data.maxBranches ? Number(data.maxBranches) : null,
       sortOrder: Number(data.sortOrder || 0),
+      segment: data.segment || 'BUSINESS',
     },
   });
 
@@ -892,6 +896,7 @@ const updateManagedPlan = (id, data) =>
       ...(data.maxUsers !== undefined && { maxUsers: data.maxUsers ? Number(data.maxUsers) : null }),
       ...(data.maxBranches !== undefined && { maxBranches: data.maxBranches ? Number(data.maxBranches) : null }),
       ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) }),
+      ...(data.segment !== undefined && { segment: data.segment }),
     },
   });
 

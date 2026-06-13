@@ -37,7 +37,8 @@ export const saGetMe = () => api.get('/auth/me');
 export const getSAPlatformDashboard = () => api.get('/dashboard');
 
 // Tenants
-export const getSATenants = () => api.get('/tenants');
+export const getSATenants = (params) => api.get('/tenants', { params });
+export const getFreelancerTenants = (params) => api.get('/tenants', { params: { ...params, businessType: 'FREELANCER', limit: 200 } });
 export const getSATenant = (id) => api.get(`/tenants/${id}`);
 export const toggleSATenant = (id) => api.patch(`/tenants/${id}/toggle`);
 export const changeSATenantPlan = (id, plan) => api.patch(`/tenants/${id}/plan`, { plan });
@@ -119,7 +120,7 @@ export const cancelSAMaintenance        = (id) => api.patch(`/maintenance/${id}/
 export const getSASubscriptions         = (params) => api.get('/subscriptions', { params });
 
 // Plan Builder — Plans
-export const getSAManagedPlans          = ()       => api.get('/plan-builder/plans');
+export const getSAManagedPlans          = (segment) => api.get('/plan-builder/plans', { params: segment ? { segment } : {} });
 export const createSAManagedPlan        = (data)   => api.post('/plan-builder/plans', data);
 export const updateSAManagedPlan        = (id, data) => api.patch(`/plan-builder/plans/${id}`, data);
 export const toggleSAManagedPlan        = (id)     => api.patch(`/plan-builder/plans/${id}/toggle`);

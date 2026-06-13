@@ -93,6 +93,17 @@ model Tenant {
   stockTransfers          StockTransfer[]
   auditReports            AuditReport[]
 
+  // ── Freelancer (SYL-FL-*) ──────────────────────────────────────────────────
+  flJobs                  FlJob[]
+  flHelpers               FlHelper[]
+  flPartners              FlPartner[]
+  flClients               FlClient[]
+  flSuppliers             FlSupplier[]
+  flTools                 FlTool[]
+  flAMC                   FlAMC[]
+  flWaSettings            FlWaSettings?
+  flWaBroadcasts          FlWaBroadcast[]
+
   hasBranches             Boolean                @default(false)
   featureConfigs          TenantFeatureConfig[]
   opdTokens               OpdToken[]
@@ -2496,7 +2507,7 @@ model BusinessTemplate {
 
 model PlatformPlan {
   id           String   @id @default(uuid())
-  key          String   @unique // STARTER | GROWTH | SCALE
+  key          String   @unique // STARTER | GROWTH | SCALE | FL_BASIC | FL_PRO etc.
   name         String
   tagline      String?
   description  String?
@@ -2510,6 +2521,7 @@ model PlatformPlan {
   maxUsers     Int?
   maxBranches  Int?
   sortOrder    Int      @default(0)
+  segment      String   @default("BUSINESS") // BUSINESS | FREELANCER
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -3541,4 +3553,353 @@ model TRSettings {
   updatedAt               DateTime @updatedAt
 
   @@map("tr_settings")
+}
+
+// ─── Syllabrix Freelancer — SYL-FL-* ─────────────────────────────────────────
+
+model FlJob {
+  id          String      @id @default(uuid())
+  tenantId    String
+  jobNumber   String
+  status      FlJobStatus @default(ENQUIRY)
+  customerId  String?
+  customerName String
+  customerPhone String
+  siteAddress String?
+  workType    String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  jobValue    Float       @default(0)
+  advanceReq  Float       @default(0)
+  notes       String?
+  meta        Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      FlClient?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  estimate    FlEstimate?
+  materials   FlMaterial[]
+  helpers     FlJobHelper[]
+  payments    FlPayment[]
+  expenses    FlExpense[]
+
+  @@unique([tenantId, jobNumber])
+  @@index([tenantId])
+  @@index([customerId])
+  @@map("fl_jobs")
+}
+
+enum FlJobStatus {
+  ENQUIRY
+  ESTIMATE_SENT
+  IN_PROGRESS
+  COMPLETED
+  PAYMENT_PENDING
+  CLOSED
+  CANCELLED
+}
+
+model FlEstimate {
+  id          String   @id @default(uuid())
+  tenantId    String
+  jobId       String   @unique
+  version     Int      @default(1)
+  validUntil  DateTime?
+  advanceReq  Float    @default(0)
+  terms       String?
+  status      String   @default("DRAFT")
+  total       Float    @default(0)
+  meta        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  job   FlJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  items FlEstimateItem[]
+
+  @@index([tenantId])
+  @@map("fl_estimates")
+}
+
+model FlEstimateItem {
+  id         String  @id @default(uuid())
+  estimateId String
+  type       String  // LABOUR | MATERIAL
+  description String
+  qty        Float   @default(1)
+  unit       String?
+  rate       Float
+  total      Float
+
+  estimate FlEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+
+  @@index([estimateId])
+  @@map("fl_estimate_items")
+}
+
+model FlMaterial {
+  id          String   @id @default(uuid())
+  tenantId    String
+  jobId       String
+  name        String
+  qty         Float
+  unit        String?
+  rate        Float
+  total       Float
+  supplierId  String?
+  purchaseDate DateTime @default(now())
+  receiptUrl  String?
+  notes       String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  job FlJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([jobId])
+  @@map("fl_materials")
+}
+
+model FlHelper {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  skill     String?
+  dailyRate Float    @default(0)
+  isActive  Boolean  @default(true)
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobHelpers FlJobHelper[]
+
+  @@index([tenantId])
+  @@map("fl_helpers")
+}
+
+model FlJobHelper {
+  id         String   @id @default(uuid())
+  tenantId   String
+  jobId      String
+  helperId   String
+  daysWorked Float    @default(0)
+  totalWages Float    @default(0)
+  paidAmount Float    @default(0)
+  meta       Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  job    FlJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  helper FlHelper @relation(fields: [helperId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, helperId])
+  @@index([tenantId])
+  @@map("fl_job_helpers")
+}
+
+model FlPartner {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  skill     String?
+  notes     String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_partners")
+}
+
+model FlPayment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  jobId     String
+  amount    Float
+  mode      String   @default("CASH") // CASH | UPI | BANK | CHEQUE
+  type      String   @default("PAYMENT") // ADVANCE | PAYMENT
+  reference String?
+  note      String?
+  paidAt    DateTime @default(now())
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  job FlJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([jobId])
+  @@map("fl_payments")
+}
+
+model FlExpense {
+  id         String   @id @default(uuid())
+  tenantId   String
+  jobId      String?
+  category   String   // MATERIAL | TOOL | TRAVEL | PHONE | WAGES | OTHER
+  amount     Float
+  note       String?
+  receiptUrl String?
+  taxDeductible Boolean @default(false)
+  expenseDate DateTime @default(now())
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  job FlJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@map("fl_expenses")
+}
+
+model FlClient {
+  id              String   @id @default(uuid())
+  tenantId        String
+  name            String
+  phone           String
+  email           String?
+  address         String?
+  city            String?
+  notes           String?
+  paymentBehaviour String  @default("NORMAL") // ON_TIME | NORMAL | LATE | DEFAULTER
+  referredBy      String?
+  meta            Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobs   FlJob[]
+
+  @@index([tenantId])
+  @@map("fl_clients")
+}
+
+model FlSupplier {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  ownerName String?
+  phone     String?
+  area      String?
+  materials String?
+  credit    Float    @default(0)
+  outstanding Float  @default(0)
+  notes     String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_suppliers")
+}
+
+model FlTool {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  purchaseDate DateTime?
+  cost         Float    @default(0)
+  condition    String   @default("GOOD") // GOOD | NEEDS_SERVICE | REPLACE
+  warrantyUntil DateTime?
+  nextService  DateTime?
+  notes        String?
+  meta         Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_tools")
+}
+
+model FlAMC {
+  id           String   @id @default(uuid())
+  tenantId     String
+  jobId        String?
+  clientName   String
+  clientPhone  String
+  workType     String
+  type         String   @default("WARRANTY") // WARRANTY | AMC
+  startDate    DateTime
+  endDate      DateTime
+  annualFee    Float    @default(0)
+  nextService  DateTime?
+  schedule     String?
+  notes        String?
+  meta         Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_amc")
+}
+
+// Baileys WhatsApp session — stores auth credentials in DB so Render restarts don't require re-scan
+model WaSession {
+  id        String   @id
+  creds     Json?
+  keys      Json?
+  updatedAt DateTime @updatedAt
+
+  @@map("wa_sessions")
+}
+
+// ── Freelancer WhatsApp Automation Settings ───────────────────────────────────
+model FlWaSettings {
+  id        String  @id @default(uuid())
+  tenantId  String  @unique
+
+  // Automation toggles — all ON by default
+  notifyNewJob       Boolean @default(true)
+  notifyStatus       Boolean @default(true)
+  notifyPayment      Boolean @default(true)
+  notifyAmcRenewal   Boolean @default(true)
+
+  // Follow-up: auto message X days after job completed
+  followUpEnabled    Boolean @default(false)
+  followUpDays       Int     @default(1)
+  followUpMsg        String? // null = use default template
+
+  // Payment reminder: auto message X days after completion if balance > 0
+  payReminderEnabled Boolean @default(false)
+  payReminderDays    Int     @default(3)
+  payReminderMsg     String?
+
+  // Custom message templates (null = use system default)
+  msgNewJob     String?
+  msgStatus     String?
+  msgPayment    String?
+  msgAmcRenewal String?
+
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("fl_wa_settings")
+}
+
+// ── Freelancer WhatsApp Broadcasts ────────────────────────────────────────────
+model FlWaBroadcast {
+  id        String   @id @default(uuid())
+  tenantId  String
+  message   String
+  filter    String   @default("all") // all | pending_payment | active_jobs | amc
+  sentCount Int      @default(0)
+  failCount Int      @default(0)
+  status    String   @default("PENDING") // PENDING | SENDING | DONE | FAILED
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("fl_wa_broadcasts")
 }

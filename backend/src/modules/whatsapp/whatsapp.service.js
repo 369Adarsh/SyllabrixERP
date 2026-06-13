@@ -1,61 +1,16 @@
-const axios = require('axios');
 const prisma = require('../../config/prisma');
-const config = require('../../config/env');
-
-const WA_BASE = () => `https://graph.facebook.com/v19.0/${config.whatsappPhoneId}/messages`;
-const WA_HEADERS = () => ({
-  Authorization: `Bearer ${config.whatsappToken}`,
-  'Content-Type': 'application/json',
-});
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
-// ── Core send ────────────────────────────────────────────────────────────────
-const sendRaw = async (payload) => {
-  try {
-    const { data } = await axios.post(WA_BASE(), payload, { headers: WA_HEADERS() });
-    return data;
-  } catch (err) {
-    // Surface Meta's actual error message instead of generic axios error
-    const metaError = err.response?.data?.error;
-    if (metaError) {
-      const msg = metaError.error_user_msg || metaError.message || 'WhatsApp API error';
-      const code = metaError.code;
-      // Common Meta error codes with friendly messages
-      const friendly = {
-        131030: 'Recipient phone number is not registered on WhatsApp.',
-        131047: 'Message failed — recipient may have opted out or number is invalid.',
-        131026: 'Recipient number is not on WhatsApp.',
-        100:    'Invalid phone number format. Use 10-digit Indian mobile number.',
-        190:    'WhatsApp access token has expired. Please refresh it in Meta Developer Console.',
-        200:    'Permission denied — check your WhatsApp Business account permissions.',
-        368:    'Your WhatsApp Business account has been temporarily blocked.',
-        // Test account limitation
-        131051: 'This number is not in your test recipients list. Add it in Meta Developer Console → WhatsApp → API Setup.',
-      };
-      const readableMsg = friendly[code] || `${msg} (Meta error code: ${code})`;
-      const e = new Error(readableMsg);
-      e.statusCode = 400;
-      e.metaCode = code;
-      throw e;
-    }
-    throw err;
-  }
-};
-
+// ── Core send (Baileys) ───────────────────────────────────────────────────────
 const sendText = async (tenantId, phone, body, contactName = null) => {
   const normalized = normalizePhone(phone);
-  const payload = {
-    messaging_product: 'whatsapp',
-    to: normalized,
-    type: 'text',
-    text: { body },
-  };
-  const result = await sendRaw(payload);
+  // Lazy require to avoid circular dep with baileys.service
+  const baileys = require('./baileys.service');
+  await baileys.sendWA(tenantId, normalized, body);
   await prisma.whatsAppMessage.create({
-    data: { tenantId, phone: normalized, contactName, direction: 'OUTBOUND', body, waMessageId: result?.messages?.[0]?.id, status: 'SENT' },
+    data: { tenantId, phone: normalized, contactName, direction: 'OUTBOUND', body, status: 'SENT' },
   });
-  return result;
 };
 
 // ── Invoice notification ─────────────────────────────────────────────────────
@@ -166,23 +121,195 @@ const getThread = async (tenantId, phone) => {
   });
 };
 
-// ── Incoming webhook handler ─────────────────────────────────────────────────
+// ── Freelancer notifications ──────────────────────────────────────────────────
+const isWAReady = (tenantId) => {
+  const { getStatus } = require('./baileys.service');
+  return getStatus(tenantId).status === 'connected';
+};
+
+const flTenantName = async (tenantId) => {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
+  return t?.name || 'Your service provider';
+};
+
+const fillVars = (template, vars) =>
+  template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+
+const sendFlJobCreated = async (tenantId, phone, contactName, job, customMsg = null) => {
+  if (!isWAReady(tenantId) || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const vars = { name: contactName || 'there', biz, jobNumber: job.jobNumber, work: job.workType || '', value: job.jobValue ? `₹${Number(job.jobValue).toLocaleString('en-IN')}` : '' };
+  const body = customMsg ? fillVars(customMsg, vars) : [
+    `Hi ${vars.name}! 👋`,
+    ``,
+    `Your job has been created with *${biz}*.`,
+    ``,
+    `📋 *Job #:* ${job.jobNumber}`,
+    `🔧 *Work:* ${job.workType}`,
+    job.jobValue ? `💰 *Value:* ₹${Number(job.jobValue).toLocaleString('en-IN')}` : null,
+    job.startDate ? `📅 *Start:* ${new Date(job.startDate).toLocaleDateString('en-IN')}` : null,
+    ``,
+    `We'll keep you updated at every step. Thank you! 🙏`,
+  ].filter(l => l !== null).join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlJobCreated failed:', e.message));
+};
+
+const STATUS_LABELS = {
+  ENQUIRY: 'Enquiry received', ESTIMATE_SENT: 'Estimate sent',
+  IN_PROGRESS: 'Work started', COMPLETED: 'Work completed',
+  PAYMENT_PENDING: 'Payment pending', CLOSED: 'Job closed', CANCELLED: 'Job cancelled',
+};
+const STATUS_EMOJI = {
+  ENQUIRY: '📩', ESTIMATE_SENT: '📄', IN_PROGRESS: '🔨',
+  COMPLETED: '✅', PAYMENT_PENDING: '⏳', CLOSED: '🔒', CANCELLED: '❌',
+};
+
+const sendFlStatusUpdate = async (tenantId, phone, contactName, job, customMsg = null) => {
+  if (!isWAReady(tenantId) || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const emoji = STATUS_EMOJI[job.status] || '📌';
+  const label = STATUS_LABELS[job.status] || job.status;
+  const vars = { name: contactName || 'there', biz, jobNumber: job.jobNumber, work: job.workType || '', status: label, emoji };
+  const body = customMsg ? fillVars(customMsg, vars) : [
+    `${emoji} *Status Update — ${biz}*`,
+    ``,
+    `Job *${job.jobNumber}* (${job.workType})`,
+    `Status: *${label}*`,
+    job.status === 'COMPLETED' ? `\nThank you for choosing us! 🙏` : `\nFor any queries, please reach out to us.`,
+  ].join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlStatusUpdate failed:', e.message));
+};
+
+const sendFlPaymentReceived = async (tenantId, phone, contactName, job, payment, customMsg = null) => {
+  if (!isWAReady(tenantId) || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const amt = `₹${Number(payment.amount).toLocaleString('en-IN')}`;
+  const vars = { name: contactName || 'there', biz, jobNumber: job.jobNumber, work: job.workType || '', amount: amt, mode: payment.mode };
+  const body = customMsg ? fillVars(customMsg, vars) : [
+    `✅ *Payment Received — ${biz}*`,
+    ``,
+    `Hi ${vars.name},`,
+    ``,
+    `We've received your payment:`,
+    `💰 *Amount:* ${amt}`,
+    `💳 *Mode:* ${payment.mode}`,
+    `📋 *Job:* ${job.jobNumber} — ${job.workType}`,
+    payment.note ? `📝 *Note:* ${payment.note}` : null,
+    ``,
+    `Thank you! 🙏`,
+  ].filter(l => l !== null).join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlPaymentReceived failed:', e.message));
+};
+
+const sendFlAMCReminder = async (tenantId, phone, contactName, amc, daysLeft) => {
+  if (!isWAReady(tenantId) || !phone) return;
+  const biz = await flTenantName(tenantId);
+  const urgency = daysLeft <= 7 ? '🚨 *Urgent Reminder*' : '⏰ *Renewal Reminder*';
+  const body = [
+    `${urgency} — ${biz}`,
+    ``,
+    `Hi ${contactName || 'there'},`,
+    ``,
+    `Your *${amc.workType}* contract is expiring in *${daysLeft} day${daysLeft !== 1 ? 's' : ''}*.`,
+    `📅 Expiry: ${new Date(amc.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+    amc.annualFee ? `💰 Annual Fee: ₹${Number(amc.annualFee).toLocaleString('en-IN')}` : null,
+    ``,
+    `Please contact us to renew your contract on time. Thank you! 🙏`,
+  ].filter(l => l !== null).join('\n');
+  return sendText(tenantId, phone, body, contactName).catch(e => console.error('[WA] sendFlAMCReminder failed:', e.message));
+};
+
+// ── Shared inbound processor (called by Baileys handler + Meta webhook) ───────
+const _processInbound = async (tenantId, phone, contactName, body, waMessageId) => {
+  try {
+    await prisma.whatsAppMessage.upsert({
+      where:  { waMessageId: waMessageId || '__never__' },
+      update: {},
+      create: { tenantId, phone, contactName, direction: 'INBOUND', body, waMessageId, status: 'DELIVERED' },
+    });
+  } catch {
+    // If upsert fails (e.g. no waMessageId), just create
+    await prisma.whatsAppMessage.create({
+      data: { tenantId, phone, contactName, direction: 'INBOUND', body, status: 'DELIVERED' },
+    }).catch(() => {});
+  }
+  await _autoCreateInquiry(tenantId, phone, contactName, body);
+};
+
+// ── Meta webhook handler (kept for backward compat, Baileys is primary) ───────
 const handleInbound = async (tenantId, entry) => {
-  const changes = entry?.changes || [];
-  for (const change of changes) {
-    const value = change.value;
-    const messages = value?.messages || [];
-    const contacts = value?.contacts || [];
+  for (const change of entry?.changes || []) {
+    const messages = change.value?.messages || [];
+    const contacts = change.value?.contacts || [];
     for (const msg of messages) {
       if (msg.type !== 'text') continue;
-      const phone = msg.from;
+      const phone       = msg.from;
       const contactName = contacts.find(c => c.wa_id === phone)?.profile?.name || null;
-      await prisma.whatsAppMessage.upsert({
-        where: { waMessageId: msg.id },
-        update: {},
-        create: { tenantId, phone, contactName, direction: 'INBOUND', body: msg.text?.body || '', waMessageId: msg.id, status: 'DELIVERED' },
+      await _processInbound(tenantId, phone, contactName, msg.text?.body || '', msg.id);
+    }
+  }
+};
+
+const _autoCreateInquiry = async (tenantId, phone, contactName, messageBody) => {
+  try {
+    // Only create job inquiries for freelancer-type tenants
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { businessType: true },
+    });
+    if (tenant?.businessType !== 'FREELANCER') return;
+
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1 hour dedup window
+    const existing = await prisma.flJob.findFirst({
+      where: { tenantId, customerPhone: phone, createdAt: { gte: cutoff } },
+    });
+    if (existing) return; // Already created an inquiry recently
+
+    const count = await prisma.flJob.count({ where: { tenantId } });
+    const jobNumber = `JOB-${String(count + 1).padStart(4, '0')}`;
+    let job;
+    try {
+      job = await prisma.flJob.create({
+        data: {
+          tenantId, jobNumber,
+          customerName: contactName || 'WhatsApp Inquiry',
+          customerPhone: phone,
+          workType: 'WhatsApp Inquiry',
+          description: messageBody,
+          status: 'ENQUIRY',
+        },
+      });
+    } catch (e) {
+      if (e.code !== 'P2002') throw e;
+      // Concurrent race on jobNumber — retry with a fresh count
+      const retryCount = await prisma.flJob.count({ where: { tenantId } });
+      job = await prisma.flJob.create({
+        data: {
+          tenantId, jobNumber: `JOB-${String(retryCount + 1).padStart(4, '0')}`,
+          customerName: contactName || 'WhatsApp Inquiry',
+          customerPhone: phone,
+          workType: 'WhatsApp Inquiry',
+          description: messageBody,
+          status: 'ENQUIRY',
+        },
       });
     }
+
+    const biz = await flTenantName(tenantId);
+    const reply = [
+      `Thank you for reaching out to *${biz}*! 🙏`,
+      ``,
+      `We've received your message and will get back to you shortly.`,
+      ``,
+      `📋 *Reference:* ${jobNumber}`,
+      ``,
+      `_This is an automated acknowledgment._`,
+    ].join('\n');
+
+    await sendText(tenantId, phone, reply, contactName);
+    console.log(`[WA Inbound] Auto-created inquiry ${jobNumber} for ${phone} (tenant ${tenantId})`);
+  } catch (e) {
+    console.error('[WA Inbound] Failed to auto-create inquiry:', e.message);
   }
 };
 
@@ -197,5 +324,7 @@ function normalizePhone(phone) {
 
 module.exports = {
   sendText, sendInvoice, sendAppointmentReminder, sendFeeReminder, sendRentReminder,
-  dispatchOverdueFeeReminders, getConversations, getThread, handleInbound,
+  dispatchOverdueFeeReminders, getConversations, getThread, handleInbound, _processInbound,
+  sendFlJobCreated, sendFlStatusUpdate, sendFlPaymentReceived, sendFlAMCReminder,
+  isWAReady,
 };

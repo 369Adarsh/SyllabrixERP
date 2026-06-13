@@ -8,6 +8,9 @@ const { whatsappLimiter } = require('../../middleware/rateLimiter');
 
 // Protected routes
 router.use(authenticate);
+router.get('/qr-status',  authorize('OWNER', 'ADMIN'), ctrl.qrStatus);
+router.get('/qr.png',     authorize('OWNER', 'ADMIN'), ctrl.qrImage);
+router.post('/disconnect', authorize('OWNER', 'ADMIN'), ctrl.disconnectWA);
 router.get('/conversations', ctrl.conversations);
 router.get('/conversations/:phone', ctrl.thread);
 router.post('/send', whatsappLimiter, authorize('OWNER', 'ADMIN', 'STAFF'), ctrl.send);

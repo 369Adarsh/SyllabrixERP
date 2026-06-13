@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Building2 } from 'lucide-react';
 import { Eye, EyeOff, Wrench } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -60,6 +61,26 @@ export default function FreelancerLogin() {
 
         {/* Card */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '32px 28px' }}>
+
+          {/* Tab switcher */}
+          <div style={{ display: 'flex', background: '#111', borderRadius: 10, padding: 3, marginBottom: 28, gap: 2 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              style={{ flex: 1, padding: '8px 4px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: 'transparent', color: MUTED, transition: 'all 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.color = TEXT}
+              onMouseLeave={e => e.currentTarget.style.color = MUTED}
+            >
+              Business
+            </button>
+            <button
+              type="button"
+              style={{ flex: 1, padding: '8px 4px', borderRadius: 8, border: 'none', cursor: 'default', fontWeight: 600, fontSize: 13, background: OR + '18', color: OR, boxShadow: `0 0 0 1px ${OR}30` }}
+            >
+              Freelancer
+            </button>
+          </div>
+
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Email */}
@@ -127,9 +148,6 @@ export default function FreelancerLogin() {
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: MUTED }}>
           New freelancer?{' '}
           <Link to="/freelancer/register" style={{ color: OR, fontWeight: 600 }}>Create account</Link>
-        </p>
-        <p style={{ textAlign: 'center', marginTop: 10, fontSize: 13, color: MUTED }}>
-          <Link to="/login" style={{ color: MUTED }}>← Business login</Link>
         </p>
       </div>
     </div>

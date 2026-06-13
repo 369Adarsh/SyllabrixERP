@@ -68,3 +68,22 @@ export const dashboardStats = () => fl('reports/dashboard');
 export const monthlyReport = (params) => fl('reports/monthly', { params });
 export const pendingPayments = () => fl('reports/pending');
 export const jobsReport = () => fl('reports/jobs');
+export const financeReport = (params) => fl('reports/finance', { params });
+
+// Settings
+export const getSettings = () => fl('settings');
+export const updateSettings = (data) => flPatch('settings', data);
+
+// WhatsApp connection
+export const getWAStatus   = () => api.get('/whatsapp/qr-status');
+export const disconnectWA  = () => api.post('/whatsapp/disconnect');
+export const getWAQRUrl    = () => `${import.meta.env.VITE_API_URL || ''}/api/v1/whatsapp/qr.png`;
+
+// WhatsApp automation settings
+export const getWaSettings    = () => fl('wa-settings');
+export const updateWaSettings = (data) => flPatch('wa-settings', data);
+
+// WhatsApp broadcast
+export const previewBroadcast = (filter) => fl('broadcast/preview', { params: { filter } });
+export const sendBroadcast    = (data) => flPost('broadcast', data);
+export const listBroadcasts   = () => fl('broadcast/history');

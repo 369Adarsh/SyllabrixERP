@@ -32,6 +32,39 @@ git checkout quality && git merge dev --no-edit && git push origin quality && gi
 - Color palette: Slate + Teal (#1FB8D6 / #27DCFF) — never deviate
 - Business Type IDs always SYL-BC-* format
 
+### Full Stack Wiring Rule — Zero Gaps Tolerated
+
+Every feature must be fully wired before it is considered done. No exceptions.
+
+**A feature is ONLY functional when ALL of this is true:**
+
+```
+BACKEND
+├── API route exists and registered in app.js
+├── Controller written and connected
+├── Service logic complete
+└── Prisma model correct and migrated
+
+FRONTEND
+├── UI component built
+├── API call wired (correct endpoint, method, auth headers)
+├── Loading state handled
+└── Error state handled
+
+NERVE CENTER
+└── Platform-level features visible and manageable from /platform/*
+
+DATA CHAIN VERIFIED
+└── UI action → API → Service → DB → Response → UI update
+    Every single link confirmed working. No broken links.
+```
+
+**Before calling anything done:**
+1. Trace the full data chain from UI click to database row and back
+2. Verify Nerve Center connection for any platform-level feature
+3. Test on Quality — only then mark complete
+4. Never push to production with unverified wiring
+
 ### Project Context
 
 - **Project:** Syllabrix — ERP SaaS for Indian SMBs

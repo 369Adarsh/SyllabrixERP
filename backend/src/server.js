@@ -3,19 +3,20 @@ const config = require('./config/env');
 const prisma = require('./config/prisma');
 const { startAutomation } = require('./modules/automation/automation.service');
 const { seedDefaultAdmin, seedDefaultPlans } = require('./modules/superadmin/superadmin.service');
+const { reconnectAll } = require('./modules/whatsapp/baileys.service');
 
 const start = async () => {
   try {
-    await prisma.$connect();
-    console.log('Database connected');
-
-    await seedDefaultAdmin();
-    await seedDefaultPlans();
-    startAutomation();
-
     app.listen(config.port, () => {
       console.log(`Syllabrix API running on port ${config.port} [${config.nodeEnv}]`);
     });
+
+    seedDefaultAdmin().catch(e => console.error('seedDefaultAdmin error:', e.message));
+    seedDefaultPlans().catch(e => console.error('seedDefaultPlans error:', e.message));
+    startAutomation();
+
+    // Reconnect all tenants that have saved WhatsApp sessions
+    reconnectAll().catch(e => console.error('[Baileys] Startup error:', e.message));
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);
