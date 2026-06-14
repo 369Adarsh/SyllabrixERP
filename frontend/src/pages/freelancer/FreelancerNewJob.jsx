@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, ChevronDown, X } from 'lucide-react';
 import { createJob, listClients } from '../../api/freelancer';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const OR = '#F97316';
@@ -11,6 +12,9 @@ const BORDER = '#222';
 
 export default function FreelancerNewJob() {
   const navigate = useNavigate();
+  const { tenant } = useAuth();
+  const jobLabel = tenant?.labelConfig?.flLabels?.jobs || 'Job';
+  const workTypeHint = tenant?.sidebarConfig?.workTypeHint || 'e.g. Describe the work…';
   const [form, setForm] = useState({
     customerId: '',
     customerName: '', customerPhone: '', siteAddress: '',
@@ -90,7 +94,7 @@ export default function FreelancerNewJob() {
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, display: 'flex', alignItems: 'center' }}>
           <ArrowLeft size={20} />
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: TEXT }}>New Job</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: TEXT }}>New {jobLabel}</h1>
       </div>
 
       <div style={{ maxWidth: 640 }}>
@@ -168,7 +172,7 @@ export default function FreelancerNewJob() {
 
           <Section title="Job Details">
             <Field label="Work Type *" error={errors.workType}>
-              <FInput value={form.workType} onChange={set('workType')} placeholder="e.g. Wedding photography, Event coverage…" />
+              <FInput value={form.workType} onChange={set('workType')} placeholder={workTypeHint} />
             </Field>
             <Field label="Description">
               <textarea

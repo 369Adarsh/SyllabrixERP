@@ -43,6 +43,7 @@ const PROFILES = [
   {
     email: 'ramesh@elec.test', name: 'Ramesh Kumar', businessName: 'Ramesh Electricals',
     city: 'Mumbai', phone: '9876540001',
+    workTypeHint: 'e.g. New wiring, Fan installation, MCB repair, Switchboard fixing…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team','suppliers','tools','amc'],
     moduleLabels: { jobs: 'Work Orders', bills: 'Payments Due' },
@@ -115,6 +116,7 @@ const PROFILES = [
   {
     email: 'priya@design.test', name: 'Priya Nair', businessName: 'Priya Creative Studio',
     city: 'Bangalore', phone: '9876540002',
+    workTypeHint: 'e.g. Logo design, Brand identity, Social media creatives, UI design…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team'],
     moduleLabels: { jobs: 'Projects', clients: 'Clients', team: 'Collaborators', expenses: 'Overheads', bills: 'Outstanding' },
@@ -165,6 +167,7 @@ const PROFILES = [
   {
     email: 'suresh@plumb.test', name: 'Suresh Patel', businessName: 'Suresh Plumbing Works',
     city: 'Ahmedabad', phone: '9876540003',
+    workTypeHint: 'e.g. Pipe leak repair, Tap fitting, Bathroom work, Water tank cleaning…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team','suppliers','tools','amc'],
     moduleLabels: { jobs: 'Service Calls', tools: 'Equipment' },
@@ -229,6 +232,7 @@ const PROFILES = [
   {
     email: 'ankit@fit.test', name: 'Ankit Verma', businessName: 'Ankit Fitness Pro',
     city: 'Delhi', phone: '9876540004',
+    workTypeHint: 'e.g. Personal training, Group fitness class, Nutrition plan, Weight loss program…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team'],
     moduleLabels: { jobs: 'Sessions & Packages', clients: 'Members', expenses: 'Business Costs', team: 'Network' },
@@ -280,6 +284,7 @@ const PROFILES = [
   {
     email: 'kavya@photo.test', name: 'Kavya Iyer', businessName: 'Kavya Iyer Photography',
     city: 'Chennai', phone: '9876540005',
+    workTypeHint: 'e.g. Wedding shoot, Portrait session, Product photography, Event coverage…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team','tools','amc'],
     moduleLabels: { jobs: 'Shoots & Projects', clients: 'Clients', team: 'Crew', tools: 'Gear', amc: 'Retainers' },
@@ -375,7 +380,7 @@ async function seedProfile(p) {
       name: p.businessName, businessType: 'FREELANCER',
       email: p.email, phone: p.phone, city: p.city,
       modules: ['invoices','expenses','customers','reports','assets','ai'],
-      sidebarConfig: { flModules: p.activeModules },
+      sidebarConfig: { flModules: p.activeModules, workTypeHint: p.workTypeHint },
       labelConfig:   { flLabels:  p.moduleLabels  },
     },
   });
