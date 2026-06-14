@@ -52,7 +52,9 @@ function StatusBadge({ status }) {
 }
 
 export default function FreelancerDashboard() {
-  const { user } = useAuth();
+  const { user, tenant } = useAuth();
+  const jobLabel = tenant?.labelConfig?.flLabels?.jobs || 'Jobs';
+  const jobSingular = jobLabel.replace(/s$/, '');
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentJobs, setRecentJobs] = useState([]);
@@ -97,7 +99,7 @@ export default function FreelancerDashboard() {
           onClick={() => navigate('/freelancer/jobs/new')}
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: OR, color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
-          <Plus size={15} /> New Job
+          <Plus size={15} /> New {jobSingular}
         </button>
       </div>
 
@@ -173,7 +175,7 @@ export default function FreelancerDashboard() {
           {/* Recent Jobs */}
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, marginBottom: 24, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${BORDER}` }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Recent Jobs</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Recent {jobLabel}</span>
               <button onClick={() => navigate('/freelancer/jobs')} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: OR, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
                 View all <ChevronRight size={13} />
               </button>
@@ -216,7 +218,7 @@ export default function FreelancerDashboard() {
             <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quick Actions</div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {[
-                { label: '+ New Job',         path: '/freelancer/jobs/new' },
+                { label: `+ New ${jobSingular}`, path: '/freelancer/jobs/new' },
                 { label: 'Log Expense',        path: '/freelancer/expenses' },
                 { label: 'Add AMC Contract',   path: '/freelancer/amc' },
                 { label: 'Add Client',         path: '/freelancer/clients' },
