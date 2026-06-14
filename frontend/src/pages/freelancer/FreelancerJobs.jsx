@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Briefcase } from 'lucide-react';
 import { listJobs } from '../../api/freelancer';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const OR = '#f97316';
@@ -35,6 +36,8 @@ function StatusBadge({ status }) {
 
 export default function FreelancerJobs() {
   const navigate = useNavigate();
+  const { tenant } = useAuth();
+  const jobLabel = tenant?.labelConfig?.flLabels?.jobs || 'Jobs';
   const [jobs, setJobs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,14 +60,14 @@ export default function FreelancerJobs() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 2 }}>Jobs</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 2 }}>{jobLabel}</h1>
           <p style={{ fontSize: 13, color: MUTED }}>{total} total</p>
         </div>
         <button
           onClick={() => navigate('/freelancer/jobs/new')}
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: OR, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
         >
-          <Plus size={15} /> New Job
+          <Plus size={15} /> New {jobLabel.replace(/s$/, '')}
         </button>
       </div>
 
@@ -97,10 +100,10 @@ export default function FreelancerJobs() {
       ) : jobs.length === 0 ? (
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '48px', textAlign: 'center' }}>
           <Briefcase size={36} color={MUTED} style={{ marginBottom: 12 }} />
-          <p style={{ color: TEXT, fontWeight: 600, marginBottom: 6 }}>No jobs yet</p>
-          <p style={{ color: MUTED, fontSize: 13, marginBottom: 20 }}>Add your first job to start tracking your work</p>
+          <p style={{ color: TEXT, fontWeight: 600, marginBottom: 6 }}>No {jobLabel.toLowerCase()} yet</p>
+          <p style={{ color: MUTED, fontSize: 13, marginBottom: 20 }}>Add your first {jobLabel.replace(/s$/, '').toLowerCase()} to start tracking your work</p>
           <button onClick={() => navigate('/freelancer/jobs/new')} style={{ padding: '9px 20px', background: OR, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer' }}>
-            + New Job
+            + New {jobLabel.replace(/s$/, '')}
           </button>
         </div>
       ) : (
