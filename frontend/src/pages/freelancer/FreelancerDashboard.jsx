@@ -54,7 +54,7 @@ function StatusBadge({ status }) {
 export default function FreelancerDashboard() {
   const { user, tenant } = useAuth();
   const jobLabel = tenant?.labelConfig?.flLabels?.jobs || 'Jobs';
-  const jobSingular = jobLabel.replace(/s$/, '');
+  const jobSingular = tenant?.labelConfig?.flLabels?.jobSingular || 'Job';
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentJobs, setRecentJobs] = useState([]);

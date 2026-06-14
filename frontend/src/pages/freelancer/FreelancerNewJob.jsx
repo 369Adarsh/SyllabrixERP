@@ -13,7 +13,7 @@ const BORDER = '#222';
 export default function FreelancerNewJob() {
   const navigate = useNavigate();
   const { tenant } = useAuth();
-  const jobLabel = tenant?.labelConfig?.flLabels?.jobs || 'Job';
+  const jobSingular = tenant?.labelConfig?.flLabels?.jobSingular || 'Job';
   const workTypeHint = tenant?.sidebarConfig?.workTypeHint || 'e.g. Describe the work…';
   const [form, setForm] = useState({
     customerId: '',
@@ -94,7 +94,7 @@ export default function FreelancerNewJob() {
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, display: 'flex', alignItems: 'center' }}>
           <ArrowLeft size={20} />
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: TEXT }}>New {jobLabel}</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: TEXT }}>New {jobSingular}</h1>
       </div>
 
       <div style={{ maxWidth: 640 }}>
