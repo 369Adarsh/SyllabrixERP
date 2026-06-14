@@ -46,7 +46,7 @@ const PROFILES = [
     workTypeHint: 'e.g. New wiring, Fan installation, MCB repair, Switchboard fixing…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team','suppliers','tools','amc'],
-    moduleLabels: { jobs: 'Work Orders', bills: 'Payments Due' },
+    moduleLabels: { jobs: 'Work Orders', jobSingular: 'Work Order', bills: 'Payments Due' },
 
     helpers: [
       { name: 'Raju Yadav',   phone: '9876541001', skill: 'Wiring helper', dailyRate: 600 },
@@ -119,7 +119,7 @@ const PROFILES = [
     workTypeHint: 'e.g. Logo design, Brand identity, Social media creatives, UI design…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team'],
-    moduleLabels: { jobs: 'Projects', clients: 'Clients', team: 'Collaborators', expenses: 'Overheads', bills: 'Outstanding' },
+    moduleLabels: { jobs: 'Projects', jobSingular: 'Project', clients: 'Clients', team: 'Collaborators', expenses: 'Overheads', bills: 'Outstanding' },
 
     helpers: [],
     partners: [
@@ -170,7 +170,7 @@ const PROFILES = [
     workTypeHint: 'e.g. Pipe leak repair, Tap fitting, Bathroom work, Water tank cleaning…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team','suppliers','tools','amc'],
-    moduleLabels: { jobs: 'Service Calls', tools: 'Equipment' },
+    moduleLabels: { jobs: 'Service Calls', jobSingular: 'Service Call', tools: 'Equipment' },
 
     helpers: [
       { name: 'Ramji Solanki',  phone: '9876544001', skill: 'Plumbing assistant', dailyRate: 450 },
@@ -235,7 +235,7 @@ const PROFILES = [
     workTypeHint: 'e.g. Personal training, Group fitness class, Nutrition plan, Weight loss program…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team'],
-    moduleLabels: { jobs: 'Sessions & Packages', clients: 'Members', expenses: 'Business Costs', team: 'Network' },
+    moduleLabels: { jobs: 'Sessions & Packages', jobSingular: 'Session', clients: 'Members', expenses: 'Business Costs', team: 'Network' },
 
     helpers: [],
     partners: [
@@ -287,7 +287,7 @@ const PROFILES = [
     workTypeHint: 'e.g. Wedding shoot, Portrait session, Product photography, Event coverage…',
 
     activeModules: ['jobs','clients','finance','expenses','bills','team','tools','amc'],
-    moduleLabels: { jobs: 'Shoots & Projects', clients: 'Clients', team: 'Crew', tools: 'Gear', amc: 'Retainers' },
+    moduleLabels: { jobs: 'Shoots & Projects', jobSingular: 'Shoot', clients: 'Clients', team: 'Crew', tools: 'Gear', amc: 'Retainers' },
 
     helpers: [
       { name: 'Karthik R', phone: '9876547001', skill: 'Lighting assistant & photo assistant', dailyRate: 1000 },

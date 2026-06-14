@@ -38,6 +38,7 @@ export default function FreelancerJobs() {
   const navigate = useNavigate();
   const { tenant } = useAuth();
   const jobLabel = tenant?.labelConfig?.flLabels?.jobs || 'Jobs';
+  const jobSingular = tenant?.labelConfig?.flLabels?.jobSingular || 'Job';
   const [jobs, setJobs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ export default function FreelancerJobs() {
           onClick={() => navigate('/freelancer/jobs/new')}
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: OR, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
         >
-          <Plus size={15} /> New {jobLabel.replace(/s$/, '')}
+          <Plus size={15} /> New {jobSingular}
         </button>
       </div>
 
@@ -101,9 +102,9 @@ export default function FreelancerJobs() {
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '48px', textAlign: 'center' }}>
           <Briefcase size={36} color={MUTED} style={{ marginBottom: 12 }} />
           <p style={{ color: TEXT, fontWeight: 600, marginBottom: 6 }}>No {jobLabel.toLowerCase()} yet</p>
-          <p style={{ color: MUTED, fontSize: 13, marginBottom: 20 }}>Add your first {jobLabel.replace(/s$/, '').toLowerCase()} to start tracking your work</p>
+          <p style={{ color: MUTED, fontSize: 13, marginBottom: 20 }}>Add your first {jobSingular.toLowerCase()} to start tracking your work</p>
           <button onClick={() => navigate('/freelancer/jobs/new')} style={{ padding: '9px 20px', background: OR, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer' }}>
-            + New {jobLabel.replace(/s$/, '')}
+            + New {jobSingular}
           </button>
         </div>
       ) : (
